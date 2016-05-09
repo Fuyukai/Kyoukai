@@ -5,7 +5,7 @@ A Response is returned by Routes when the underlying coroutine is done.
 """
 from http_parser.util import IOrderedDict
 
-from .util import HTTP_CODES
+from .util import HTTP_CODES, VERSION
 
 
 class Response(object):
@@ -30,6 +30,7 @@ class Response(object):
         self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = "text/plain"
+        self.headers["Server"] = "Kyokai/{} (see https://github.com/SunDwarf/Kyokai)".format(VERSION)
 
     def to_bytes(self):
         """
