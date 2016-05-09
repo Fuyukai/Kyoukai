@@ -33,6 +33,7 @@ class Request(object):
         self.path = parser.get_path()
         self.headers = parser.get_headers()
         self.query = parser.get_query_string()
+        self._fully_parsed = parser.is_message_complete()
 
     @classmethod
     def from_data(cls, data: bytes):
@@ -44,7 +45,7 @@ class Request(object):
         data_len = len(data)
         # Execute the parser.
         parsed_len = parser.execute(data, data_len)
-        if data_len != parsed_len:
+        if data_len != parsed_len and parser.is_message_complete():
             raise HTTPClientException(400, "Bad Request")
 
         # Create a new request.
