@@ -68,6 +68,14 @@ class Kyokai(object):
             if route.kyokai_match(path, meth):
                 return route
 
+    def route(self, regex, methods: list=list("GET")):
+        """
+        Create an incoming route for
+        """
+        r = Route(regex, methods)
+        self.routes.append(r)
+        return r
+
     def _delegate_exc(self, protocol, error):
         pass
 
