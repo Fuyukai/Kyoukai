@@ -47,24 +47,17 @@ class _KanataProtocol(asyncio.Protocol):
         """
         Create a new Request, and delegate Kyokai to process it.
         """
-        logger.debug("Recieved {} bytes of data from client {}:{}, feeding into the buffer.."
+        logger.debug("Recieved {} bytes of data from client {}:{}"
                      .format(len(data), *self._transport.get_extra_info("peername"))
                      )
-        # Feed into the buffer.
 
-        if data:
-            self.buffer += data
-        # TODO: Less shitty detection of EOF.
-        if self.buffer.endswith(b"\r\n\r\n"):
-            # Delegate as response.
-            logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
-            buf = self.buffer
-            self.buffer = b""
-            # Create a request
-            try:
-                req = Request.from_data(buf)
-            except HTTPException as e:
-                # Delegate the HTTP exception, probably a 400.
-                self.app._delegate_exc(self, e)
-            else:
-                self.app._delegate_response(self, req)
+        # Delegate as response.
+        logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
+        # Create a request
+        try:
+            req = Request.from_data(data)
+        except HTTPException as e:
+            # Delegate the HTTP exception, probably a 400.
+            self.app._delegate_exc(self, e)
+        else:
+            self.app._delegate_response(self, req)

@@ -32,6 +32,7 @@ class Request(object):
         self.method = parser.get_method()
         self.path = parser.get_path()
         self.headers = parser.get_headers()
+        self.query = parser.get_query_string()
 
     @classmethod
     def from_data(cls, data: bytes):
