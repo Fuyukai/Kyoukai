@@ -8,7 +8,9 @@ import asyncio
 import uvloop
 import logging
 
+from kyokai.exc import HTTPClientException, HTTPException
 from kyokai.request import Request
+from kyokai.route import Route
 from .kanata import _KanataProtocol
 
 # Enforce uvloop.
@@ -34,6 +36,8 @@ class Kyokai(object):
         self.loop = asyncio.get_event_loop()
         self.logger = logging.getLogger("Kyokai")
 
+        self.routes = []
+
     def _kanata_factory(self, *args, **kwargs):
         return _KanataProtocol(self)
 
@@ -55,10 +59,37 @@ class Kyokai(object):
         except KeyboardInterrupt:
             return
 
-    def _delegate_exc(self, protocol):
+    def _match_route(self, path, meth):
+        """
+        Match a route, based on the regular expression of the route.
+        """
+        for route in self.routes:
+            assert isinstance(route, Route), "Routes should be a Route class"
+            if route.kyokai_match(path, meth):
+                return route
+
+    def _delegate_exc(self, protocol, error):
         pass
 
     def _delegate_response(self, protocol, request: Request):
         """
         Internally routes responses around.
         """
+        # Match a route, if possible.
+        self.logger.debug("Matching route `{}`.".format(request.path))
+        coro = self._match_route(request.path, request.method)
+        if not coro:
+            # Match a 404.
+            self._delegate_exc(protocol, HTTPClientException(404, "Not Found"))
+            return
+        # Invoke the coroutine.
+        self.loop.create_task(self._invoke(coro, request, protocol))
+
+    async def _invoke(self, route, request, protocol: _KanataProtocol):
+        """
+        Invokes a route to run its code.
+        """
+        try:
+            response = await route.invoke(self, request)
+        except HTTPException:
+            pass
