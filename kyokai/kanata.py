@@ -8,6 +8,7 @@ import logging
 
 from kyokai.exc import HTTPException
 from kyokai.request import Request
+from kyokai.response import Response
 
 logger = logging.getLogger("Kyokai")
 
@@ -32,6 +33,15 @@ class _KanataProtocol(asyncio.Protocol):
         self._transport = transport
 
         logger.debug("Recieved connection from {}:{}".format(*transport.get_extra_info("peername")))
+
+    def handle_resp(self, res: Response):
+        """
+        Handle a response.
+
+        Sends the Response to the client.
+        """
+        data = res.to_bytes()
+        self._transport.write(data)
 
     def data_received(self, data: bytes):
         """

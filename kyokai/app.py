@@ -10,6 +10,7 @@ import logging
 
 from kyokai.exc import HTTPClientException, HTTPException
 from kyokai.request import Request
+from kyokai.response import Response
 from kyokai.route import Route
 from .kanata import _KanataProtocol
 
@@ -76,8 +77,12 @@ class Kyokai(object):
         self.routes.append(r)
         return r
 
-    def _delegate_exc(self, protocol, error):
-        pass
+    def _delegate_exc(self, protocol, error: HTTPException):
+        """
+        Internally delegates an exception, and responds appropriately.
+        """
+        # TODO: Add custom exception handlers.
+        protocol.handle_resp(Response(error.errcode, error.errcode, {}))
 
     def _delegate_response(self, protocol, request: Request):
         """
@@ -98,6 +103,6 @@ class Kyokai(object):
         Invokes a route to run its code.
         """
         try:
-            response = await route.invoke(self, request)
-        except HTTPException:
-            pass
+            response = await route.invoke(request)
+        except HTTPException as e:
+            self._delegate_exc(protocol, e)

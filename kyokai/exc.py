@@ -18,7 +18,7 @@ class HTTPException(Exception):
         return "HTTP {} {}".format(self.errcode, self.msg)
 
 
-class HTTPClientException(Exception):
+class HTTPClientException(HTTPException):
     """
     Raised when a client causes an error.
     """

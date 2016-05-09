@@ -33,7 +33,7 @@ class Route(object):
         """
         self._wrapped_coro = coro
 
-    async def invoke(self, app, request):
+    async def invoke(self, request):
         """
         Invoke the route, calling the underlying coroutine.
         """
