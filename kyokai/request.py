@@ -33,6 +33,7 @@ class Request(object):
         self.path = parser.get_path()
         self.headers = parser.get_headers()
         self.query = parser.get_query_string()
+        self.body = parser.recv_body().decode()
         self._fully_parsed = parser.is_message_complete()
 
     @classmethod
