@@ -5,6 +5,8 @@ This is automatically passed into your app route when an appropriate path is rec
 """
 
 # Use the C parser if applicable.
+import logging
+
 try:
     from http_parser.parser import HttpParser
 except ImportError:
@@ -12,6 +14,8 @@ except ImportError:
 
 from kyokai.exc import HTTPClientException
 
+
+logger = logging.getLogger("Kyokai")
 
 class Request(object):
     """
@@ -46,7 +50,9 @@ class Request(object):
         data_len = len(data)
         # Execute the parser.
         parsed_len = parser.execute(data, data_len)
-        if data_len != parsed_len and parser.is_message_complete():
+        logger.debug("Expected length vs parsed length: {}/{}".format(data_len, parsed_len))
+        if parsed_len == 0 or (data_len != parsed_len and parser.is_message_complete()):
+            logger.debug("Parsing complete and parsed length != expected length.")
             raise HTTPClientException(400, "Bad Request")
 
         # Create a new request.
