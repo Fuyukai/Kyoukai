@@ -68,8 +68,11 @@ class Kyokai(object):
         """
         for route in self.routes:
             assert isinstance(route, Route), "Routes should be a Route class"
-            if route.kyokai_match(path, meth):
-                return route
+            if route.kyokai_match(path):
+                if route.kyokai_method_allowed(meth):
+                    return route
+                else:
+                    return -1
 
     def route(self, regex, methods: list=None):
         """
@@ -97,7 +100,12 @@ class Kyokai(object):
         coro = self._match_route(request.path, request.method)
         if not coro:
             # Match a 404.
+            self.logger.info("{} - {} {}".format(404, request.method, request.path))
             self._delegate_exc(protocol, HTTPClientException(404, "Not Found"))
+            return
+        elif coro == -1:
+            self.logger.info("{} - {} {}".format(405, request.method, request.path))
+            self._delegate_exc(protocol, HTTPClientException(405, "Method Not Allowed"))
             return
         # Invoke the coroutine.
         self.loop.create_task(self._invoke(coro, request, protocol))
@@ -113,4 +121,5 @@ class Kyokai(object):
             self._delegate_exc(protocol, e)
             return
         # TODO: Wrap response better.
+        self.logger.info("{} - {} {}".format(response.code, request.method, request.path))
         return protocol.handle_resp(response)

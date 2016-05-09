@@ -21,13 +21,20 @@ class Route(object):
         self.allowed_methods = methods
         self._wrapped_coro = None
 
-    def kyokai_match(self, path: str, method: str):
+    def kyokai_match(self, path: str):
         """
         Check if a given path matches the specified route.
         """
         matched = self.matcher.match(path)
-        in_m = method.lower() in [m.lower() for m in self.allowed_methods]
-        return (matched and in_m)
+        return matched
+
+    def kyokai_method_allowed(self, meth: str):
+        """
+        Check if the method matches.
+        """
+        in_m = meth.lower() in [m.lower() for m in self.allowed_methods]
+        return in_m
+
 
     def __call__(self, coro):
         """
