@@ -28,17 +28,19 @@ class Response(object):
         Override certain headers, like Content-Size.
         """
         self.headers["Content-Length"] = len(self.body)
+        if 'Content-Type' not in self.headers:
+            self.headers["Content-Type"] = "text/plain"
 
     def to_bytes(self):
         """
         Return the correct response.
         """
         self._recalculate_headers()
-        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}\r\n\r\n{body}\r\n"
+        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}\r\n{body}\r\n"
         headers_fmt = ""
         # Calculate headers
         for name, val in self.headers.items():
-            headers_fmt += "{}: {}".format(name, val)
+            headers_fmt += "{}: {}\r\n".format(name, val)
         built = fmt.format(code=self.code, msg=HTTP_CODES.get(self.code, "Unknown"), headers=headers_fmt,
                            body=self.body)
 
