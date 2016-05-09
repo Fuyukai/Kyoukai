@@ -40,7 +40,7 @@ class Route(object):
         Invoke the route, calling the underlying coroutine.
         """
         # Extract match groups.
-        matches = self.matcher.findall(request.path)
+        matches = self.matcher.match(request.path).groups()
         # Invoke the coroutine.
         try:
             if matches:

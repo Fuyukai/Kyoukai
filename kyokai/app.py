@@ -5,6 +5,8 @@ This file contains the main definition for the app.
 """
 
 import asyncio
+import traceback
+
 import uvloop
 import logging
 
@@ -69,10 +71,12 @@ class Kyokai(object):
             if route.kyokai_match(path, meth):
                 return route
 
-    def route(self, regex, methods: list=list("GET")):
+    def route(self, regex, methods: list=None):
         """
         Create an incoming route for
         """
+        if not methods:
+            methods = ["GET"]
         r = Route(regex, methods)
         self.routes.append(r)
         return r
@@ -105,4 +109,8 @@ class Kyokai(object):
         try:
             response = await route.invoke(request)
         except HTTPException as e:
+            traceback.print_exc()
             self._delegate_exc(protocol, e)
+            return
+        # TODO: Wrap response better.
+        return protocol.handle_resp(response)

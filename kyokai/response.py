@@ -15,13 +15,13 @@ class Response(object):
     The method `to_bytes()` transforms this into a bytes response.
     """
 
-    def __init__(self, code: int, body: str, headers: dict):
+    def __init__(self, code: int, body: str, headers: dict=None):
         """
         Create a new response.
         """
         self.code = code
         self.body = str(body)
-        self.headers = IOrderedDict(headers)
+        self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
     def _recalculate_headers(self):
         """
