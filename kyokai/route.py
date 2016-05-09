@@ -3,6 +3,8 @@ Module for Kyokai routes.
 """
 import re
 
+from kyokai.exc import HTTPClientException, HTTPException
+
 
 class Route(object):
     """
@@ -39,4 +41,16 @@ class Route(object):
         """
         # Extract match groups.
         matches = self.matcher.findall(request.path)
+        # Invoke the coroutine.
+        try:
+            if matches:
+                result = await self._wrapped_coro(request, *matches)
+            else:
+                result = await self._wrapped_coro(request)
+        except Exception as e:
+            if isinstance(e, HTTPClientException):
+                raise
+            else:
+                raise HTTPException(500)
+        return result
 
