@@ -11,7 +11,7 @@ def extract_version(module='kyokai'):
     fname = os.path.join(rootpath, module, 'util.py')
     with open(fname) as f:
         for line in f:
-            if line.startswith('__version__'):
+            if line.startswith('VERSION'):
                 _, version = line.split('=')
                 version = version.strip()[1:-1]  # Remove quotation characters.
                 break
