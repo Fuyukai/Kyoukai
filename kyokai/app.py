@@ -74,6 +74,26 @@ class Kyokai(object):
                 else:
                     return -1
 
+    def _wrap_response(self, response):
+        """
+        Wrap up a response, if applicable.
+
+        This allows Flask-like `return ""`.
+        """
+        if isinstance(response, tuple):
+            if len(response) == 1:
+                # Only body.
+                r = Response(200, response[0], {})
+            elif len(response) == 2:
+                # Body and code.
+                r = Response(response[1], response[0], {})
+            elif len(response) == 3:
+                # Body, code, headers.
+                r = Response(response[1], response[0], response[2])
+            else:
+                # what
+                raise HTTPException
+
     def route(self, regex, methods: list=None):
         """
         Create an incoming route for
@@ -111,15 +131,21 @@ class Kyokai(object):
         self.loop.create_task(self._invoke(coro, request, protocol))
 
     async def _invoke(self, route, request, protocol: _KanataProtocol):
+        try:
+            await self._wrapped_invoke(route, request, protocol)
+        except Exception as e:
+            if not isinstance(e, HTTPException):
+                traceback.print_exc()
+                self._delegate_exc(protocol, HTTPException(500))
+            else:
+                self._delegate_exc(protocol, e)
+
+    async def _wrapped_invoke(self, route, request, protocol: _KanataProtocol):
         """
         Invokes a route to run its code.
         """
-        try:
-            response = await route.invoke(request)
-        except HTTPException as e:
-            traceback.print_exc()
-            self._delegate_exc(protocol, e)
-            return
+        response = await route.invoke(request)
         # TODO: Wrap response better.
+        response = self._wrap_response(response)
         self.logger.info("{} - {} {}".format(response.code, request.method, request.path))
         return protocol.handle_resp(response)
