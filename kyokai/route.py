@@ -55,7 +55,10 @@ class Route(object):
         Invoke the route, calling the underlying coroutine.
         """
         # Extract match groups.
-        matches = self.matcher.match(request.path).groups()
+        if not self.hard_match:
+            matches = self.matcher.match(request.path).groups()
+        else:
+            matches = None
         # Invoke the coroutine.
         try:
             if matches:
