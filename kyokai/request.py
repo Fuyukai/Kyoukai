@@ -58,7 +58,6 @@ class Request(object):
         self.values = IOrderedDict(self.args)
         self.values.update(self.args)
 
-
     @classmethod
     def from_data(cls, data: bytes):
         """

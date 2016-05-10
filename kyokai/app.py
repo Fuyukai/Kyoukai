@@ -38,8 +38,10 @@ class Kyokai(object):
         self.name = name
         self.loop = asyncio.get_event_loop()
         self.logger = logging.getLogger("Kyokai")
+        self.logger.setLevel(log_level)
 
         self.routes = []
+        self.error_handlers = {}
 
     def _kanata_factory(self, *args, **kwargs):
         return _KanataProtocol(self)
@@ -109,11 +111,14 @@ class Kyokai(object):
         self.routes.append(r)
         return r
 
-    def _delegate_exc(self, protocol, error: HTTPException, body: str=None):
+    def _delegate_exc(self, protocol, request, error: HTTPException, body: str=None):
         """
         Internally delegates an exception, and responds appropriately.
         """
-        # TODO: Add custom exception handlers.
+        # Check if there's a custom error handler, and if so, run it.
+        if error.errcode in self.error_handlers:
+            route = self.error_handlers[error.errcode]
+            self.loop.create_task(self._invoke_errhandler(route, request, error, protocol))
         protocol.handle_resp(Response(error.errcode, error.errcode if not body else body, {}))
 
     def _delegate_response(self, protocol, request: Request):
@@ -126,25 +131,47 @@ class Kyokai(object):
         if not coro:
             # Match a 404.
             self.logger.info("{} - {} {}".format(404, request.method, request.path))
-            self._delegate_exc(protocol, HTTPClientException(404, "Not Found"))
+            self._delegate_exc(protocol, request, HTTPClientException(404, "Not Found"))
             return
         elif coro == -1:
             self.logger.info("{} - {} {}".format(405, request.method, request.path))
-            self._delegate_exc(protocol, HTTPClientException(405, "Method Not Allowed"))
+            self._delegate_exc(protocol, request, HTTPClientException(405, "Method Not Allowed"))
             return
         # Invoke the coroutine.
         self.loop.create_task(self._invoke(coro, request, protocol))
 
+    async def _invoke_errhandler(self, route, request, error, protocol):
+        """
+        Invokes an error handler protocol, bypassing _delegate_exc.
+        """
+        try:
+            response = await route.invoke(request)
+        except Exception as e:
+            if not isinstance(e, HTTPException):
+                self.logger.error("Error in error handler {}:".format(route.__name__))
+                traceback.print_exc()
+                protocol.handle_resp(Response(500, "500 INTERNAL SERVER ERROR", {"X-Kyokai-Errorhandler":
+                                                                                     route.__name__}))
+            else:
+                protocol.handle_resp(Response(e.errcode, e.msg, {}))
+            return
+        # Wrap response.
+        response = self._wrap_response(response)
+        protocol.handle_resp(response)
+
     async def _invoke(self, route, request, protocol: _KanataProtocol):
+        """
+        Invokes a function, if appropriate. Handles error automatically.
+        """
         try:
             await self._wrapped_invoke(route, request, protocol)
         except Exception as e:
             if not isinstance(e, HTTPException):
                 self.logger.error("Error in view {}:".format(route.__name__))
                 traceback.print_exc()
-                self._delegate_exc(protocol, HTTPException(500))
+                self._delegate_exc(protocol, request, HTTPException(500))
             else:
-                self._delegate_exc(protocol, e)
+                self._delegate_exc(protocol, request, e)
 
     async def _wrapped_invoke(self, route, request, protocol: _KanataProtocol):
         """
