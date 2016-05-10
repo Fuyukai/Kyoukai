@@ -21,4 +21,8 @@ Alternatively, if you want cutting edge, you can install directly from git.
     
 **Note that the Git version is not guarenteed to be stable, at all.**
  
- 
+## Getting Started
+
+Kyōkai requires knowledge of asyncio to use effectively. If you understand asyncio, check out the examples:
+
+ - [First App](/examples/first-app)
