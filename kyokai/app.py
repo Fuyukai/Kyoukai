@@ -93,6 +93,11 @@ class Kyokai(object):
             else:
                 # what
                 raise HTTPException
+        elif isinstance(response, Response):
+            r = response
+        else:
+            raise TypeError
+        return r
 
     def route(self, regex, methods: list=None):
         """
@@ -104,12 +109,12 @@ class Kyokai(object):
         self.routes.append(r)
         return r
 
-    def _delegate_exc(self, protocol, error: HTTPException):
+    def _delegate_exc(self, protocol, error: HTTPException, body: str=None):
         """
         Internally delegates an exception, and responds appropriately.
         """
         # TODO: Add custom exception handlers.
-        protocol.handle_resp(Response(error.errcode, error.errcode, {}))
+        protocol.handle_resp(Response(error.errcode, error.errcode if not body else body, {}))
 
     def _delegate_response(self, protocol, request: Request):
         """
