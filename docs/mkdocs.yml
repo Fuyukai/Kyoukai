@@ -1,1 +1,5 @@
-site_name: My Docs
+site_name: Kyōkai (境界)
+theme: cinder
+repo_url: "https://github.com/SunDwarf/Kyokai"
+copyright: "Kyōkai is licensed under the <a href='https://github.com/SunDwarf/Kyokai/blob/master/LICENCE'>MIT
+license</a>"
