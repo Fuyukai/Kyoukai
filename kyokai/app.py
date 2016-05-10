@@ -46,9 +46,9 @@ class Kyokai(object):
     def _kanata_factory(self, *args, **kwargs):
         return _KanataProtocol(self)
 
-    async def _run(self, ip: str="127.0.0.1", port: int=4444):
+    async def start(self, ip: str="127.0.0.1", port: int=4444):
         """
-        Run the app. Internal coroutine.
+        Run the app, via async.
         """
         print("Kyokai serving on {}:{}.".format(ip, port))
         self.logger.info("Kyokai serving on {}:{}.".format(ip, port))
@@ -57,8 +57,10 @@ class Kyokai(object):
     def run(self, ip: str="127.0.0.1", port: int=4444):
         """
         Run a Kyokai app.
+
+        This is just a shortcut to run the app from synchronous code.
         """
-        self.loop.create_task(self._run(ip, port))
+        self.loop.create_task(self.start(ip, port))
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
