@@ -96,7 +96,7 @@ class Kyokai(object):
         elif isinstance(response, Response):
             r = response
         else:
-            raise TypeError
+            raise TypeError("Route requested bad ")
         return r
 
     def route(self, regex, methods: list=None):
@@ -140,6 +140,7 @@ class Kyokai(object):
             await self._wrapped_invoke(route, request, protocol)
         except Exception as e:
             if not isinstance(e, HTTPException):
+                self.logger.error("Error in view {}:".format(route.__name__))
                 traceback.print_exc()
                 self._delegate_exc(protocol, HTTPException(500))
             else:

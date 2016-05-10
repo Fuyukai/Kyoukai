@@ -35,12 +35,12 @@ class Route(object):
         in_m = meth.lower() in [m.lower() for m in self.allowed_methods]
         return in_m
 
-
     def __call__(self, coro):
         """
         Sets the coroutine.
         """
         self._wrapped_coro = coro
+        self.__name__ = coro.__name__
 
     async def invoke(self, request):
         """
