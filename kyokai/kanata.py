@@ -68,3 +68,6 @@ class _KanataProtocol(asyncio.Protocol):
             else:
                 # Continue.
                 return
+
+    def close(self):
+        self._transport.close()

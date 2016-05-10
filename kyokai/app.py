@@ -144,6 +144,9 @@ class Kyokai(object):
             route = self.error_handlers[error.errcode]
             self.loop.create_task(self._invoke_errhandler(route, request, error, protocol))
         protocol.handle_resp(Response(error.errcode, error.errcode if not body else body, {}))
+        if request.headers.get("Connection") != "keep-alive":
+            # Close the conenction.
+            protocol.close()
 
     def _delegate_response(self, protocol, request: Request):
         """
@@ -182,6 +185,9 @@ class Kyokai(object):
         # Wrap response.
         response = self._wrap_response(response)
         protocol.handle_resp(response)
+        if request.headers.get("Connection") != "keep-alive":
+            # Close the conenction.
+            protocol.close()
 
     async def _invoke(self, route, request, protocol: _KanataProtocol):
         """
@@ -194,8 +200,14 @@ class Kyokai(object):
                 self.logger.error("Error in view {}:".format(route.__name__))
                 traceback.print_exc()
                 self._delegate_exc(protocol, request, HTTPException(500))
+                if request.headers.get("Connection") != "keep-alive":
+                    # Close the conenction.
+                    protocol.close()
             else:
                 self._delegate_exc(protocol, request, e)
+                if request.headers.get("Connection") != "keep-alive":
+                    # Close the conenction.
+                    protocol.close()
 
     async def _wrapped_invoke(self, route, request, protocol: _KanataProtocol):
         """
@@ -204,4 +216,7 @@ class Kyokai(object):
         response = await route.invoke(request)
         response = self._wrap_response(response)
         self.logger.info("{} - {} {}".format(response.code, request.method, request.path))
-        return protocol.handle_resp(response)
+        protocol.handle_resp(response)
+        if request.headers.get("Connection") != "keep-alive":
+            # Close the conenction.
+            protocol.close()
