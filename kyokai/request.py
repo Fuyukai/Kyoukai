@@ -4,9 +4,10 @@ A request represents a client wanting to get a resource from the server.
 This is automatically passed into your app route when an appropriate path is recieved.
 """
 
-# Use the C parser if applicable.
 import logging
+import urllib.parse as uparse
 
+# Use the C parser if applicable.
 try:
     from http_parser.parser import HttpParser
 except ImportError:
@@ -16,6 +17,7 @@ from kyokai.exc import HTTPClientException
 
 
 logger = logging.getLogger("Kyokai")
+
 
 class Request(object):
     """
@@ -39,6 +41,20 @@ class Request(object):
         self.query = parser.get_query_string()
         self.body = parser.recv_body().decode()
         self._fully_parsed = parser.is_message_complete()
+
+        # urlparse out the items.
+        self._raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
+        # Reparse args
+        self.args = {}
+        for k, v in self._raw_args.items():
+            if len(v) == 1:
+                self.args[k] = v[0]
+            elif len(v) == 0:
+                self.args[k] = None
+            else:
+                self.args[k] = v
+        self.form = uparse.parse_qs(self.body, keep_blank_values=True)
+
 
     @classmethod
     def from_data(cls, data: bytes):
