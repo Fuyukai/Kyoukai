@@ -111,6 +111,11 @@ class Kyokai(object):
         self.routes.append(r)
         return r
 
+    def errorhandler(self, code: int):
+        r = Route("", [])
+        self.error_handlers[code] = r
+        return r
+
     def _delegate_exc(self, protocol, request, error: HTTPException, body: str=None):
         """
         Internally delegates an exception, and responds appropriately.
