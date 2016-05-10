@@ -96,7 +96,7 @@ class Kyokai(object):
         elif isinstance(response, Response):
             r = response
         else:
-            raise TypeError("Route requested bad ")
+            r = Response(200, response, {})
         return r
 
     def route(self, regex, methods: list=None):
