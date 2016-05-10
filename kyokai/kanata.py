@@ -56,7 +56,7 @@ class _KanataProtocol(asyncio.Protocol):
         # Create a request
         self.buffer += data
         try:
-            req = Request.from_data(self.buffer)
+            req = Request.from_data(self.buffer, self.ip)
         except HTTPException as e:
             # Delegate the HTTP exception, probably a 400.
             self.app._delegate_exc(self, e)

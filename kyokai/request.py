@@ -42,6 +42,10 @@ class Request(object):
         self.body = parser.recv_body().decode()
         self._fully_parsed = parser.is_message_complete()
 
+        self.raw_data = b""
+
+        self.source = "0.0.0.0"
+
         # urlparse out the items.
         self._raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
         # Reparse args
@@ -59,7 +63,7 @@ class Request(object):
         self.values.update(self.args)
 
     @classmethod
-    def from_data(cls, data: bytes):
+    def from_data(cls, data: bytes, source: str):
         """
         Create a new request from request data.
         """
@@ -75,5 +79,10 @@ class Request(object):
 
         # Create a new request.
         req = cls(parser)
+
+        # Set the raw data.
+        req.raw_data = data
+        # Set the IP.
+        req.source = source
 
         return req
