@@ -13,19 +13,27 @@ class Route(object):
     It takes in a regular expression as a matcher, for the path, and a list of accepted methods.
     """
 
-    def __init__(self, matcher: str, methods: list):
+    def __init__(self, matcher: str, methods: list, hard_match: bool=False):
         """
         Create a new Route.
         """
-        self.matcher = re.compile(matcher)
+        if hard_match:
+            self.matcher = matcher
+        else:
+            self.matcher = re.compile(matcher)
         self.allowed_methods = methods
+        self.hard_match = hard_match
         self._wrapped_coro = None
 
     def kyokai_match(self, path: str):
         """
         Check if a given path matches the specified route.
         """
-        matched = self.matcher.match(path)
+        # If it's a hard match, do an lower == match
+        if self.hard_match:
+            matched = path.lower() == self.matcher.lower()
+        else:
+            matched = self.matcher.match(path)
         return matched
 
     def kyokai_method_allowed(self, meth: str):

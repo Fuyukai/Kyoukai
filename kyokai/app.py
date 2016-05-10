@@ -101,13 +101,32 @@ class Kyokai(object):
             r = Response(200, response, {})
         return r
 
-    def route(self, regex, methods: list=None):
+    def route(self, regex, methods: list=None, hard_match: bool=False):
         """
-        Create an incoming route for
+        Create an incoming route for a function.
+
+        Parameters:
+            regex:
+                The regular expression to match the path to.
+                In standard Python `re` forme.
+
+                Group matches are automatically extracted from the regex, and passed as arguments.
+
+            methods:
+                The list of allowed methods, e.g ["GET", "POST"].
+                You can check the method with `request.method`.
+
+            hard_match:
+                Should we match based on equality, rather than regex?
+
+                This prevents index or lower level paths from matching 404s at higher levels.
         """
         if not methods:
             methods = ["GET"]
-        r = Route(regex, methods)
+        # Override hard match if it's a `/` route.
+        if regex == "/":
+            hard_match = True
+        r = Route(regex, methods, hard_match)
         self.routes.append(r)
         return r
 
@@ -183,7 +202,6 @@ class Kyokai(object):
         Invokes a route to run its code.
         """
         response = await route.invoke(request)
-        # TODO: Wrap response better.
         response = self._wrap_response(response)
         self.logger.info("{} - {} {}".format(response.code, request.method, request.path))
         return protocol.handle_resp(response)
