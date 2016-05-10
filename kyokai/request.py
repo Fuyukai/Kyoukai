@@ -9,9 +9,9 @@ import urllib.parse as uparse
 
 # Use the C parser if applicable.
 try:
-    from http_parser.parser import HttpParser
+    from http_parser.parser import HttpParser, IOrderedDict
 except ImportError:
-    from http_parser.pyparser import HttpParser
+    from http_parser.pyparser import HttpParser, IOrderedDict
 
 from kyokai.exc import HTTPClientException
 
@@ -45,7 +45,7 @@ class Request(object):
         # urlparse out the items.
         self._raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
         # Reparse args
-        self.args = {}
+        self.args = IOrderedDict()
         for k, v in self._raw_args.items():
             if len(v) == 1:
                 self.args[k] = v[0]
@@ -54,6 +54,9 @@ class Request(object):
             else:
                 self.args[k] = v
         self.form = uparse.parse_qs(self.body, keep_blank_values=True)
+
+        self.values = IOrderedDict(self.args)
+        self.values.update(self.args)
 
 
     @classmethod
