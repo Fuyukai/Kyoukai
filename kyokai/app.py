@@ -6,25 +6,39 @@ This file contains the main definition for the app.
 
 import asyncio
 import traceback
+import logging
 
 import uvloop
-import logging
+import yaml
 
 from kyokai.exc import HTTPClientException, HTTPException
 from kyokai.request import Request
 from kyokai.response import Response
 from kyokai.route import Route
-from .kanata import _KanataProtocol
+from kyokai.kanata import _KanataProtocol
+
+try:
+    from kyokai.renderers import MakoRenderer as MakoRenderer
+    _has_mako = True
+except ImportError:
+    _has_mako = False
+
+try:
+    from kyokai.renderers import JinjaRenderer as JinjaRenderer
+    _has_jinja2 = True
+except ImportError:
+    _has_jinja2 = False
 
 # Enforce uvloop.
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
 
 class Kyokai(object):
     """
     A Kyoukai app.
     """
 
-    def __init__(self, name: str, log_level=logging.INFO):
+    def __init__(self, name: str, log_level=logging.INFO, config_file: str="config.yml"):
         """
         Create a new app.
 
@@ -32,7 +46,11 @@ class Kyokai(object):
             name: str
                 The name of the app.
 
-            log_level: The log level of the logger.
+            log_level:
+                The log level of the logger.
+
+            config_file:
+                The path to the config file of the app. Optional.
         """
 
         self.name = name
@@ -43,10 +61,35 @@ class Kyokai(object):
         self.routes = []
         self.error_handlers = {}
 
+        # Load config.
+        try:
+            with open(config_file, 'r') as f:
+                self.config = yaml.load(f)
+        except FileNotFoundError:
+            self.config = {}
+
+        # Create a renderer.
+        if self.config.get("template_renderer", "mako") == "mako":
+            if not _has_mako:
+                raise ImportError("Mako is not installed; cannot use for templates.")
+            else:
+                self._renderer = MakoRenderer.render
+        elif self.config.get("template_renderer", "mako") == "jinja2":
+            if not _has_jinja2:
+                raise ImportError("Jinja2 is not installed; cannot use for templates.")
+            else:
+                self._renderer = JinjaRenderer.render
+
     def _kanata_factory(self, *args, **kwargs):
         return _KanataProtocol(self)
 
-    async def start(self, ip: str="127.0.0.1", port: int=4444):
+    def render(self, filename, **kwargs):
+        """
+        Render a template using the specified rendering engine.
+        """
+        return self._renderer(filename, **kwargs)
+
+    async def start(self, ip: str = "127.0.0.1", port: int = 4444):
         """
         Run the app, via async.
         """
@@ -54,7 +97,7 @@ class Kyokai(object):
         self.logger.info("Kyokai serving on {}:{}.".format(ip, port))
         self.server = await self.loop.create_server(self._kanata_factory, ip, port)
 
-    def run(self, ip: str="127.0.0.1", port: int=4444):
+    def run(self, ip: str = "127.0.0.1", port: int = 4444):
         """
         Run a Kyokai app.
 
@@ -103,7 +146,7 @@ class Kyokai(object):
             r = Response(200, response, {})
         return r
 
-    def route(self, regex, methods: list=None, hard_match: bool=False):
+    def route(self, regex, methods: list = None, hard_match: bool = False):
         """
         Create an incoming route for a function.
 
@@ -137,7 +180,7 @@ class Kyokai(object):
         self.error_handlers[code] = r
         return r
 
-    def _delegate_exc(self, protocol, request, error: HTTPException, body: str=None):
+    def _delegate_exc(self, protocol, request, error: HTTPException, body: str = None):
         """
         Internally delegates an exception, and responds appropriately.
         """
