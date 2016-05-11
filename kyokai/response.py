@@ -3,10 +3,13 @@ Module for a Response object.
 
 A Response is returned by Routes when the underlying coroutine is done.
 """
+import warnings
+
 try:
     from http_parser.parser import IOrderedDict
 except ImportError:
     from http_parser.pyparser import IOrderedDict
+    warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
 
 from .util import HTTP_CODES, VERSION
 
