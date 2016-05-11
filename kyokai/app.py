@@ -33,7 +33,7 @@ except ImportError:
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
-class Kyokai(object):
+class Kyōkai(object):
     """
     A Kyoukai app.
     """
@@ -241,3 +241,6 @@ class Kyokai(object):
         if request.headers.get("Connection") != "keep-alive":
             # Close the conenction.
             protocol.close()
+
+# Alias it
+Kyokai = Kyōkai
