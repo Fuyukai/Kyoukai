@@ -17,7 +17,7 @@ Kyōkai is shipped as a PyPI package, so can be installed easily with pip.
     
 Alternatively, if you want cutting edge, you can install directly from git.
 
-    $ pip install git+https://github.com/SunDwarf/Kyokai.git
+    $ pip install git+https://github.com/SunDwarf/Kyoukai.git
     
 **Note that the Git version is not guarenteed to be stable, at all.**
  
