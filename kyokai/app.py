@@ -5,9 +5,12 @@ This file contains the main definition for the app.
 """
 
 import asyncio
+import io
+import os
 import traceback
 import logging
 
+import magic
 import uvloop
 import yaml
 
@@ -112,6 +115,41 @@ class Kyōkai(object):
         print("Kyokai serving on {}:{}.".format(ip, port))
         self.logger.info("Kyokai serving on {}:{}.".format(ip, port))
         self.server = await self.loop.create_server(self._kanata_factory, ip, port)
+
+    def get_static_path(self, filename: str) -> str:
+        """
+        Gets a sanitized static path.
+
+        The file is not guarenteed to exist.
+        """
+        keepcharacters = (' ', '.', '_')
+        fname = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
+        return os.path.join(os.getcwd(), self.config.get("static_dir", "static"), fname)
+
+    def get_static_file(self, filename: str) -> io.BufferedIOBase:
+        """
+        Gets a file, safely.
+
+        Sanitizes the input, then opens `static/f`, or None if the file does not exist.
+        """
+        fname = self.get_static_path(filename)
+        if not os.path.exists(fname):
+            return None
+        else:
+            return open(os.path.join(os.getcwd(), self.config.get("static_dir", "static"), fname), 'r')
+
+    def get_static(self, filename: str) -> Response:
+        """
+        Gets a file, using static, but returns a Response instead of the file handle.
+        """
+        content = self.get_static_file(filename)
+        if not content:
+            raise HTTPClientException(404)
+
+        with content:
+            mimetype = magic.from_file(self.get_static_path(filename), mime=True)
+            return Response(200, body=content.read(), headers={"Content-Type": mimetype.decode()})
+
 
     def run(self, ip: str = "127.0.0.1", port: int = 4444):
         """

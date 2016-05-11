@@ -12,6 +12,7 @@ except ImportError:
     warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
 
 from .util import HTTP_CODES, VERSION
+import magic
 
 
 class Response(object):
@@ -29,13 +30,22 @@ class Response(object):
         self.body = str(body)
         self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
+    def _mimetype(self, body):
+        """
+        Calculates the mime type of the file.
+        """
+        mime = magic.from_buffer(body)
+        if mime:
+            return mime.decode()
+
     def _recalculate_headers(self):
         """
         Override certain headers, like Content-Size.
         """
         self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
-            self.headers["Content-Type"] = "text/html"
+            self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
+
         self.headers["Server"] = "Kyoukai/{} (see https://github.com/SunDwarf/Kyoukai)".format(VERSION)
 
     def to_bytes(self):
