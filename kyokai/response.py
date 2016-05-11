@@ -29,7 +29,7 @@ class Response(object):
         """
         self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
-            self.headers["Content-Type"] = "text/plain"
+            self.headers["Content-Type"] = "text/html"
         self.headers["Server"] = "Kyokai/{} (see https://github.com/SunDwarf/Kyokai)".format(VERSION)
 
     def to_bytes(self):
