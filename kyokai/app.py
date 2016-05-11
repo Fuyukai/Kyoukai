@@ -11,6 +11,11 @@ import logging
 import uvloop
 import yaml
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
 from kyokai.exc import HTTPClientException, HTTPException
 from kyokai.request import Request
 from kyokai.response import Response
@@ -55,8 +60,6 @@ class Kyōkai(object):
 
         self.name = name
         self.loop = asyncio.get_event_loop()
-        self.logger = logging.getLogger("Kyokai")
-        self.logger.setLevel(log_level)
 
         self.routes = []
         self.error_handlers = {}
@@ -64,9 +67,22 @@ class Kyōkai(object):
         # Load config.
         try:
             with open(config_file, 'r') as f:
-                self.config = yaml.load(f)
+                self.config = yaml.load(f, Loader)
         except FileNotFoundError:
             self.config = {}
+
+        # Should we use logging speedhack?
+        # This speeds up Kyoukai MASSIVELY - 0.3ms off each request, which is around 75% on an empty request.
+        if self.config.get("use_logging_speedhack"):
+            print("Using logging speed hack.")
+            class _FakeLogging(logging.Logger):
+                def isEnabledFor(self, level):
+                    return False
+
+            logging.Logger.manager.loggerDict["Kyokai"] = _FakeLogging("Kyokai")
+
+        self.logger = logging.getLogger("Kyokai")
+        self.logger.setLevel(log_level)
 
         # Create a renderer.
         if self.config.get("template_renderer", "mako") == "mako":

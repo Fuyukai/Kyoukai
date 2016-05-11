@@ -16,9 +16,6 @@ except ImportError:
 from kyokai.exc import HTTPClientException
 
 
-logger = logging.getLogger("Kyokai")
-
-
 class Request(object):
     """
     A Request object.
@@ -78,9 +75,7 @@ class Request(object):
         data_len = len(data)
         # Execute the parser.
         parsed_len = parser.execute(data, data_len)
-        logger.debug("Expected length vs parsed length: {}/{}".format(data_len, parsed_len))
         if parsed_len == 0 or (data_len != parsed_len and parser.is_message_complete()):
-            logger.debug("Parsing complete and parsed length != expected length.")
             raise HTTPClientException(400, "Bad Request")
 
         # Create a new request.

@@ -10,8 +10,6 @@ from kyokai.exc import HTTPException
 from kyokai.request import Request
 from kyokai.response import Response
 
-logger = logging.getLogger("Kyokai")
-
 
 class _KanataProtocol(asyncio.Protocol):
     """
@@ -22,6 +20,8 @@ class _KanataProtocol(asyncio.Protocol):
         self._transport = None
         self.ip = None
         self.client_port = None
+
+        self.logger = logging.getLogger("Kyokai")
 
         self.loop = asyncio.get_event_loop()
 
@@ -34,7 +34,7 @@ class _KanataProtocol(asyncio.Protocol):
         self.ip, self.client_port = transport.get_extra_info("peername")
         self._transport = transport
 
-        logger.debug("Recieved connection from {}:{}".format(*transport.get_extra_info("peername")))
+        self.logger.debug("Recieved connection from {}:{}".format(*transport.get_extra_info("peername")))
 
     def handle_resp(self, res: Response):
         """
@@ -49,12 +49,12 @@ class _KanataProtocol(asyncio.Protocol):
         """
         Create a new Request, and delegate Kyokai to process it.
         """
-        logger.debug("Recieved {} bytes of data from client {}:{}, feeding."
+        self.logger.debug("Recieved {} bytes of data from client {}:{}, feeding."
                      .format(len(data), *self._transport.get_extra_info("peername"))
                      )
 
         # Delegate as response.
-        logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
+        self.logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
         # Create a request
         self.buffer += data
         try:
@@ -65,6 +65,7 @@ class _KanataProtocol(asyncio.Protocol):
         else:
             if req.fully_parsed:
                 # Reset buffer.
+                self.logger.debug("Request for `{}` fully parsed, passing.".format(req.path))
                 self.buffer = b""
                 self.loop.create_task(self.app.delegate_request(self, req))
             else:
