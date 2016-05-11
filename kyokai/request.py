@@ -30,6 +30,9 @@ class Request(object):
             The method of the request.
     """
 
+    __slots__ = ["_parser", "method", "path", "headers", "query", "body", "raw_data", "source", "args",
+                 "form", "values"]
+
     def __init__(self, parser: HttpParser):
         """
         Create a new Request.
@@ -40,17 +43,16 @@ class Request(object):
         self.headers = parser.get_headers()
         self.query = parser.get_query_string()
         self.body = parser.recv_body().decode()
-        self._fully_parsed = parser.is_message_complete()
 
         self.raw_data = b""
 
         self.source = "0.0.0.0"
 
         # urlparse out the items.
-        self._raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
+        _raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
         # Reparse args
         self.args = IOrderedDict()
-        for k, v in self._raw_args.items():
+        for k, v in _raw_args.items():
             if len(v) == 1:
                 self.args[k] = v[0]
             elif len(v) == 0:
@@ -61,6 +63,10 @@ class Request(object):
 
         self.values = IOrderedDict(self.args)
         self.values.update(self.args)
+
+    @property
+    def fully_parsed(self):
+        return self._parser.is_message_complete()
 
     @classmethod
     def from_data(cls, data: bytes, source: str):
