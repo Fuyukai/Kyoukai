@@ -180,88 +180,64 @@ class Kyokai(object):
         self.error_handlers[code] = r
         return r
 
-    def _delegate_exc(self, protocol, request, error: HTTPException, body: str = None):
+    async def delegate_request(self, protocol, request: Request):
         """
-        Internally delegates an exception, and responds appropriately.
+        Delegates a request to be handled automatically.
         """
-        # Check if there's a custom error handler, and if so, run it.
-        if error.errcode in self.error_handlers:
-            route = self.error_handlers[error.errcode]
-            self.loop.create_task(self._invoke_errhandler(route, request, error, protocol))
-        protocol.handle_resp(Response(error.errcode, error.errcode if not body else body, {}))
-        if request.headers.get("Connection") != "keep-alive":
-            # Close the conenction.
-            protocol.close()
-
-    def _delegate_response(self, protocol, request: Request):
-        """
-        Internally routes responses around.
-        """
-        # Match a route, if possible.
         self.logger.debug("Matching route `{}`.".format(request.path))
         coro = self._match_route(request.path, request.method)
-        if not coro:
-            # Match a 404.
-            self.logger.info("{} - {} {}".format(404, request.method, request.path))
-            self._delegate_exc(protocol, request, HTTPClientException(404, "Not Found"))
+        if coro == -1:
+            # 415 invalid method
+            await self._exception_handler(protocol, request, 415)
             return
-        elif coro == -1:
-            self.logger.info("{} - {} {}".format(405, request.method, request.path))
-            self._delegate_exc(protocol, request, HTTPClientException(405, "Method Not Allowed"))
+        elif not coro:
+            await self._exception_handler(protocol, request, 404)
             return
-        # Invoke the coroutine.
-        self.loop.create_task(self._invoke(coro, request, protocol))
 
-    async def _invoke_errhandler(self, route, request, error, protocol):
-        """
-        Invokes an error handler protocol, bypassing _delegate_exc.
-        """
+        # Invoke the route, wrapped.
         try:
-            response = await route.invoke(request)
-        except Exception as e:
-            if not isinstance(e, HTTPException):
-                self.logger.error("Error in error handler {}:".format(route.__name__))
-                traceback.print_exc()
-                protocol.handle_resp(Response(500, "500 INTERNAL SERVER ERROR", {"X-Kyokai-Errorhandler":
-                                                                                     route.__name__}))
-            else:
-                protocol.handle_resp(Response(e.errcode, e.msg, {}))
+            response = await coro.invoke(request)
+        except HTTPException as e:
+            self.logger.info("{} {} - {}".format(request.method, request.path, e.errcode))
+            await self._exception_handler(protocol, request, e.errcode)
             return
-        # Wrap response.
+        except Exception as e:
+            self.logger.info("{} {} - 500".format(request.method, request.path))
+            self.logger.error("Error in route {}".format(coro.__name__))
+            traceback.print_exc()
+            await self._exception_handler(protocol, request, 500)
+            return
+
+        # Wrap the response.
         response = self._wrap_response(response)
+        self.logger.info("{} {} - {}".format(request.method, request.path, response.code))
+        # Handle the response.
         protocol.handle_resp(response)
+        # Check if we should close it.
         if request.headers.get("Connection") != "keep-alive":
             # Close the conenction.
             protocol.close()
 
-    async def _invoke(self, route, request, protocol: _KanataProtocol):
+    async def _exception_handler(self, protocol, request, code):
         """
-        Invokes a function, if appropriate. Handles error automatically.
+        Handles built in HTTP exceptions.
         """
-        try:
-            await self._wrapped_invoke(route, request, protocol)
-        except Exception as e:
-            if not isinstance(e, HTTPException):
-                self.logger.error("Error in view {}:".format(route.__name__))
+        if code in self.error_handlers:
+            route = self.error_handlers[code]
+            # Await the invoke.
+            try:
+                response = await route.invoke(request)
+            except Exception:
+                self.logger.error("Error in error handler for code {}".format(code))
                 traceback.print_exc()
-                self._delegate_exc(protocol, request, HTTPException(500))
-                if request.headers.get("Connection") != "keep-alive":
-                    # Close the conenction.
-                    protocol.close()
-            else:
-                self._delegate_exc(protocol, request, e)
-                if request.headers.get("Connection") != "keep-alive":
-                    # Close the conenction.
-                    protocol.close()
+                response = Response(500, "500 Internal Server Error", {})
+        else:
+            response = Response(code, body=str(code))
 
-    async def _wrapped_invoke(self, route, request, protocol: _KanataProtocol):
-        """
-        Invokes a route to run its code.
-        """
-        response = await route.invoke(request)
-        response = self._wrap_response(response)
-        self.logger.info("{} - {} {}".format(response.code, request.method, request.path))
+        # Handle the response.
         protocol.handle_resp(response)
+
+        # Check if we should close it.
         if request.headers.get("Connection") != "keep-alive":
             # Close the conenction.
             protocol.close()

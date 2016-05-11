@@ -23,6 +23,8 @@ class _KanataProtocol(asyncio.Protocol):
         self.ip = None
         self.client_port = None
 
+        self.loop = asyncio.get_event_loop()
+
         self.buffer = b""
 
     def connection_made(self, transport: asyncio.Transport):
@@ -61,10 +63,10 @@ class _KanataProtocol(asyncio.Protocol):
             # Delegate the HTTP exception, probably a 400.
             self.app._delegate_exc(self, e)
         else:
-            if req._fully_parsed:
+            if req.fully_parsed:
                 # Reset buffer.
                 self.buffer = b""
-                self.app._delegate_response(self, req)
+                self.loop.create_task(self.app.delegate_request(self, req))
             else:
                 # Continue.
                 return
