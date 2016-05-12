@@ -8,6 +8,8 @@ import logging
 import urllib.parse as uparse
 
 # Use the C parser if applicable.
+from http import cookies
+
 try:
     from http_parser.parser import HttpParser, IOrderedDict
 except ImportError:
@@ -28,7 +30,7 @@ class Request(object):
     """
 
     __slots__ = ["_parser", "method", "path", "headers", "query", "body", "raw_data", "source", "args",
-                 "form", "values"]
+                 "form", "values", "cookies"]
 
     def __init__(self, parser: HttpParser):
         """
@@ -40,6 +42,9 @@ class Request(object):
         self.headers = parser.get_headers()
         self.query = parser.get_query_string()
         self.body = parser.recv_body().decode()
+
+        self.cookies = cookies.SimpleCookie()
+        self.cookies.load(self.headers.get("Cookie", "")) or {}
 
         self.raw_data = b""
 

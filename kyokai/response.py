@@ -16,6 +16,7 @@ import magic
 
 from email.utils import formatdate
 
+
 class Response(object):
     """
     A response is responsible (no pun intended) for delivering data to the client, again.
