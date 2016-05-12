@@ -3,7 +3,7 @@ A request represents a client wanting to get a resource from the server.
 
 This is automatically passed into your app route when an appropriate path is recieved.
 """
-
+import json
 import logging
 import urllib.parse as uparse
 
@@ -30,7 +30,7 @@ class Request(object):
     """
 
     __slots__ = ["_parser", "method", "path", "headers", "query", "body", "raw_data", "source", "args",
-                 "form", "values", "cookies"]
+                 "form", "values", "cookies", "extra", "json"]
 
     def __init__(self, parser: HttpParser):
         """
@@ -61,10 +61,16 @@ class Request(object):
                 self.args[k] = None
             else:
                 self.args[k] = v
-        self.form = uparse.parse_qs(self.body, keep_blank_values=True)
+        if self.headers.get("Content-Type") == "application/json":
+            # Parse as JSON
+            self.json = json.loads(self.body)
+            self.form = None
+        else:
+            self.json = None
+            self.form = uparse.parse_qs(self.body, keep_blank_values=True)
 
         self.values = IOrderedDict(self.args)
-        self.values.update(self.args)
+        self.values.update(self.form if self.form else {})
 
     @property
     def fully_parsed(self):
