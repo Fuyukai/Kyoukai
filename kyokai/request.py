@@ -63,10 +63,8 @@ class Request(object):
                 self.args[k] = v
         if self.headers.get("Content-Type") == "application/json":
             # Parse as JSON
-            self.json = json.loads(self.body)
-            self.form = None
+            self.form = json.loads(self.body)
         else:
-            self.json = None
             self.form = uparse.parse_qs(self.body, keep_blank_values=True)
 
         self.values = IOrderedDict(self.args)
