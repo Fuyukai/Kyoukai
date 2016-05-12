@@ -150,7 +150,6 @@ class Kyōkai(object):
             mimetype = magic.from_file(self.get_static_path(filename), mime=True)
             return Response(200, body=content.read(), headers={"Content-Type": mimetype.decode()})
 
-
     def run(self, ip: str = "127.0.0.1", port: int = 4444):
         """
         Run a Kyokai app.
