@@ -65,7 +65,11 @@ class Request(object):
             # Parse as JSON
             self.form = json.loads(self.body)
         else:
-            self.form = uparse.parse_qs(self.body, keep_blank_values=True)
+            t_f = uparse.parse_qs(self.body, keep_blank_values=True)
+            self.form = {}
+            # Unfuck parsed stuff
+            for k, v in t_f.items():
+                self.form[k] = v[0] if (isinstance(v, list) and len(v) == 1) else v
 
         self.values = IOrderedDict(self.args)
         self.values.update(self.form if self.form else {})
