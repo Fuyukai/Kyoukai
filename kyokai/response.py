@@ -14,6 +14,7 @@ except ImportError:
 from .util import HTTP_CODES, VERSION
 import magic
 
+from email.utils import formatdate
 
 class Response(object):
     """
@@ -45,7 +46,7 @@ class Response(object):
         self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
-
+        self.headers["Date"] = formatdate()
         self.headers["Server"] = "Kyoukai/{} (see https://github.com/SunDwarf/Kyoukai)".format(VERSION)
 
     def to_bytes(self):
