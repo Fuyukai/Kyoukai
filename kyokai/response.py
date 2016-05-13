@@ -15,6 +15,7 @@ from .util import HTTP_CODES, VERSION
 import magic
 
 from email.utils import formatdate
+from http.cookies import SimpleCookie
 
 
 class Response(object):
@@ -29,6 +30,7 @@ class Response(object):
         Create a new response.
         """
         self.code = code
+        self.cookies = SimpleCookie()
         self.body = str(body)
         self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
@@ -47,6 +49,7 @@ class Response(object):
         self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
+        # Set cookies.
         self.headers["Date"] = formatdate()
         self.headers["Server"] = "Kyoukai/{} (see https://github.com/SunDwarf/Kyoukai)".format(VERSION)
 
@@ -55,12 +58,12 @@ class Response(object):
         Return the correct response.
         """
         self._recalculate_headers()
-        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}\r\n{body}\r\n"
+        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}{cookies}\r\n{body}\r\n"
         headers_fmt = ""
         # Calculate headers
         for name, val in self.headers.items():
             headers_fmt += "{}: {}\r\n".format(name, val)
         built = fmt.format(code=self.code, msg=HTTP_CODES.get(self.code, "Unknown"), headers=headers_fmt,
-                           body=self.body)
+                           body=self.body, cookies='\r\n' + self.cookies.output() if len(self.cookies) else "")
 
         return built.encode()
