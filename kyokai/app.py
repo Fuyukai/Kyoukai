@@ -271,7 +271,8 @@ class Kyōkai(object):
             request = await hook(request)
             if not request or not isinstance(request, Request):
                 self.logger.error("Error in pre-request hook {} - did not return a Request!".format(hook.__name__))
-                self._exception_handler(protocol, request, 500)
+                await self._exception_handler(protocol, request, 500)
+                return
 
         # Invoke the route, wrapped.
         try:
@@ -294,6 +295,8 @@ class Kyōkai(object):
             response = await hook(response)
             if not response:
                 self.logger.error("Error in post-request hook {} - did not return anything!".format(hook.__name__))
+                await self._exception_handler(protocol, request, 500)
+                return
 
         self.logger.info("{} {} - {}".format(request.method, request.path, response.code))
         # Handle the response.
