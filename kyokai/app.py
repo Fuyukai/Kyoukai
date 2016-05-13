@@ -238,6 +238,20 @@ class Kyōkai(object):
         self.error_handlers[code] = r
         return r
 
+    def before_request(self, func):
+        """
+        Adds a hook to run before request.
+        """
+        self.request_hooks["pre"].append(func)
+        return func
+
+    def after_request(self, func):
+        """
+        Adds a hook to run after the request.
+        """
+        self.request_hooks["post"].append(func)
+        return func
+
     async def delegate_request(self, protocol, request: Request):
         """
         Delegates a request to be handled automatically.
