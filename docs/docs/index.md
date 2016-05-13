@@ -26,3 +26,4 @@ Alternatively, if you want cutting edge, you can install directly from git.
 Kyōkai requires knowledge of asyncio to use effectively. If you understand asyncio, check out the examples:
 
  - [First App](/examples/first-app)
+ - [Better Routing](/examples/advanced-routing)
