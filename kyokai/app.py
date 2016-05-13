@@ -234,6 +234,11 @@ class Kyōkai(object):
         return r
 
     def errorhandler(self, code: int):
+        """
+        Create an error handler for the specified code.
+
+        This will wrap the function in a Route.
+        """
         r = Route("", [])
         self.error_handlers[code] = r
         return r
