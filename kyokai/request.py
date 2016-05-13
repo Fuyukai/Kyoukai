@@ -4,7 +4,6 @@ A request represents a client wanting to get a resource from the server.
 This is automatically passed into your app route when an appropriate path is recieved.
 """
 import json
-import logging
 import urllib.parse as uparse
 
 # Use the C parser if applicable.

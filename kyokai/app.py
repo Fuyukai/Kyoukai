@@ -99,6 +99,11 @@ class Kyōkai(object):
             else:
                 self._renderer = JinjaRenderer.render
 
+        self.request_hooks = {
+            "pre": [],
+            "post": []
+        }
+
     def _kanata_factory(self, *args, **kwargs):
         return _KanataProtocol(self)
 
@@ -247,6 +252,13 @@ class Kyōkai(object):
             await self._exception_handler(protocol, request, 404)
             return
 
+        # Pre-request hooks.
+        for hook in self.request_hooks["pre"]:
+            request = await hook(request)
+            if not request or not isinstance(request, Request):
+                self.logger.error("Error in pre-request hook {} - did not return a Request!".format(hook.__name__))
+                self._exception_handler(protocol, request, 500)
+
         # Invoke the route, wrapped.
         try:
             response = await coro.invoke(request)
@@ -263,6 +275,12 @@ class Kyōkai(object):
 
         # Wrap the response.
         response = self._wrap_response(response)
+        # Post-request hooks.
+        for hook in self.request_hooks["post"]:
+            response = await hook(response)
+            if not response:
+                self.logger.error("Error in post-request hook {} - did not return anything!".format(hook.__name__))
+
         self.logger.info("{} {} - {}".format(request.method, request.path, response.code))
         # Handle the response.
         protocol.handle_resp(response)
