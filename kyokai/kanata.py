@@ -61,7 +61,7 @@ class _KanataProtocol(asyncio.Protocol):
             req = Request.from_data(self.buffer, self.ip)
         except HTTPException as e:
             # Delegate the HTTP exception, probably a 400.
-            self.app._delegate_exc(self, e)
+            self.app._exception_handler(self, None, 400)
         else:
             if req.fully_parsed:
                 # Reset buffer.
