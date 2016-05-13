@@ -7,3 +7,4 @@ pages:
   - Index: index.md
   - Examples:
       - Basic App: examples/first-app.md
+      - Advanced Routing: examples/advanced-routing.md
