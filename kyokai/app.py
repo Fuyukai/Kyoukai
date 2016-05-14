@@ -322,6 +322,7 @@ class Kyōkai(object):
             # Await the invoke.
             try:
                 response = await route.invoke(request)
+                response = self._wrap_response(response)
             except Exception:
                 self.logger.error("Error in error handler for code {}".format(code))
                 traceback.print_exc()
