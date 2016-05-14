@@ -9,6 +9,7 @@ try:
     from http_parser.parser import IOrderedDict
 except ImportError:
     from http_parser.pyparser import IOrderedDict
+
     warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
 
 from .util import HTTP_CODES, VERSION
@@ -25,7 +26,7 @@ class Response(object):
     The method `to_bytes()` transforms this into a bytes response.
     """
 
-    def __init__(self, code: int, body: str, headers: dict=None):
+    def __init__(self, code: int, body: str, headers: dict = None):
         """
         Create a new response.
         """
@@ -67,3 +68,22 @@ class Response(object):
                            body=self.body, cookies='\r\n' + self.cookies.output() if len(self.cookies) else "")
 
         return built.encode()
+
+
+def redirect(location, code=302, response_cls=Response):
+    """
+    Creates a redirect response.
+    """
+    # https://github.com/pallets/werkzeug/blob/master/werkzeug/utils.py#L373
+    # response body used from Werkzeug
+    res = response_cls(
+        code=302,
+        body=
+        '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+        '<title>Redirecting...</title>\n'
+        '<h1>Redirecting...</h1>\n'
+        '<p>You should be redirected automatically to target URL: '
+        '<a href="{}">{}</a>.  If not click the link.'.format(location),
+        headers={"Location": location}
+    )
+    return res
