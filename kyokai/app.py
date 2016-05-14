@@ -265,9 +265,11 @@ class Kyōkai(object):
         coro = self._match_route(request.path, request.method)
         if coro == -1:
             # 415 invalid method
+            self.logger.info("{} {} - {}".format(request.method, request.path, 415))
             await self._exception_handler(protocol, request, 415)
             return
         elif not coro:
+            self.logger.info("{} {} - {}".format(request.method, request.path, 404))
             await self._exception_handler(protocol, request, 404)
             return
 
