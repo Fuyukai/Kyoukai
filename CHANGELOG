@@ -1,2 +1,6 @@
+1.1.0 -
+	- Feature: Redirect utility function, which automatically handles redirects.
+	- Feature: Session handling in an extension module, uses `itsdangerous` for signing.
+
 1.0.0 - Initial release
 	- Initial release of Kyōkai. Contains all the basic things required.
