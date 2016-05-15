@@ -28,5 +28,5 @@ class KyoukaiComponent(Component):
         Starts a Kyokai server.
         """
         protocol_factory = partial(KyokaiProtocol, self.app, ctx)
-        server = await asyncio.get_event_loop().create_server(protocol_factory)
+        server = await asyncio.get_event_loop().create_server(protocol_factory, self.ip, self.port)
         logger.info("Kyokai serving on {}:{}.".format(self.ip, self.port))
