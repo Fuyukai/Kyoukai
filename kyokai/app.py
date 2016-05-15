@@ -14,7 +14,7 @@ import magic
 import yaml
 
 from kyokai.blueprints import Blueprint
-from kyokai.asphalt import HTTPRequestContext
+from kyokai.context import HTTPRequestContext
 
 try:
     from yaml import CLoader as Loader
