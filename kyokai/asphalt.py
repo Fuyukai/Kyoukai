@@ -17,11 +17,13 @@ logger = logging.getLogger("Kyokai")
 
 
 class KyoukaiComponent(Component):
-    def __init__(self, app: Union[str, Kyokai], ip: str = '0.0.0.0', port: int = 4444):
+    def __init__(self, app: Union[str, Kyokai], ip: str = '0.0.0.0', port: int = 4444, **cfg):
         assert check_argument_types()
         self.app = resolve_reference(app)
         self.ip = ip
         self.port = port
+        self._extra_cfg = cfg
+        self.app.reconfigure(cfg)
 
     async def start(self, ctx: Context):
         """

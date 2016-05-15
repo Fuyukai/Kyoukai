@@ -44,7 +44,7 @@ class Kyōkai(object):
     A Kyoukai app.
     """
 
-    def __init__(self, name: str, cfg: dict=None, log_level=logging.INFO):
+    def __init__(self, name: str, cfg: dict=None):
         """
         Create a new app.
 
@@ -55,8 +55,6 @@ class Kyōkai(object):
             log_level:
                 The log level of the logger.
 
-            config_file:
-                The path to the config file of the app. Optional.
         """
 
         self.name = name
@@ -66,8 +64,12 @@ class Kyōkai(object):
         self.error_handlers = {}
 
         self.config = cfg if cfg else {}
+        self.request_hooks = {
+            "pre": [],
+            "post": []
+        }
 
-
+    def reconfigure(self, config: dict):
         # Should we use logging speedhack?
         # This speeds up Kyoukai MASSIVELY - 0.3ms off each request, which is around 75% on an empty request.
         if self.config.get("use_logging_speedhack"):
@@ -80,7 +82,6 @@ class Kyōkai(object):
             logging.Logger.manager.loggerDict["Kyokai"] = _FakeLogging("Kyokai")
 
         self.logger = logging.getLogger("Kyokai")
-        self.logger.setLevel(log_level)
 
         # Create a renderer.
         if self.config.get("template_renderer", "mako") == "mako":
@@ -93,11 +94,6 @@ class Kyōkai(object):
                 raise ImportError("Jinja2 is not installed; cannot use for templates.")
             else:
                 self._renderer = JinjaRenderer.render
-
-        self.request_hooks = {
-            "pre": [],
-            "post": []
-        }
 
 
     def register_blueprint(self, bp: Blueprint):
