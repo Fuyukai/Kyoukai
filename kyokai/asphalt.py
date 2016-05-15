@@ -25,7 +25,7 @@ class KyoukaiComponent(Component):
         """
         Return a new protocol
         """
-        return KyokaiProtocol(self._app, self.context, HTTPRequestContext)
+        return KyokaiProtocol(self._app, self.context)
 
     async def start(self, ctx: Context):
         """
@@ -36,14 +36,3 @@ class KyoukaiComponent(Component):
         self.server = await loop.create_server(self.protocol_factory, self.ip, self.port)
         print("Kyoukai serving on {}:{}.".format(self.ip, self.port))
         logger.info("Kyokai serving on {}:{}.".format(self.ip, self.port))
-
-
-class HTTPRequestContext(Context):
-    """
-    Sub-class of context used for HTTP requests.
-    """
-
-    def __init__(self, request, parent: Context):
-        assert check_argument_types()
-        super().__init__(parent=parent)
-        self.request = request

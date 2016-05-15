@@ -40,6 +40,8 @@ setup(
         "http-parser>=0.8.3",
         "uvloop>=0.4.15",
         "PyYAML>=3.11",
-        "python-magic", 'typeguard', 'asphalt'
+        "python-magic",
+        'typeguard',
+        'asphalt'
     ]
 )

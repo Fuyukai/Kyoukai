@@ -7,13 +7,14 @@ import logging
 from kyokai.exc import HTTPException
 from kyokai.request import Request
 from kyokai.response import Response
+from kyokai.context import HTTPRequestContext
 
 
 class KyokaiProtocol(asyncio.Protocol):
     """
     The Kyoukai protocol.
     """
-    def __init__(self, app, parent_context, context_cls):
+    def __init__(self, app, parent_context):
         self.app = app
         self._transport = None
         self.ip = None
@@ -25,8 +26,6 @@ class KyokaiProtocol(asyncio.Protocol):
 
         # Asphalt contexts
         self.parent_context = parent_context
-
-        self.context_cls = context_cls
 
         self.buffer = b""
 
@@ -70,7 +69,7 @@ class KyokaiProtocol(asyncio.Protocol):
                 # Reset buffer.
                 self.logger.debug("Request for `{}` fully parsed, passing.".format(req.path))
                 self.buffer = b""
-                ctx = self.context_cls(req, self.parent_context)
+                ctx = HTTPRequestContext(req, self.parent_context)
                 self.loop.create_task(self.app.delegate_request(self, ctx))
             else:
                 # Continue.

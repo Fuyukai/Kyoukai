@@ -2,7 +2,7 @@
 Misc utilities.
 """
 
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 VERSIONT = tuple(map(int, VERSION.split('.')))
 
 HTTP_CODES = {

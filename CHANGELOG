@@ -1,3 +1,7 @@
+1.2.0 -
+	- Major change: Kyōkai now runs on top of the brilliant Asphalt framework (https://github.com/asphalt-framework).
+	 Loading and running Kyōkai is managed by Asphalt, and it allows easier integration with things such as SQLAlchemy.
+
 1.1.1 -
 	- Feature: Blueprints. Similar to Flask blueprints.
 
