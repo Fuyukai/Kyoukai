@@ -12,7 +12,6 @@ from kyokai.protocol import KyokaiProtocol
 
 from asphalt.core import Component, resolve_reference, Context
 
-loop = asyncio.get_event_loop()
 logger = logging.getLogger("Kyokai")
 
 
@@ -32,6 +31,7 @@ class KyoukaiComponent(Component):
         """
         Starts a Kyokai server.
         """
+        loop = asyncio.get_event_loop()
         self.context = ctx
         self.server = await loop.create_server(self.protocol_factory, self.ip, self.port)
         print("Kyoukai serving on {}:{}.".format(self.ip, self.port))
