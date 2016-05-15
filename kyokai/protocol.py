@@ -1,7 +1,5 @@
 """
-Kanata is the Kyokai protocol, used for handling the events of a Kyokai server.
-
-Each Kanata handles an individual connection.
+This class handles the protocol side of Kyoukai.
 """
 import asyncio
 import logging
@@ -11,11 +9,11 @@ from kyokai.request import Request
 from kyokai.response import Response
 
 
-class _KanataProtocol(asyncio.Protocol):
+class KyokaiProtocol(asyncio.Protocol):
     """
-    A Kanata protocol.
+    The Kyoukai protocol.
     """
-    def __init__(self, app):
+    def __init__(self, app, parent_context, context_cls):
         self.app = app
         self._transport = None
         self.ip = None
@@ -24,6 +22,11 @@ class _KanataProtocol(asyncio.Protocol):
         self.logger = logging.getLogger("Kyokai")
 
         self.loop = asyncio.get_event_loop()
+
+        # Asphalt contexts
+        self.parent_context = parent_context
+
+        self.context_cls = context_cls
 
         self.buffer = b""
 
@@ -67,7 +70,8 @@ class _KanataProtocol(asyncio.Protocol):
                 # Reset buffer.
                 self.logger.debug("Request for `{}` fully parsed, passing.".format(req.path))
                 self.buffer = b""
-                self.loop.create_task(self.app.delegate_request(self, req))
+                ctx = self.context_cls(req, self.parent_context)
+                self.loop.create_task(self.app.delegate_request(self, ctx))
             else:
                 # Continue.
                 return

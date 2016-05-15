@@ -11,10 +11,10 @@ import traceback
 import logging
 
 import magic
-import uvloop
 import yaml
 
 from kyokai.blueprints import Blueprint
+from kyokai.asphalt import HTTPRequestContext
 
 try:
     from yaml import CLoader as Loader
@@ -25,7 +25,6 @@ from kyokai.exc import HTTPClientException, HTTPException
 from kyokai.request import Request
 from kyokai.response import Response
 from kyokai.route import Route
-from kyokai.kanata import _KanataProtocol
 
 try:
     from kyokai.renderers import MakoRenderer as MakoRenderer
@@ -39,16 +38,13 @@ try:
 except ImportError:
     _has_jinja2 = False
 
-# Enforce uvloop.
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 
 class Kyōkai(object):
     """
     A Kyoukai app.
     """
 
-    def __init__(self, name: str, log_level=logging.INFO, config_file: str="config.yml"):
+    def __init__(self, name: str, cfg: dict=None, log_level=logging.INFO):
         """
         Create a new app.
 
@@ -69,17 +65,14 @@ class Kyōkai(object):
         self.routes = []
         self.error_handlers = {}
 
-        # Load config.
-        try:
-            with open(config_file, 'r') as f:
-                self.config = yaml.load(f, Loader)
-        except FileNotFoundError:
-            self.config = {}
+        self.config = cfg if cfg else {}
+
 
         # Should we use logging speedhack?
         # This speeds up Kyoukai MASSIVELY - 0.3ms off each request, which is around 75% on an empty request.
         if self.config.get("use_logging_speedhack"):
             print("Using logging speed hack.")
+
             class _FakeLogging(logging.Logger):
                 def isEnabledFor(self, level):
                     return False
@@ -106,8 +99,6 @@ class Kyōkai(object):
             "post": []
         }
 
-    def _kanata_factory(self, *args, **kwargs):
-        return _KanataProtocol(self)
 
     def register_blueprint(self, bp: Blueprint):
         """
@@ -120,14 +111,6 @@ class Kyōkai(object):
         Render a template using the specified rendering engine.
         """
         return self._renderer(filename, **kwargs)
-
-    async def start(self, ip: str = "127.0.0.1", port: int = 4444):
-        """
-        Run the app, via async.
-        """
-        print("Kyokai serving on {}:{}.".format(ip, port))
-        self.logger.info("Kyokai serving on {}:{}.".format(ip, port))
-        self.server = await self.loop.create_server(self._kanata_factory, ip, port)
 
     def get_static_path(self, filename: str) -> str:
         """
@@ -162,18 +145,6 @@ class Kyōkai(object):
         with content:
             mimetype = magic.from_file(self.get_static_path(filename), mime=True)
             return Response(200, body=content.read(), headers={"Content-Type": mimetype.decode()})
-
-    def run(self, ip: str = "127.0.0.1", port: int = 4444):
-        """
-        Run a Kyokai app.
-
-        This is just a shortcut to run the app from synchronous code.
-        """
-        self.loop.create_task(self.start(ip, port))
-        try:
-            self.loop.run_forever()
-        except KeyboardInterrupt:
-            return
 
     def _match_route(self, path, meth):
         """
@@ -265,42 +236,42 @@ class Kyōkai(object):
         self.request_hooks["post"].append(func)
         return func
 
-    async def delegate_request(self, protocol, request: Request):
+    async def delegate_request(self, protocol, ctx: HTTPRequestContext):
         """
         Delegates a request to be handled automatically.
         """
-        self.logger.debug("Matching route `{}`.".format(request.path))
-        coro = self._match_route(request.path, request.method)
+        self.logger.debug("Matching route `{}`.".format(ctx.request.path))
+        coro = self._match_route(ctx.request.path, ctx.request.method)
         if coro == -1:
             # 415 invalid method
-            self.logger.info("{} {} - {}".format(request.method, request.path, 415))
-            await self._exception_handler(protocol, request, 415)
+            self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 415))
+            await self._exception_handler(protocol, ctx.request, 415)
             return
         elif not coro:
-            self.logger.info("{} {} - {}".format(request.method, request.path, 404))
-            await self._exception_handler(protocol, request, 404)
+            self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 404))
+            await self._exception_handler(protocol, ctx.request, 404)
             return
 
         # Pre-request hooks.
         for hook in self.request_hooks["pre"]:
-            request = await hook(request)
-            if not request or not isinstance(request, Request):
+            ctx.request = await hook(ctx.request)
+            if not ctx.request or not isinstance(ctx.request, Request):
                 self.logger.error("Error in pre-request hook {} - did not return a Request!".format(hook.__name__))
-                await self._exception_handler(protocol, request, 500)
+                await self._exception_handler(protocol, ctx.request, 500)
                 return
 
         # Invoke the route, wrapped.
         try:
-            response = await coro.invoke(request)
+            response = await coro.invoke(ctx.request)
         except HTTPException as e:
-            self.logger.info("{} {} - {}".format(request.method, request.path, e.errcode))
-            await self._exception_handler(protocol, request, e.errcode)
+            self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, e.errcode))
+            await self._exception_handler(protocol, ctx, e.errcode)
             return
         except Exception as e:
-            self.logger.info("{} {} - 500".format(request.method, request.path))
+            self.logger.info("{} {} - 500".format(ctx.request.method, ctx.request.path))
             self.logger.error("Error in route {}".format(coro.__name__))
             traceback.print_exc()
-            await self._exception_handler(protocol, request, 500)
+            await self._exception_handler(protocol, ctx, 500)
             return
 
         # Wrap the response.
@@ -310,18 +281,18 @@ class Kyōkai(object):
             response = await hook(response)
             if not response:
                 self.logger.error("Error in post-request hook {} - did not return anything!".format(hook.__name__))
-                await self._exception_handler(protocol, request, 500)
+                await self._exception_handler(protocol, ctx, 500)
                 return
 
-        self.logger.info("{} {} - {}".format(request.method, request.path, response.code))
+        self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, response.code))
         # Handle the response.
         protocol.handle_resp(response)
         # Check if we should close it.
-        if request.headers.get("Connection") != "keep-alive":
+        if ctx.request.headers.get("Connection") != "keep-alive":
             # Close the conenction.
             protocol.close()
 
-    async def _exception_handler(self, protocol, request, code):
+    async def _exception_handler(self, protocol, ctx: HTTPRequestContext, code):
         """
         Handles built in HTTP exceptions.
         """
@@ -329,7 +300,7 @@ class Kyōkai(object):
             route = self.error_handlers[code]
             # Await the invoke.
             try:
-                response = await route.invoke(request)
+                response = await route.invoke(ctx)
                 response = self._wrap_response(response)
             except Exception:
                 self.logger.error("Error in error handler for code {}".format(code))
@@ -342,9 +313,10 @@ class Kyōkai(object):
         protocol.handle_resp(response)
 
         # Check if we should close it.
-        if request.headers.get("Connection") != "keep-alive":
+        if ctx.request.headers.get("Connection") != "keep-alive":
             # Close the conenction.
             protocol.close()
+
 
 # Alias it
 Kyokai = Kyōkai
