@@ -8,6 +8,7 @@ import functools
 import asyncio
 
 from kyokai import Kyokai, Request
+from kyokai.context import HTTPRequestContext
 from kyokai.response import redirect, Response
 
 try:
@@ -34,6 +35,7 @@ class KyoukaiSession(object):
     A KyoukaiSession object provides a few useful methods for handling client logins.
 
     The class takes a callable, which will then be called to get a user upon a request.
+    The callable must take a HTTPRequestContext, or other suitable class.
 
     This user will be passed in to your route, as the second argument.
 
@@ -42,7 +44,7 @@ class KyoukaiSession(object):
     ```python
     @app.route("/")
     @session.login_required
-    async def index(request: Request, user: User):
+    async def index(ctx: HTTPRequestContext, user: User):
         return "You are " + repr(user)
     ```
 
@@ -99,13 +101,13 @@ class KyoukaiSession(object):
         Decorator for checking if the login is correct.
         """
         @functools.wraps(func)
-        async def _login_required_fake_func(request: Request, *args):
+        async def _login_required_fake_func(ctx: HTTPRequestContext, *args):
             """
             You will never see this.
 
             Enforces login.
             """
-            id = self._get_id(request)
+            id = self._get_id(ctx.request)
             if not id:
                 return redirect(self.redirect_uri)
             # Get the user object.
@@ -113,11 +115,11 @@ class KyoukaiSession(object):
                 # Don't know why, but ok
                 u = await self._callable_f
             elif asyncio.iscoroutinefunction(self._callable_f):
-                u = await self._callable_f(id)
+                u = await self._callable_f(ctx)
             else:
                 u = self._callable_f(id)
             # Await the underlying function.
-            return await func(request, u, *args)
+            return await func(ctx, u, *args)
 
         return _login_required_fake_func
 
