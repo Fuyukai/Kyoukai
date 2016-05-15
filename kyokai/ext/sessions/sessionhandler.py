@@ -1,6 +1,7 @@
 """
 Class that handles logins.
 """
+import types
 import typing
 
 import functools
@@ -114,7 +115,8 @@ class KyoukaiSession(object):
             if asyncio.iscoroutine(self._callable_f):
                 # Don't know why, but ok
                 u = await self._callable_f
-            elif asyncio.iscoroutinefunction(self._callable_f):
+            elif asyncio.iscoroutinefunction(self._callable_f) or \
+                    hasattr(self._callable_f, "__await__"):
                 u = await self._callable_f(id)
             else:
                 u = self._callable_f(id)
