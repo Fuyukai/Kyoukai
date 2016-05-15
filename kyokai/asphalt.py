@@ -4,35 +4,29 @@ Asphalt framework mixin for Kyokai.
 import logging
 
 import asyncio
+from functools import partial
 from typing import Union
 
+from asphalt.core import Component, resolve_reference, Context
 from typeguard import check_argument_types
 
+from kyokai.app import Kyokai
 from kyokai.protocol import KyokaiProtocol
-
-from asphalt.core import Component, resolve_reference, Context
 
 logger = logging.getLogger("Kyokai")
 
 
 class KyoukaiComponent(Component):
-    def __init__(self, app, ip: str = '0.0.0.0', port: int = 4444):
-        self._app = resolve_reference(app)
+    def __init__(self, app: Union[str, Kyokai], ip: str = '0.0.0.0', port: int = 4444):
+        assert check_argument_types()
+        self.app = resolve_reference(app)
         self.ip = ip
         self.port = port
-
-    def protocol_factory(self):
-        """
-        Return a new protocol
-        """
-        return KyokaiProtocol(self._app, self.context)
 
     async def start(self, ctx: Context):
         """
         Starts a Kyokai server.
         """
-        loop = asyncio.get_event_loop()
-        self.context = ctx
-        self.server = await loop.create_server(self.protocol_factory, self.ip, self.port)
-        print("Kyoukai serving on {}:{}.".format(self.ip, self.port))
+        protocol_factory = partial(KyokaiProtocol, self.app, ctx)
+        server = await get_event_loop().create_server(protocol_factory)
         logger.info("Kyokai serving on {}:{}.".format(self.ip, self.port))
