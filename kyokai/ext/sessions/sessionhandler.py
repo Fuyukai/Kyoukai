@@ -115,7 +115,7 @@ class KyoukaiSession(object):
                 # Don't know why, but ok
                 u = await self._callable_f
             elif asyncio.iscoroutinefunction(self._callable_f):
-                u = await self._callable_f(ctx)
+                u = await self._callable_f(id)
             else:
                 u = self._callable_f(id)
             # Await the underlying function.
