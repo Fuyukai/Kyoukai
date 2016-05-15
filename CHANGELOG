@@ -1,3 +1,6 @@
+1.1.1 -
+	- Feature: Blueprints. Similar to Flask blueprints.
+
 1.1.0 -
 	- Feature: Redirect utility function, which automatically handles redirects.
 	- Feature: Session handling in an extension module, uses `itsdangerous` for signing.

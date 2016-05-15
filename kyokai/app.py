@@ -14,6 +14,8 @@ import magic
 import uvloop
 import yaml
 
+from kyokai.blueprints import Blueprint
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -106,6 +108,12 @@ class Kyōkai(object):
 
     def _kanata_factory(self, *args, **kwargs):
         return _KanataProtocol(self)
+
+    def register_blueprint(self, bp: Blueprint):
+        """
+        Registers a blueprint.
+        """
+        self.routes += bp._init_bp()
 
     def render(self, filename, **kwargs):
         """
