@@ -243,11 +243,11 @@ class Kyōkai(object):
             if coro == -1:
                 # 415 invalid method
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 415))
-                await self._exception_handler(protocol, ctx.request, 415)
+                await self._exception_handler(protocol, ctx, 415)
                 return
             elif not coro:
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 404))
-                await self._exception_handler(protocol, ctx.request, 404)
+                await self._exception_handler(protocol, ctx, 404)
                 return
 
             # Pre-request hooks.
@@ -255,7 +255,7 @@ class Kyōkai(object):
                 ctx.request = await hook(ctx)
                 if not ctx.request or not isinstance(ctx.request, Request):
                     self.logger.error("Error in pre-request hook {} - did not return a Request!".format(hook.__name__))
-                    await self._exception_handler(protocol, ctx.request, 500)
+                    await self._exception_handler(protocol, ctx, 500)
                     return
 
             # Invoke the route, wrapped.
