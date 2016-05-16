@@ -69,7 +69,10 @@ class Kyōkai(object):
             "post": []
         }
 
+        self.debug = False
+
     def reconfigure(self, config: dict):
+        self.config = config
         # Should we use logging speedhack?
         # This speeds up Kyoukai MASSIVELY - 0.3ms off each request, which is around 75% on an empty request.
         if self.config.get("use_logging_speedhack"):
@@ -95,6 +98,8 @@ class Kyōkai(object):
             else:
                 self._renderer = JinjaRenderer.render
 
+        if self.config.get("debug") is True:
+            self.debug = True
 
     def register_blueprint(self, bp: Blueprint):
         """
@@ -269,6 +274,10 @@ class Kyōkai(object):
                 self.logger.info("{} {} - 500".format(ctx.request.method, ctx.request.path))
                 self.logger.error("Error in route {}".format(coro.__name__))
                 traceback.print_exc()
+                if self.debug:
+                    r = Response(500, traceback.format_exc())
+                    protocol.handle_resp(r)
+                    return
                 await self._exception_handler(protocol, ctx, 500)
                 return
 
@@ -303,7 +312,10 @@ class Kyōkai(object):
             except Exception:
                 self.logger.error("Error in error handler for code {}".format(code))
                 traceback.print_exc()
-                response = Response(500, "500 Internal Server Error", {})
+                if self.debug:
+                    response = Response(500, traceback.format_exc())
+                else:
+                    response = Response(500, "500 Internal Server Error", {})
         else:
             response = Response(code, body=str(code))
 
