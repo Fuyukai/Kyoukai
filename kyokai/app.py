@@ -16,7 +16,7 @@ import yaml
 
 from kyokai.blueprints import Blueprint
 from kyokai.context import HTTPRequestContext
-from kyokai.util import secure_filename
+from kyokai.util import static_filename
 
 try:
     from yaml import CLoader as Loader
@@ -123,7 +123,7 @@ class Kyōkai(object):
 
         The file is not guarenteed to exist.
         """
-        return os.path.join(os.getcwd(), self.config.get("static_dir", "static"), secure_filename(filename))
+        return os.path.join(os.getcwd(), self.config.get("static_dir", "static"), static_filename(filename))
 
     def get_static_file(self, filename: str) -> io.BufferedIOBase:
         """
