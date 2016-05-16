@@ -6,6 +6,7 @@ This file contains the main definition for the app.
 
 import asyncio
 import io
+import mimetypes
 import os
 import traceback
 import logging
@@ -146,8 +147,11 @@ class Kyōkai(object):
             raise HTTPClientException(404)
 
         with content:
-            mimetype = magic.from_file(self.get_static_path(filename), mime=True)
-            return Response(200, body=content.read(), headers={"Content-Type": mimetype.decode()})
+            path = self.get_static_path(filename)
+            mimetype = mimetypes.guess_type(path)[0]
+            if not mimetype:
+                mimetype = magic.from_file(path, mime=True).decode()
+            return Response(200, body=content.read(), headers={"Content-Type": mimetype})
 
     def _match_route(self, path, meth):
         """
