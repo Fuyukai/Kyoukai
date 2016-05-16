@@ -149,6 +149,8 @@ class KyoukaiSession(object):
             # await the fnc
             return await func(ctx, u, *args)
 
+        return _with_user_fake_func
+
     def login(self, id, redirect_uri="/"):
         """
         Logs in a user, and returns a Response.
