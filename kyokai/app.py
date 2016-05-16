@@ -60,6 +60,8 @@ class Kyōkai(object):
         self.name = name
         self.loop = asyncio.get_event_loop()
 
+        self.logger = logging.getLogger("Kyokai")
+
         self.routes = []
         self.error_handlers = {}
 
@@ -84,8 +86,6 @@ class Kyōkai(object):
 
             logging.Logger.manager.loggerDict["Kyokai"] = _FakeLogging("Kyokai")
 
-        self.logger = logging.getLogger("Kyokai")
-
         # Create a renderer.
         if self.config.get("template_renderer", "mako") == "mako":
             if not _has_mako:
@@ -105,7 +105,9 @@ class Kyōkai(object):
         """
         Registers a blueprint.
         """
-        self.routes += bp._init_bp()
+        bp_routes = bp._init_bp()
+        self.logger.info("Registered {} route(s) from blueprint `{}`.".format(len(bp_routes), bp._name))
+        self.routes += bp_routes
 
     def render(self, filename, **kwargs):
         """
