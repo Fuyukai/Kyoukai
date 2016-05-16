@@ -125,6 +125,30 @@ class KyoukaiSession(object):
 
         return _login_required_fake_func
 
+    def with_user(self, func):
+        """
+        Decorator for loading a user, but not requiring one.
+        """
+        @functools.wraps(func)
+        async def _with_user_fake_func(ctx: HTTPRequestContext, *args):
+            """
+            You should never see this.
+            """
+            id = self._get_id(ctx.request)
+            if id:
+                if asyncio.iscoroutine(self._callable_f):
+                    # Don't know why, but ok
+                    u = await self._callable_f
+                elif asyncio.iscoroutinefunction(self._callable_f) or \
+                        hasattr(self._callable_f, "__await__"):
+                    u = await self._callable_f(id)
+                else:
+                    u = self._callable_f(id)
+            else:
+                u = None
+            # await the fnc
+            return await func(ctx, u, *args)
+
     def login(self, id, redirect_uri="/"):
         """
         Logs in a user, and returns a Response.
