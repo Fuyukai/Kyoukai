@@ -50,19 +50,19 @@ class Route(object):
         self._wrapped_coro = coro
         self.__name__ = coro.__name__
 
-    async def invoke(self, request):
+    async def invoke(self, ctx):
         """
         Invoke the route, calling the underlying coroutine.
         """
         # Extract match groups.
         if not self.hard_match:
-            matches = self.matcher.match(request.path).groups()
+            matches = self.matcher.match(ctx.request.path).groups()
         else:
             matches = None
         # Invoke the coroutine.
         if matches:
-            result = await self._wrapped_coro(request, *matches)
+            result = await self._wrapped_coro(ctx, *matches)
         else:
-            result = await self._wrapped_coro(request)
+            result = await self._wrapped_coro(ctx)
         return result
 
