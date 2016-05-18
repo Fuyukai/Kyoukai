@@ -10,6 +10,7 @@ import mimetypes
 import os
 import traceback
 import logging
+import typing
 
 import magic
 import yaml
@@ -253,11 +254,11 @@ class Kyōkai(object):
             if coro == -1:
                 # 415 invalid method
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 415))
-                await self._exception_handler(protocol, ctx, 415)
+                await self._exception_handler(protocol, ctx, None, 415)
                 return
             elif not coro:
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 404))
-                await self._exception_handler(protocol, ctx, 404)
+                await self._exception_handler(protocol, ctx, None, 404)
                 return
 
             # Pre-request hooks.
@@ -265,7 +266,7 @@ class Kyōkai(object):
                 ctx.request = await hook(ctx)
                 if not ctx.request or not isinstance(ctx.request, Request):
                     self.logger.error("Error in pre-request hook {} - did not return a Request!".format(hook.__name__))
-                    await self._exception_handler(protocol, ctx, 500)
+                    await self._exception_handler(protocol, ctx, None, 500)
                     return
 
             # Invoke the route, wrapped.
@@ -273,7 +274,7 @@ class Kyōkai(object):
                 response = await coro.invoke(ctx)
             except HTTPException as e:
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, e.errcode))
-                await self._exception_handler(protocol, ctx, e.errcode)
+                await self._exception_handler(protocol, ctx, coro, e.errcode)
                 return
             except Exception as e:
                 self.logger.info("{} {} - 500".format(ctx.request.method, ctx.request.path))
@@ -283,7 +284,7 @@ class Kyōkai(object):
                     r = Response(500, traceback.format_exc())
                     protocol.handle_resp(r)
                     return
-                await self._exception_handler(protocol, ctx, 500)
+                await self._exception_handler(protocol, ctx, coro, 500)
                 return
 
             # Wrap the response.
@@ -293,7 +294,7 @@ class Kyōkai(object):
                 response = await hook(response)
                 if not response:
                     self.logger.error("Error in post-request hook {} - did not return anything!".format(hook.__name__))
-                    await self._exception_handler(protocol, ctx, 500)
+                    await self._exception_handler(protocol, ctx, None, 500)
                     return
 
             self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, response.code))
@@ -304,12 +305,24 @@ class Kyōkai(object):
                 # Close the conenction.
                 protocol.close()
 
-    async def _exception_handler(self, protocol, ctx: HTTPRequestContext, code):
+    def _get_errorhandler(self, coro: Route, code: int):
+        """
+        Gets the error handler for the route.
+
+        Used for per-blueprint routes.
+        """
+        if not coro:
+            return self.error_handlers.get(code)
+        else:
+            r_handler = coro.get_errorhandler(code)
+            return r_handler if r_handler else self.error_handlers.get(code)
+
+    async def _exception_handler(self, protocol, ctx: HTTPRequestContext, coro: typing.Union[Route, None], code):
         """
         Handles built in HTTP exceptions.
         """
-        if code in self.error_handlers:
-            route = self.error_handlers[code]
+        route = self._get_errorhandler(coro, code)
+        if route:
             # Await the invoke.
             try:
                 response = await route.invoke(ctx)

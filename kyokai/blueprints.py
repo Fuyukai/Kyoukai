@@ -19,6 +19,11 @@ class Blueprint(object):
 
         self.routes = []
 
+        self.errhandlers = {}
+
+    def _bp_get_errhandler(self, code: int):
+        return self.errhandlers.get(code)
+
     def route(self, regex, methods: list = None, hard_match: bool = False):
         """
         Create an incoming route for a function.
@@ -46,6 +51,7 @@ class Blueprint(object):
             hard_match = True
         regex = self._prefix + regex
         r = Route(regex, methods, hard_match)
+        r.set_errorhandler_factory(self._bp_get_errhandler)
         self.routes.append(r)
         return r
 

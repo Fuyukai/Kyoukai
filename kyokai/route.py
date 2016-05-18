@@ -25,6 +25,8 @@ class Route(object):
         self.hard_match = hard_match
         self._wrapped_coro = None
 
+        self._errhandlerf = None
+
     def kyokai_match(self, path: str):
         """
         Check if a given path matches the specified route.
@@ -42,6 +44,27 @@ class Route(object):
         """
         in_m = meth.lower() in [m.lower() for m in self.allowed_methods]
         return in_m
+
+    def set_errorhandler_factory(self, func):
+        """
+        Sets the error handler factory for the route.
+        """
+        self._errhandlerf = func
+
+    @property
+    def errorhandler_factory(self):
+        """
+        Gets the error handler factory.
+        """
+        return self._errhandlerf
+
+    def get_errorhandler(self, code: int):
+        """
+        Gets an error handler for the specified route.
+
+        Used for per-blueprint error handlers.
+        """
+        return self._errhandlerf(code)
 
     def __call__(self, coro):
         """
