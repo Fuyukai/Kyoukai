@@ -12,6 +12,7 @@ from typeguard import check_argument_types
 
 from kyokai.app import Kyokai
 from kyokai.protocol import KyokaiProtocol
+from kyokai.context import HTTPRequestContext
 
 logger = logging.getLogger("Kyokai")
 
@@ -23,6 +24,10 @@ class KyoukaiComponent(Component):
         self.ip = ip
         self.port = port
         self._extra_cfg = cfg
+
+        # Set HTTPRequestContext's `cfg` val to the extra config.
+        HTTPRequestContext.cfg = self._extra_cfg
+
         self.app.reconfigure(cfg)
 
     async def start(self, ctx: Context):
