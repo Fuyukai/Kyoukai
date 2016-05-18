@@ -42,7 +42,10 @@ class Route(object):
         """
         Check if the method matches.
         """
-        in_m = meth.lower() in [m.lower() for m in self.allowed_methods]
+        meths = [m.lower() for m in self.allowed_methods]
+        if 'any' in meths:
+            return True
+        in_m = meth.lower() in meths
         return in_m
 
     def set_errorhandler_factory(self, func):

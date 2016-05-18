@@ -153,17 +153,23 @@ class Kyōkai(object):
                 mimetype = magic.from_file(path, mime=True).decode()
             return Response(200, body=content.read(), headers={"Content-Type": mimetype})
 
-    def _match_route(self, path, meth):
+    def _match_route(self, path, meth) -> typing.Tuple[int, Route]:
         """
         Match a route, based on the regular expression of the route.
+
+        Returns a tuple:
+             0 and the route if it's valid.
+            -1 and the route if it's an invalid method.
+            -2 and None if it doesn't match.
         """
         for route in self.routes:
             assert isinstance(route, Route), "Routes should be a Route class"
             if route.kyokai_match(path):
                 if route.kyokai_method_allowed(meth):
-                    return route
+                    return 0, route
                 else:
-                    return -1
+                    return -1, route
+        return -2, None
 
     def _wrap_response(self, response):
         """
@@ -251,16 +257,17 @@ class Kyōkai(object):
         async with ctx:
             self.logger.debug("Matching route `{}`.".format(ctx.request.path))
             coro = self._match_route(ctx.request.path, ctx.request.method)
-            if coro == -1:
+            if coro[0] == -1:
                 # 415 invalid method
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 415))
-                await self._exception_handler(protocol, ctx, None, 415)
+                await self._exception_handler(protocol, ctx, coro[1], 415)
                 return
-            elif not coro:
+            elif coro[0] == -2:
                 self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 404))
                 await self._exception_handler(protocol, ctx, None, 404)
                 return
-
+            else:
+                coro = coro[1]
             # Pre-request hooks.
             for hook in self.request_hooks["pre"]:
                 ctx.request = await hook(ctx)
