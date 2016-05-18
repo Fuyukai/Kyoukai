@@ -55,5 +55,15 @@ class Blueprint(object):
         self.routes.append(r)
         return r
 
+    def errorhandler(self, code: int):
+        """
+        Create an error handler for the specified code.
+
+        This will wrap the function in a Route.
+        """
+        r = Route("", [])
+        self.errhandlers[code] = r
+        return r
+
     def _init_bp(self):
         return self.routes
