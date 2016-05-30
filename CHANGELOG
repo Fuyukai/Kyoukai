@@ -1,3 +1,8 @@
+1.3.0 -
+	- Feature: Per-blueprint error handlers.
+	- Feature: Allow ANY method in `@app.route` to allow any method to match.
+	- Change: Route now returns a tuple, based on if it could match the method correctly or not.
+
 1.2.0 -
 	- Major change: Kyōkai now runs on top of the brilliant Asphalt framework (https://github.com/asphalt-framework).
 	 Loading and running Kyōkai is managed by Asphalt, and it allows easier integration with things such as SQLAlchemy.
