@@ -83,7 +83,7 @@ def redirect(location, code=302, response_cls=Response):
         '<title>Redirecting...</title>\n'
         '<h1>Redirecting...</h1>\n'
         '<p>You should be redirected automatically to target URL: '
-        '<a href="{}">{}</a>.  If not click the link.'.format(location),
+        '<a href="{location}">{location}</a>.  If not click the link.'.format(location=location),
         headers={"Location": location}
     )
     return res
