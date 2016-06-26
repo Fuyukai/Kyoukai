@@ -11,18 +11,11 @@ import os
 import traceback
 import logging
 import typing
-
 import magic
-import yaml
 
 from kyokai.blueprints import Blueprint
 from kyokai.context import HTTPRequestContext
 from kyokai.util import static_filename
-
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader as Loader
 
 from kyokai.exc import HTTPClientException, HTTPException
 from kyokai.request import Request
