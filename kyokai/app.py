@@ -12,6 +12,9 @@ import traceback
 import logging
 import typing
 import magic
+from asphalt.core import Context
+
+from asphalt.core.runner import run_application
 
 from kyokai.blueprints import Blueprint
 from kyokai.context import HTTPRequestContext
@@ -24,12 +27,14 @@ from kyokai.route import Route
 
 try:
     from kyokai.renderers import MakoRenderer as MakoRenderer
+
     _has_mako = True
 except ImportError:
     _has_mako = False
 
 try:
     from kyokai.renderers import JinjaRenderer as JinjaRenderer
+
     _has_jinja2 = True
 except ImportError:
     _has_jinja2 = False
@@ -40,7 +45,7 @@ class Kyōkai(object):
     A Kyoukai app.
     """
 
-    def __init__(self, name: str, cfg: dict=None):
+    def __init__(self, name: str, cfg: dict = None):
         """
         Create a new app.
 
@@ -348,6 +353,33 @@ class Kyōkai(object):
                 protocol.close()
         else:
             protocol.close()
+
+    async def start(self, ip="0.0.0.0", port=4444, component=None):
+        """
+        Run the Kyoukai component asynchronously.
+
+        This bypasses Asphalt's runner completely and starts Kyoukai as it's own context.
+        """
+        self.logger.warning("Kyoukai is bypassing Asphalt - contexts will not work.")
+        ctx = Context()
+        if not component:
+            from kyokai.asphalt import KyoukaiComponent
+            component = KyoukaiComponent(self, ip, port)
+        await component.start(ctx)
+
+    def run(self, ip="0.0.0.0", port=4444, component=None):
+        """
+        Runs the Kyoukai server from within your code.
+
+        Note that
+
+        This is not normally invoked - instead Asphalt should invoke the Kyoukai component.
+        However, this is here for convenience.
+        """
+        if not component:
+            from kyokai.asphalt import KyoukaiComponent
+            component = KyoukaiComponent(self, ip, port)
+        run_application(component)
 
 
 # Alias it

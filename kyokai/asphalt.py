@@ -20,7 +20,10 @@ logger = logging.getLogger("Kyokai")
 class KyoukaiComponent(Component):
     def __init__(self, app: Union[str, Kyokai], ip: str = '0.0.0.0', port: int = 4444, **cfg):
         assert check_argument_types()
-        self.app = resolve_reference(app)
+        if not isinstance(app, Kyokai):
+            self.app = resolve_reference(app)
+        else:
+            self.app = app
         self.ip = ip
         self.port = port
         self._extra_cfg = cfg
