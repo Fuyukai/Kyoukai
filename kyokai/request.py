@@ -31,9 +31,9 @@ class Request(object):
     __slots__ = ["_parser", "method", "path", "headers", "query", "body", "raw_data", "source", "args",
                  "form", "values", "cookies", "extra", "json"]
 
-    def __init__(self, parser: HttpParser):
+    def _parse(self, parser: HttpParser):
         """
-        Create a new Request.
+        Parse the data.
         """
         self._parser = parser
         self.method = parser.get_method()
@@ -77,25 +77,33 @@ class Request(object):
     def fully_parsed(self):
         return self._parser.is_message_complete()
 
-    @classmethod
-    def from_data(cls, data: bytes, source: str):
+    def parse(self, data: bytes, source: str):
         """
-        Create a new request from request data.
+        Parse the request.
         """
         parser = HttpParser()
-        # Get the length of the data.
         data_len = len(data)
         # Execute the parser.
         parsed_len = parser.execute(data, data_len)
         if parsed_len == 0 or (data_len != parsed_len and parser.is_message_complete()):
             raise HTTPClientException(400, "Bad Request")
 
-        # Create a new request.
-        req = cls(parser)
+        self.raw_data = data
+        self.source = source
 
-        # Set the raw data.
-        req.raw_data = data
-        # Set the IP.
-        req.source = source
+        # Parse the data.
+        self._parse(parser)
+
+    @classmethod
+    def from_data(cls, data: bytes, source: str):
+        """
+        Create a new request from request data.
+
+        Shortcut for ```r = Request(); r.parse(data, source)```
+        """
+        # Create a new request.
+        req = cls()
+
+        req.parse(data, source)
 
         return req

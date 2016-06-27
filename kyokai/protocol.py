@@ -59,17 +59,18 @@ class KyokaiProtocol(asyncio.Protocol):
         self.logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
         # Create a request
         self.buffer += data
+        req = Request()
+        ctx = HTTPRequestContext(req, self.parent_context)
         try:
-            req = Request.from_data(self.buffer, self.ip)
+            req.parse(self.buffer, self.ip)
         except HTTPException as e:
             # Delegate the HTTP exception, probably a 400.
-            self.app._exception_handler(self, None, 400)
+            self.loop.create_task(self.app._exception_handler(self, ctx, None, 400))
         else:
             if req.fully_parsed:
                 # Reset buffer.
                 self.logger.debug("Request for `{}` fully parsed, passing.".format(req.path))
                 self.buffer = b""
-                ctx = HTTPRequestContext(req, self.parent_context)
                 self.loop.create_task(self.app.delegate_request(self, ctx))
             else:
                 # Continue.

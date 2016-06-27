@@ -341,8 +341,12 @@ class Kyōkai(object):
         protocol.handle_resp(response)
 
         # Check if we should close it.
-        if ctx.request.headers.get("Connection") != "keep-alive":
-            # Close the conenction.
+        # Check if we have headers, because these don't exist in a 400 from the protocol.
+        if hasattr(ctx.request, "headers"):
+            if ctx.request.headers.get("Connection") != "keep-alive":
+                # Close the conenction.
+                protocol.close()
+        else:
             protocol.close()
 
 
