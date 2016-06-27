@@ -140,10 +140,10 @@ response code, and the third code is used as the headers.
 
 ## Running your App
 
-Running a Kyōkai app is also simple. It comes with an incredibly fast built-in web server that can be used perfectly 
-fine independently, no WSGI server required.
- 
-Calling it from blocking code is as simple as running:
+The ideal way of running a Kyoukai project is through the Asphalt framework. See [Asphalt usage](/examples/asphalt)
+for more information on how to use the advanced Asphalt components.
+
+However, Kyoukai includes a built-in way of running the app from blocking code.
 
 ```python
 app.run(host="127.0.0.1", port=4444)
