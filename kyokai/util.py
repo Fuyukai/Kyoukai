@@ -4,7 +4,7 @@ Misc utilities.
 import os
 import pathlib
 
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 VERSIONT = tuple(map(int, VERSION.split('.')))
 
 HTTP_CODES = {
@@ -14,7 +14,7 @@ HTTP_CODES = {
     203: "Non-Authoritative Information",
     204: "No Content",
     205: "Reset Content",
-    301: "Moved Permenantly",
+    301: "Moved Permanently",
     302: "Found",
     303: "See Other",
     304: "Not Modified",
