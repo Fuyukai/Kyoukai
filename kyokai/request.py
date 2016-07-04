@@ -62,7 +62,11 @@ class Request(object):
                 self.args[k] = v
         if self.headers.get("Content-Type") == "application/json":
             # Parse as JSON
-            self.form = json.loads(self.body)
+            try:
+                self.form = json.loads(self.body)
+            except json.JSONDecodeError:
+                # The form isn't quite complete yet.
+                self.form = {}
         else:
             t_f = uparse.parse_qs(self.body, keep_blank_values=True)
             self.form = {}

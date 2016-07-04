@@ -25,7 +25,7 @@ class Route(object):
         self.hard_match = hard_match
         self._wrapped_coro = None
 
-        self._errhandlerf = None
+        self._errhandlerf = lambda *args, **kwargs: None
 
     def kyokai_match(self, path: str):
         """
