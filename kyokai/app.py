@@ -88,12 +88,12 @@ class Kyōkai(object):
             logging.Logger.manager.loggerDict["Kyokai"] = _FakeLogging("Kyokai")
 
         # Create a renderer.
-        if self.config.get("template_renderer", "mako") == "mako":
+        if self.config.get("template_renderer") == "mako":
             if not _has_mako:
                 raise ImportError("Mako is not installed; cannot use for templates.")
             else:
                 self._renderer = MakoRenderer.render
-        elif self.config.get("template_renderer", "mako") == "jinja2":
+        elif self.config.get("template_renderer") == "jinja2":
             if not _has_jinja2:
                 raise ImportError("Jinja2 is not installed; cannot use for templates.")
             else:
@@ -364,8 +364,8 @@ class Kyōkai(object):
         ctx = Context()
         if not component:
             from kyokai.asphalt import KyoukaiComponent
-            component = KyoukaiComponent(self, ip, port)
-        await component.start(ctx)
+            self.component = KyoukaiComponent(self, ip, port)
+        await self.component.start(ctx)
 
     def run(self, ip="0.0.0.0", port=4444, component=None):
         """
