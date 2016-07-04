@@ -4,7 +4,7 @@ Misc utilities.
 import os
 import pathlib
 
-VERSION = "1.3.2"
+VERSION = "1.3.3"
 VERSIONT = tuple(map(int, VERSION.split('.')))
 
 HTTP_CODES = {
