@@ -49,6 +49,8 @@ class Request(object):
 
         self.source = "0.0.0.0"
 
+        self.extra = {}
+
         # urlparse out the items.
         _raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
         # Reparse args
