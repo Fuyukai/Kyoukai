@@ -41,7 +41,7 @@ class Response(object):
         """
         mime = magic.from_buffer(body)
         if mime:
-            return mime.decode()
+            return mime.decode() if isinstance(mime, bytes) else mime
 
     def _recalculate_headers(self):
         """
