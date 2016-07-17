@@ -65,7 +65,7 @@ class Response(object):
         for name, val in self.headers.items():
             headers_fmt += "{}: {}\r\n".format(name, val)
         built = fmt.format(code=self.code, msg=HTTP_CODES.get(self.code, "Unknown"), headers=headers_fmt,
-                           body=self.body, cookies=self.cookies.output() if len(self.cookies) else "")
+                           body=self.body, cookies=(self.cookies.output() + "\r\n") if len(self.cookies) else "")
 
         return built.encode()
 
