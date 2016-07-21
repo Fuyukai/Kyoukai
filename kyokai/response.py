@@ -48,12 +48,9 @@ class Response(object):
         if _has_magic:
             mime = magic.from_buffer(body)
             if mime:
-                if isinstance(mime, bytes):
-                    mime = mime.decode()
-                if mime == "data":
-                    return "text/plain"
-                else:
-                    return mime
+                return mime.decode() if isinstance(mime, bytes) else mime
+            else:
+                return "empty"
         else:
             return "text/plain"
 
