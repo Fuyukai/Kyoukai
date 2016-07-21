@@ -303,6 +303,13 @@ class Kyōkai(object):
                     self.logger.error("??????? Something went terribly wrong.")
                     return
 
+            # If the route did not match, return a 404.
+            if not route:
+                fof = HTTPException(404)
+                self.log_request(ctx, code=404)
+                await self._handle_http_error(fof, protocol, ctx)
+                return
+
             # Try and invoke the Route.
             try:
                 # Note that this will already be a Response.
