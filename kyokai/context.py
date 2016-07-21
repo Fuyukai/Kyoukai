@@ -22,3 +22,7 @@ class HTTPRequestContext(Context):
     @property
     def request(self) -> 'kyokai.Request':
         return self._request
+
+    @request.setter
+    def request(self, req: 'kyokai.Request'):
+        self._request = req
