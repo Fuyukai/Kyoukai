@@ -52,10 +52,6 @@ class Kyōkai(object):
         Parameters:
             name: str
                 The name of the app.
-
-            log_level:
-                The log level of the logger.
-
         """
 
         self.name = name
@@ -63,7 +59,6 @@ class Kyōkai(object):
 
         self.logger = logging.getLogger("Kyokai")
 
-        self.routes = []
         self.error_handlers = {}
 
         self.config = cfg if cfg else {}
@@ -72,10 +67,13 @@ class Kyōkai(object):
             "post": []
         }
 
+        # Define the "root" blueprint, which is used for @app.request.
+        self._root_bp = Blueprint("root", None)
+
         self.debug = False
 
     def reconfigure(self, config: dict):
-        self.config = config
+        self.config = {**config, **self.config}
         # Should we use logging speedhack?
         # This speeds up Kyoukai MASSIVELY - 0.3ms off each request, which is around 75% on an empty request.
         if self.config.get("use_logging_speedhack"):
@@ -102,13 +100,22 @@ class Kyōkai(object):
         if self.config.get("debug") is True:
             self.debug = True
 
+    #def register_blueprint(self, bp: Blueprint):
+    #    """
+    #    Registers a blueprint.
+    #    """
+    #    bp_routes = bp._init_bp()
+    #    self.logger.info("Registered {} route(s) from blueprint `{}`.".format(len(bp_routes), bp._name))
+    #    self.routes += bp_routes
+
     def register_blueprint(self, bp: Blueprint):
         """
-        Registers a blueprint.
+        Registers a blueprint as a sub-blueprint to the root blueprint.
         """
-        bp_routes = bp._init_bp()
-        self.logger.info("Registered {} route(s) from blueprint `{}`.".format(len(bp_routes), bp._name))
-        self.routes += bp_routes
+        self._root_bp.add_sub_bp(bp)
+        if bp.parent is None:
+            bp.parent = self._root_bp
+        return bp
 
     def render(self, filename, **kwargs):
         """

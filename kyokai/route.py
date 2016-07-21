@@ -3,6 +3,7 @@ Module for Kyokai routes.
 """
 import re
 
+from kyokai import blueprints
 from kyokai.exc import HTTPClientException, HTTPException
 
 
@@ -13,7 +14,8 @@ class Route(object):
     It takes in a regular expression as a matcher, for the path, and a list of accepted methods.
     """
 
-    def __init__(self, matcher: str, methods: list, hard_match: bool=False):
+    def __init__(self, blueprint: 'blueprints.Blueprint',
+                 matcher: str, methods: list, hard_match: bool=False):
         """
         Create a new Route.
         """
@@ -25,7 +27,7 @@ class Route(object):
         self.hard_match = hard_match
         self._wrapped_coro = None
 
-        self._errhandlerf = lambda *args, **kwargs: None
+        self.bp = blueprint
 
     def kyokai_match(self, path: str):
         """
@@ -47,27 +49,6 @@ class Route(object):
             return True
         in_m = meth.lower() in meths
         return in_m
-
-    def set_errorhandler_factory(self, func):
-        """
-        Sets the error handler factory for the route.
-        """
-        self._errhandlerf = func
-
-    @property
-    def errorhandler_factory(self):
-        """
-        Gets the error handler factory.
-        """
-        return self._errhandlerf
-
-    def get_errorhandler(self, code: int):
-        """
-        Gets an error handler for the specified route.
-
-        Used for per-blueprint error handlers.
-        """
-        return self._errhandlerf(code)
 
     def __call__(self, coro):
         """

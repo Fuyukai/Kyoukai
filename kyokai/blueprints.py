@@ -10,8 +10,14 @@ from kyokai.route import Route
 class Blueprint(object):
     """
     A Blueprint is a container for routes.
+
+    Blueprints have 'parent' blueprints - they inherit error handlers and hooks from them. The root blueprint has no
+    parent, so it does not inherit from anything.
+
+    Note that if a Blueprint that is not the root blueprint has a parent value of None, it is automatically set to
+    inherit the root blueprint of the app.
     """
-    def __init__(self, name: str, parent: 'Blueprint',
+    def __init__(self, name: str, parent: 'Blueprint'=None,
                  url_prefix: str=""):
         self._prefix = url_prefix
         self._name = name
@@ -28,6 +34,13 @@ class Blueprint(object):
         Returns the parent Blueprint of the currentl Blueprint.
         """
         return self._parent
+
+    @parent.setter
+    def parent(self, bp: 'Blueprint'):
+        """
+        Sets the parent blueprint.
+        """
+        self._parent = bp
 
     def route(self, regex, methods: list = None, hard_match: bool = False):
         """
