@@ -37,7 +37,7 @@ class Request(object):
         """
         self._parser = parser
         self.method = parser.get_method()
-        self.path = parser.get_path()
+        self.path = uparse.unquote(parser.get_path())
         self.headers = parser.get_headers()
         self.query = parser.get_query_string()
         self.body = parser.recv_body().decode()

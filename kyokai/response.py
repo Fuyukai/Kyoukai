@@ -23,6 +23,7 @@ else:
 
 from email.utils import formatdate
 from http.cookies import SimpleCookie
+import urllib.parse as uparse
 
 
 class Response(object):
@@ -87,6 +88,8 @@ def redirect(location, code=302, response_cls=Response):
     """
     # https://github.com/pallets/werkzeug/blob/master/werkzeug/utils.py#L373
     # response body used from Werkzeug
+    location = uparse.quote(location)
+
     res = response_cls(
         code=302,
         body=
