@@ -118,7 +118,7 @@ class Blueprint(object):
         self.routes.append(r)
         return r
 
-    def get_errorhandler(self, code: int) -> list:
+    def get_errorhandler(self, code: int) -> Route:
         """
         Not to be used by the user/dev - internal function used to traverse down the parent's error handlers.
         """
