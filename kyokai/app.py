@@ -101,14 +101,6 @@ class Kyōkai(object):
         if self.config.get("debug") is True:
             self.debug = True
 
-    # def register_blueprint(self, bp: Blueprint):
-    #    """
-    #    Registers a blueprint.
-    #    """
-    #    bp_routes = bp._init_bp()
-    #    self.logger.info("Registered {} route(s) from blueprint `{}`.".format(len(bp_routes), bp._name))
-    #    self.routes += bp_routes
-
     def register_blueprint(self, bp: Blueprint):
         """
         Registers a blueprint as a sub-blueprint to the root blueprint.
@@ -348,40 +340,6 @@ class Kyōkai(object):
                 # If it's that bad, just close it anyway.
                 protocol.close()
 
-            # We're done here.
-
-    async def _exception_handler(self, protocol, ctx: HTTPRequestContext, coro: typing.Union[Route, None], code):
-        """
-        Handles built in HTTP exceptions.
-        """
-        route = self._get_errorhandler(coro, code)
-        if route:
-            # Await the invoke.
-            try:
-                response = await route.invoke(ctx)
-                response = self._wrap_response(response)
-            except Exception:
-                self.logger.error("Error in error handler for code {}".format(code))
-                traceback.print_exc()
-                if self.debug:
-                    response = Response(500, traceback.format_exc())
-                else:
-                    response = Response(500, "500 Internal Server Error", {})
-        else:
-            response = Response(code, body=str(code))
-
-        # Handle the response.
-        protocol.handle_resp(response)
-
-        # Check if we should close it.
-        # Check if we have headers, because these don't exist in a 400 from the protocol.
-        if hasattr(ctx.request, "headers"):
-            if ctx.request.headers.get("Connection") != "keep-alive":
-                # Close the conenction.
-                protocol.close()
-        else:
-            protocol.close()
-
     async def start(self, ip = "0.0.0.0", port = 4444, component = None):
         """
         Run the Kyoukai component asynchronously.
@@ -412,3 +370,4 @@ class Kyōkai(object):
 
 # Alias it
 Kyokai = Kyōkai
+Kyoukai = Kyokai
