@@ -1,4 +1,5 @@
 import os
+import sys
 
 from setuptools import find_packages, setup
 
@@ -6,7 +7,7 @@ rootpath = os.path.abspath(os.path.dirname(__file__))
 
 
 # Extract version
-def extract_version(module='kyokai'):
+def extract_version(module = 'kyokai'):
     version = None
     fname = os.path.join(rootpath, module, 'util.py')
     with open(fname) as f:
@@ -17,6 +18,17 @@ def extract_version(module='kyokai'):
                 break
     return version
 
+
+deps = [
+    "http-parser>=0.8.3",
+    "PyYAML>=3.11",
+    "typeguard>=1.2.1",
+    "asphalt"
+]
+
+if sys.platform != "win32":
+    # Add python-magic to deps.
+    deps.append("python-magic")
 
 setup(
     name='Kyokai',
@@ -36,11 +48,5 @@ setup(
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Application Frameworks"
     ],
-    install_requires=[
-        "http-parser>=0.8.3",
-        "PyYAML>=3.11",
-        "python-magic",
-        'typeguard>=1.2.1',
-        'asphalt'
-    ]
+    install_requires=deps
 )

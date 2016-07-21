@@ -13,7 +13,13 @@ except ImportError:
     warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
 
 from .util import HTTP_CODES, VERSION
-import magic
+try:
+    import magic
+except ImportError:
+    _has_magic = False
+    warnings.warn("Cannot load libmagic - Cannot determine file types automatically...")
+else:
+    _has_magic = True
 
 from email.utils import formatdate
 from http.cookies import SimpleCookie
@@ -39,9 +45,12 @@ class Response(object):
         """
         Calculates the mime type of the file.
         """
-        mime = magic.from_buffer(body)
-        if mime:
-            return mime.decode() if isinstance(mime, bytes) else mime
+        if _has_magic:
+            mime = magic.from_buffer(body)
+            if mime:
+                return mime.decode() if isinstance(mime, bytes) else mime
+        else:
+            return "application/octet-stream"
 
     def _recalculate_headers(self):
         """
