@@ -278,7 +278,7 @@ class Kyōkai(object):
             resp = Response(code, body, {"Content-Type": "text/plain"})
         else:
             # Invoke the error handler specified.
-            resp = self._wrap_response(await error_handler.invoke(ctx))
+            resp = self._wrap_response(await error_handler.invoke(self, ctx))
         protocol.handle_resp(resp)
 
         # Check if we should close the connection.
