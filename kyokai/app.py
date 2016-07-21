@@ -235,15 +235,13 @@ class Kyōkai(object):
         """
         Adds a hook to run before request.
         """
-        self.request_hooks["pre"].append(func)
-        return func
+        return self._root_bp.before_request(func)
 
     def after_request(self, func):
         """
         Adds a hook to run after the request.
         """
-        self.request_hooks["post"].append(func)
-        return func
+        return self._root_bp.after_request(func)
 
     async def _handle_http_error(self, err: HTTPException, protocol, ctx: HTTPRequestContext):
         """
