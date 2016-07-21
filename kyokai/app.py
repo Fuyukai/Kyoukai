@@ -223,14 +223,8 @@ class Kyōkai(object):
 
                 This prevents index or lower level paths from matching 404s at higher levels.
         """
-        if not methods:
-            methods = ["GET"]
-        # Override hard match if it's a `/` route.
-        if regex == "/":
-            hard_match = True
-        r = Route(regex, methods, hard_match)
-        self.routes.append(r)
-        return r
+        # Rewrite it to the _root_bp method.
+        return self._root_bp.route(regex, methods, hard_match)
 
     def errorhandler(self, code: int):
         """
