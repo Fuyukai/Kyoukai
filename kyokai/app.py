@@ -11,7 +11,12 @@ import os
 import traceback
 import logging
 import typing
-import magic
+try:
+    import magic
+except (ImportError, OSError):
+    _has_magic = False
+else:
+    _has_magic = True
 from asphalt.core import Context
 
 from asphalt.core.runner import run_application
@@ -149,7 +154,10 @@ class Kyōkai(object):
             path = self.get_static_path(filename)
             mimetype = mimetypes.guess_type(path)[0]
             if not mimetype:
-                mimetype = magic.from_file(path, mime=True).decode()
+                if _has_magic:
+                    mimetype = magic.from_file(path, mime=True).decode()
+                else:
+                    mimetype = "application/octet-stream"
             return Response(200, body=content.read(), headers={"Content-Type": mimetype})
 
     def _match_route(self, path, meth) -> Route:
