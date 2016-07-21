@@ -51,12 +51,18 @@ class Route(object):
         in_m = meth.lower() in meths
         return in_m
 
+    def create(self, coro):
+        """
+        Set the internal coroutine state from the passed in value.
+        """
+        self._wrapped_coro = coro
+        self.__name__ = coro.__name__
+
     def __call__(self, coro):
         """
         Sets the coroutine.
         """
-        self._wrapped_coro = coro
-        self.__name__ = coro.__name__
+        self.create(coro)
 
     async def invoke(self, app, ctx: HTTPRequestContext):
         """
