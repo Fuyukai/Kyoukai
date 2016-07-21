@@ -15,7 +15,7 @@ except ImportError:
 from .util import HTTP_CODES, VERSION
 try:
     import magic
-except ImportError:
+except (ImportError, OSError):
     _has_magic = False
     warnings.warn("Cannot load libmagic - Cannot determine file types automatically...")
 else:
