@@ -232,7 +232,11 @@ class Kyōkai(object):
         """
         Logs a request to the logger.
         """
-        route = ctx.request.path
+        try:
+            route = ctx.request.path
+        except AttributeError:
+            # *really* bad request - ignore it.
+            return
         self.logger.info("{} {} - {}".format(ctx.request.method, route, code))
 
     def before_request(self, func):
@@ -276,6 +280,15 @@ class Kyōkai(object):
             # Invoke the error handler specified.
             resp = self._wrap_response(await error_handler.invoke(ctx))
         protocol.handle_resp(resp)
+
+        # Check if we should close the connection.
+        if hasattr(ctx.request, "headers"):
+            # The hasattr check is required because in a 400, the request is bad and doesn't have headers.
+            if ctx.request.headers.get("connection") != "keep-alive":
+                protocol.close()
+        else:
+            # If it's that bad, just close it anyway.
+            protocol.close()
 
         return resp
 
@@ -324,82 +337,18 @@ class Kyōkai(object):
 
             # Respond with the response.
             protocol.handle_resp(response)
-            # We're done here.
 
-    async def _delegate_request(self, protocol, ctx: HTTPRequestContext):
-        """
-        Delegates a request to be handled automatically.
-        """
-        # Needs more indentation.
-        async with ctx:
-            self.logger.debug("Matching route `{}`.".format(ctx.request.path))
-            coro = self._match_route(ctx.request.path, ctx.request.method)
-            if coro[0] == -1:
-                # 415 invalid method
-                self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 415))
-                await self._exception_handler(protocol, ctx, coro[1], 415)
-                return
-            elif coro[0] == -2:
-                self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, 404))
-                await self._exception_handler(protocol, ctx, None, 404)
-                return
+            # Copy/pasted, but it doesn't really matter.
+            # Check if we should close the conn.
+            if hasattr(ctx.request, "headers"):
+                # The hasattr check is required because in a 400, the request is bad and doesn't have headers.
+                if ctx.request.headers.get("connection") != "keep-alive":
+                    protocol.close()
             else:
-                coro = coro[1]
-            # Pre-request hooks.
-            for hook in self.request_hooks["pre"]:
-                ctx.request = await hook(ctx)
-                if not ctx.request or not isinstance(ctx.request, Request):
-                    self.logger.error("Error in pre-request hook {} - did not return a Request!".format(hook.__name__))
-                    await self._exception_handler(protocol, ctx, None, 500)
-                    return
-
-            # Invoke the route, wrapped.
-            try:
-                response = await coro.invoke(ctx)
-            except HTTPException as e:
-                self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, e.errcode))
-                await self._exception_handler(protocol, ctx, coro, e.errcode)
-                return
-            except Exception as e:
-                self.logger.info("{} {} - 500".format(ctx.request.method, ctx.request.path))
-                self.logger.error("Error in route {}".format(coro.__name__))
-                traceback.print_exc()
-                if self.debug:
-                    r = Response(500, traceback.format_exc())
-                    protocol.handle_resp(r)
-                    return
-                await self._exception_handler(protocol, ctx, coro, 500)
-                return
-
-            # Wrap the response.
-            response = self._wrap_response(response)
-            # Post-request hooks.
-            for hook in self.request_hooks["post"]:
-                response = await hook(response)
-                if not response:
-                    self.logger.error("Error in post-request hook {} - did not return anything!".format(hook.__name__))
-                    await self._exception_handler(protocol, ctx, None, 500)
-                    return
-
-            self.logger.info("{} {} - {}".format(ctx.request.method, ctx.request.path, response.code))
-            # Handle the response.
-            protocol.handle_resp(response)
-            # Check if we should close it.
-            if ctx.request.headers.get("Connection") != "keep-alive":
-                # Close the conenction.
+                # If it's that bad, just close it anyway.
                 protocol.close()
 
-    def _get_errorhandler(self, coro: Route, code: int):
-        """
-        Gets the error handler for the route.
-
-        Used for per-blueprint routes.
-        """
-        if not coro:
-            return self.error_handlers.get(code)
-        else:
-            r_handler = coro.get_errorhandler(code)
-            return r_handler if r_handler else self.error_handlers.get(code)
+            # We're done here.
 
     async def _exception_handler(self, protocol, ctx: HTTPRequestContext, coro: typing.Union[Route, None], code):
         """
