@@ -1,5 +1,5 @@
 """
-Kyōkai are simply groups of routes.
+Kyōkai blueprints are simply groups of routes.
 
 They're a simpler way of grouping your routes together instead of having to import your app object manually all of
 the time.
@@ -9,11 +9,10 @@ from kyokai.route import Route
 
 class Blueprint(object):
     """
-    A Blueprint contains one public method: `bp.route`. It acts exactly the same as a normal route method.
-
-    If you set a `url_prefix` in the constructor, this prefix will be added onto your routes.
+    A Blueprint is a container for routes.
     """
-    def __init__(self, name: str, url_prefix: str=""):
+    def __init__(self, name: str, parent: 'Blueprint',
+                 url_prefix: str=""):
         self._prefix = url_prefix
         self._name = name
 
@@ -21,8 +20,14 @@ class Blueprint(object):
 
         self.errhandlers = {}
 
-    def _bp_get_errhandler(self, code: int):
-        return self.errhandlers.get(code)
+        self._parent = parent
+
+    @property
+    def parent(self) -> 'Blueprint':
+        """
+        Returns the parent Blueprint of the currentl Blueprint.
+        """
+        return self._parent
 
     def route(self, regex, methods: list = None, hard_match: bool = False):
         """
@@ -50,8 +55,7 @@ class Blueprint(object):
         if regex == "/":
             hard_match = True
         regex = self._prefix + regex
-        r = Route(regex, methods, hard_match)
-        r.set_errorhandler_factory(self._bp_get_errhandler)
+        r = Route(self, regex, methods, hard_match)
         self.routes.append(r)
         return r
 
@@ -61,9 +65,6 @@ class Blueprint(object):
 
         This will wrap the function in a Route.
         """
-        r = Route("", [])
+        r = Route(self, "", [])
         self.errhandlers[code] = r
         return r
-
-    def _init_bp(self):
-        return self.routes
