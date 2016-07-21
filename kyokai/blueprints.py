@@ -17,8 +17,9 @@ class Blueprint(object):
     Note that if a Blueprint that is not the root blueprint has a parent value of None, it is automatically set to
     inherit the root blueprint of the app.
     """
-    def __init__(self, name: str, parent: 'Blueprint'=None,
-                 url_prefix: str=""):
+
+    def __init__(self, name: str, parent: 'Blueprint' = None,
+                 url_prefix: str = ""):
         self._prefix = url_prefix
         self._name = name
 
@@ -26,7 +27,36 @@ class Blueprint(object):
 
         self.errhandlers = {}
 
+        # The parent of this blueprint.
         self._parent = parent
+
+        # The children of this blueprint.
+        self._children = {}
+
+    def add_child(self, blueprint: 'Blueprint'):
+        """
+        Add a child Blueprint to the current blueprint.
+        """
+        self._children[blueprint._name] = blueprint
+
+    def match(self, route: str, method: str):
+        """
+        Match a route.
+
+        This will search down our routes, and then down our children's routes, to see if we can find a match for the
+        specified route.
+        """
+        for route_obb in self.routes:
+            assert isinstance(route_obb, Route)
+            matched = route_obb.match(route, method)
+            if matched:
+                return route_obb
+
+        # Search through the children
+        for child in self.children:
+            matched = child.match(route, method)
+            if matched:
+                return matched
 
     @property
     def parent(self) -> 'Blueprint':
@@ -41,6 +71,22 @@ class Blueprint(object):
         Sets the parent blueprint.
         """
         self._parent = bp
+
+    @property
+    def children(self):
+        """
+        Gets the children blueprint of this one.
+        """
+        return self._children
+
+    @property
+    def prefix(self):
+        """
+        Calculates the prefix using the parent blueprints.
+        """
+        if self.parent is None:
+            return self._prefix
+        return self.parent.prefix + self._prefix
 
     def route(self, regex, methods: list = None, hard_match: bool = False):
         """
@@ -67,7 +113,7 @@ class Blueprint(object):
         # Override hard match if it's a `/` route.
         if regex == "/":
             hard_match = True
-        regex = self._prefix + regex
+        regex = self.prefix + regex
         r = Route(self, regex, methods, hard_match)
         self.routes.append(r)
         return r

@@ -73,3 +73,12 @@ class Route(object):
             result = await self._wrapped_coro(ctx)
         return result
 
+    def match(self, route: str, method: str):
+        """
+        Short way of checkinf if the route matches.
+        """
+        if not self.kyokai_method_allowed(method):
+            return False
+
+        return self.kyokai_match(route)
+

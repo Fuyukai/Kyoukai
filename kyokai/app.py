@@ -15,6 +15,7 @@ import magic
 from asphalt.core import Context
 
 from asphalt.core.runner import run_application
+from typeguard import check_argument_types
 
 from kyokai.blueprints import Blueprint
 from kyokai.context import HTTPRequestContext
@@ -112,7 +113,8 @@ class Kyōkai(object):
         """
         Registers a blueprint as a sub-blueprint to the root blueprint.
         """
-        self._root_bp.add_sub_bp(bp)
+        assert check_argument_types()
+        self._root_bp.add_child(bp)
         if bp.parent is None:
             bp.parent = self._root_bp
         return bp
