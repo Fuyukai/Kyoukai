@@ -107,7 +107,7 @@ class Blueprint(object):
                 return route_obb
 
         # Search through the children
-        for child in self.children:
+        for child in self.children.values():
             matched = child.match(route, method)
             if matched:
                 return matched
