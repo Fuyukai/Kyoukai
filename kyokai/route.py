@@ -5,7 +5,8 @@ import re
 
 from asphalt.core import Context
 
-from kyokai import blueprints, Response
+import kyokai
+from kyokai import blueprints
 from kyokai.context import HTTPRequestContext
 from kyokai.exc import HTTPClientException, HTTPException
 
@@ -99,7 +100,7 @@ class Route(object):
         if hooks:
             for hook in hooks:
                 result = await hook(ctx, result)
-                if not isinstance(result, Response):
+                if not isinstance(result, kyokai.Response):
                     raise TypeError("Hook {} returned non-response".format(hook.__name__))
                 result = app._wrap_response(result)
 
