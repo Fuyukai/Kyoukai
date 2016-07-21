@@ -50,7 +50,7 @@ class Response(object):
             if mime:
                 return mime.decode() if isinstance(mime, bytes) else mime
         else:
-            return "application/octet-stream"
+            return "text/plain"
 
     def _recalculate_headers(self):
         """
