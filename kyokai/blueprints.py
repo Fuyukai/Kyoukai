@@ -4,6 +4,8 @@ Kyōkai blueprints are simply groups of routes.
 They're a simpler way of grouping your routes together instead of having to import your app object manually all of
 the time.
 """
+import collections
+
 from kyokai.route import Route
 
 
@@ -29,15 +31,67 @@ class Blueprint(object):
 
         # The parent of this blueprint.
         self._parent = parent
+        if self._parent is not None:
+            # Add ourselves as a child.
+            self._parent.add_child(self)
 
         # The children of this blueprint.
         self._children = {}
+
+        self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
 
     def add_child(self, blueprint: 'Blueprint'):
         """
         Add a child Blueprint to the current blueprint.
         """
         self._children[blueprint._name] = blueprint
+
+    def before_request(self, coro):
+        """
+        Set a coroutine to run as before the request.
+
+        This coroutine should take in the HTTPRequestContext, and return a new HTTPRequestContext.
+        """
+        # Unlike before, don't use Route objects.
+        # Just append it to the route handlers.
+        self._request_hooks["pre"][coro.__name__] = coro
+        return coro
+
+    def after_request(self, coro):
+        """
+        Set a coroutine to run after the request.
+
+        Unlike the before counterpart, this should take in the ctx and a response, and produce a Response.
+        """
+        self._request_hooks["post"][coro.__name__] = coro
+
+    def get_pre_hooks(self, ctx):
+        """
+        Get the pre-request hooks in a list.
+
+        This goes from top-level blueprint to bottom-level blueprint in terms of order.
+        """
+        if self.parent is not None:
+            bps = self.parent.get_pre_hooks(ctx)
+        else:
+            bps = []
+
+        # Return the list of our hooks, merged with the other list.
+        return bps + list(self._request_hooks["pre"].values())
+
+    def get_post_hooks(self, ctx):
+        """
+        Get the post-request hooks in a list.
+
+        This goes from top-level blueprint to bottom-level blueprint in terms of order.
+        """
+        if self.parent is not None:
+            bps = self.parent.get_post_hooks(ctx)
+        else:
+            bps = []
+
+        # Return the list of our hooks, merged with the other list.
+        return bps + list(self._request_hooks["post"].values())
 
     def match(self, route: str, method: str):
         """

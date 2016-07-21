@@ -3,7 +3,9 @@ Module for Kyokai routes.
 """
 import re
 
-from kyokai import blueprints
+from asphalt.core import Context
+
+from kyokai import blueprints, Response
 from kyokai.context import HTTPRequestContext
 from kyokai.exc import HTTPClientException, HTTPException
 
@@ -68,6 +70,17 @@ class Route(object):
         """
         Invoke the route, calling the underlying coroutine.
         """
+        # Run pre-request hooks.
+        hooks = self.bp.get_pre_hooks(ctx)
+        if hooks:
+            for hook in hooks:
+                # Await the hook.
+                ctx = await hook(ctx)
+                if not isinstance(ctx, Context):
+                    # idc about the subtype, as long as it's a context.
+                    raise TypeError("Hook {} returned non-context".format(hook.__name__))
+
+
         # Extract match groups.
         if not self.hard_match:
             matches = self.matcher.match(ctx.request.path).groups()
@@ -81,6 +94,14 @@ class Route(object):
 
         # Wrap the result.
         result = app._wrap_response(result)
+
+        hooks = self.bp.get_post_hooks(ctx)
+        if hooks:
+            for hook in hooks:
+                result = await hook(ctx, result)
+                if not isinstance(result, Response):
+                    raise TypeError("Hook {} returned non-response".format(hook.__name__))
+                result = app._wrap_response(result)
 
         return result
 
