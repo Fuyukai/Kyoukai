@@ -35,10 +35,13 @@ class KyoukaiComponent(Component):
 
         self.app.reconfigure(cfg)
 
+    def get_protocol(self, ctx: Context):
+        return KyokaiProtocol(self.app, ctx)
+
     async def start(self, ctx: Context):
         """
         Starts a Kyokai server.
         """
-        protocol_factory = partial(KyokaiProtocol, self.app, ctx)
-        self.server = await asyncio.get_event_loop().create_server(protocol_factory, self.ip, self.port)
+        protocol = self.get_protocol(ctx)
+        self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port)
         logger.info("Kyokai serving on {}:{}.".format(self.ip, self.port))

@@ -14,6 +14,7 @@ class KyokaiProtocol(asyncio.Protocol):
     """
     The Kyoukai protocol.
     """
+
     def __init__(self, app, parent_context):
         self.app = app
         self._transport = None
@@ -51,9 +52,11 @@ class KyokaiProtocol(asyncio.Protocol):
         """
         Create a new Request, and delegate Kyokai to process it.
         """
-        self.logger.debug("Recieved {} bytes of data from client {}:{}, feeding."
-                     .format(len(data), *self._transport.get_extra_info("peername"))
-                     )
+        self.logger.debug(
+            "Recieved {} bytes of data from client {}:{}, feeding.".format(
+                len(data), *self._transport.get_extra_info("peername")
+            )
+        )
 
         # Delegate as response.
         self.logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
