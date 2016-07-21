@@ -4,6 +4,7 @@ Module for Kyokai routes.
 import re
 
 from kyokai import blueprints
+from kyokai.context import HTTPRequestContext
 from kyokai.exc import HTTPClientException, HTTPException
 
 
@@ -57,7 +58,7 @@ class Route(object):
         self._wrapped_coro = coro
         self.__name__ = coro.__name__
 
-    async def invoke(self, ctx):
+    async def invoke(self, app, ctx: HTTPRequestContext):
         """
         Invoke the route, calling the underlying coroutine.
         """
@@ -71,6 +72,10 @@ class Route(object):
             result = await self._wrapped_coro(ctx, *matches)
         else:
             result = await self._wrapped_coro(ctx)
+
+        # Wrap the result.
+        result = app._wrap_response(result)
+
         return result
 
     def match(self, route: str, method: str):

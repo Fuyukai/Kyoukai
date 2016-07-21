@@ -68,7 +68,8 @@ class KyokaiProtocol(asyncio.Protocol):
             req.parse(self.buffer, self.ip)
         except HTTPException as e:
             # Delegate the HTTP exception, probably a 400.
-            self.loop.create_task(self.app._exception_handler(self, ctx, None, 400))
+            self.app.log_request(e, code=400)
+            self.loop.create_task(self.app._handle_http_error(e, self, ctx))
         else:
             if req.fully_parsed:
                 # Reset buffer.

@@ -101,7 +101,7 @@ class Kyōkai(object):
         if self.config.get("debug") is True:
             self.debug = True
 
-    #def register_blueprint(self, bp: Blueprint):
+    # def register_blueprint(self, bp: Blueprint):
     #    """
     #    Registers a blueprint.
     #    """
@@ -160,23 +160,14 @@ class Kyōkai(object):
                 mimetype = magic.from_file(path, mime=True).decode()
             return Response(200, body=content.read(), headers={"Content-Type": mimetype})
 
-    def _match_route(self, path, meth) -> typing.Tuple[int, Route]:
+    def _match_route(self, path, meth) -> Route:
         """
         Match a route, based on the regular expression of the route.
 
-        Returns a tuple:
-             0 and the route if it's valid.
-            -1 and the route if it's an invalid method.
-            -2 and None if it doesn't match.
+        Returns the route if it's valid, None if it's not, and raises a 405 HTTPException if it's a bad method for
+        the specified route.
         """
-        for route in self.routes:
-            assert isinstance(route, Route), "Routes should be a Route class"
-            if route.kyokai_match(path):
-                if route.kyokai_method_allowed(meth):
-                    return 0, route
-                else:
-                    return -1, route
-        return -2, None
+        return self._root_bp.match(path, meth)
 
     def _wrap_response(self, response):
         """
@@ -184,7 +175,9 @@ class Kyōkai(object):
 
         This allows Flask-like `return ""`.
         """
-        if isinstance(response, tuple):
+        if response is None:
+            r = Response(204, "", {})
+        elif isinstance(response, tuple):
             if len(response) == 1:
                 # Only body.
                 r = Response(200, response[0], {})
@@ -200,6 +193,7 @@ class Kyōkai(object):
         elif isinstance(response, Response):
             r = response
         else:
+
             r = Response(200, response, {})
         return r
 
@@ -232,9 +226,14 @@ class Kyōkai(object):
 
         This will wrap the function in a Route.
         """
-        r = Route("", [])
-        self.error_handlers[code] = r
-        return r
+        return self._root_bp.errorhandler(code)
+
+    def log_request(self, ctx: HTTPRequestContext, code: int = 200):
+        """
+        Logs a request to the logger.
+        """
+        route = ctx.request.path
+        self.logger.info("{} {} - {}".format(ctx.request.method, route, code))
 
     def before_request(self, func):
         """
@@ -250,7 +249,84 @@ class Kyōkai(object):
         self.request_hooks["post"].append(func)
         return func
 
+    async def _handle_http_error(self, err: HTTPException, protocol, ctx: HTTPRequestContext):
+        """
+        Handles HTTP errors.
+        """
+        code = err.errcode
+        route = err.route
+        # Check if the route is None.
+        # If it is, we just have to use the default blueprint to handle the exception.
+        if not route:
+            bp = self._root_bp
+        else:
+            bp = route.bp
+
+        # Get the error handler.
+        error_handler = bp.get_errorhandler(code)
+        if not error_handler:
+            # Since there's no special error handler derived for this code, return a basic Response.
+            # If it's a 500 and we're in debug mode, format the traceback.
+            if err.errcode == 500 and self.debug:
+                body = traceback.format_exc()
+            else:
+                body = str(code)
+            resp = Response(code, body, {"Content-Type": "text/plain"})
+        else:
+            # Invoke the error handler specified.
+            resp = self._wrap_response(await error_handler.invoke(ctx))
+        protocol.handle_resp(resp)
+
+        return resp
+
     async def delegate_request(self, protocol, ctx: HTTPRequestContext):
+        """
+        Handles a request from the protocol.
+        """
+        async with ctx:
+            # First, try and match the route.
+            try:
+                route = self._match_route(ctx.request.path, ctx.request.method)
+            except HTTPException as e:
+                # We matched it; but the route doesn't work for this method.
+                # So we catch the 405 error,
+                if e.errcode == 405:
+                    self.log_request(ctx, code=e.errcode)
+                    response = await self._handle_http_error(e, protocol, ctx)
+                    return
+                else:
+                    self.logger.error("??????? Something went terribly wrong.")
+                    return
+
+            # Try and invoke the Route.
+            try:
+                # Note that this will already be a Response.
+                # The route should call `app._wrap_response` when handling the response.
+                # This is because routes are responsible for pre-route and post-route hooks, calling them in the
+                # blueprint as appropriate.
+                # So we just pass ourselves to the route and hope it invokes properly.
+                response = await route.invoke(self, ctx)
+            except HTTPException as e:
+                # Handle a HTTPException normally.
+                self.log_request(ctx, e.errcode)
+                await self._handle_http_error(e, protocol, ctx)
+                return
+            except Exception as e:
+                # An uncaught exception has propogated down to our level - oh dear.
+                # Catch it, turn it into a 500, and return.
+                self.logger.exception("Unhandled exception in route:")
+                exc = HTTPException(500)
+                self.log_request(ctx, 500)
+                await self._handle_http_error(exc, protocol, ctx)
+                return
+            else:
+                self.log_request(ctx, response.code)
+
+            # Respond with the response.
+            protocol.handle_resp(response)
+            # We're done here.
+
+    async def _delegate_request(self, protocol, ctx: HTTPRequestContext):
         """
         Delegates a request to be handled automatically.
         """
@@ -357,7 +433,7 @@ class Kyōkai(object):
         else:
             protocol.close()
 
-    async def start(self, ip="0.0.0.0", port=4444, component=None):
+    async def start(self, ip = "0.0.0.0", port = 4444, component = None):
         """
         Run the Kyoukai component asynchronously.
 
@@ -370,7 +446,7 @@ class Kyōkai(object):
             self.component = KyoukaiComponent(self, ip, port)
         await self.component.start(ctx)
 
-    def run(self, ip="0.0.0.0", port=4444, component=None):
+    def run(self, ip = "0.0.0.0", port = 4444, component = None):
         """
         Runs the Kyoukai server from within your code.
 
