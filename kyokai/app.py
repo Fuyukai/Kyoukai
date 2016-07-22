@@ -341,7 +341,7 @@ class Kyōkai(object):
             except Exception as e:
                 # An uncaught exception has propogated down to our level - oh dear.
                 # Catch it, turn it into a 500, and return.
-                self.logger.exception("Unhandled exception in route:")
+                self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
                 exc = HTTPException(500)
                 self.log_request(ctx, 500)
                 await self._handle_http_error(exc, protocol, ctx)
