@@ -8,7 +8,7 @@ Setting up a Kyōkai app is incredibly simple. Here's a simple server that echoe
 
 ```python
 import json
-from kyokai import Kyokai, Request, Response
+from kyokai import Kyokai, Request
 
 kyk = Kyokai("example_app")
 
