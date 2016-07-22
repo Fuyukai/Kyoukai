@@ -401,7 +401,3 @@ class Kyoukai(object):
             component = KyoukaiComponent(self, ip, port)
         run_application(component)
 
-
-# Alias it
-Kyokai = Kyōkai
-Kyoukai = Kyokai
