@@ -84,7 +84,7 @@ class Route(object):
         return self
 
     def __repr__(self):
-        return "<Route `{}` in blueprint `{}`>".format(self.name, repr(self.bp))
+        return "<Route '{}' in blueprint {}>".format(self.name, repr(self.bp))
 
     def __call__(self, coro):
         """

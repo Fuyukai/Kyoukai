@@ -75,7 +75,8 @@ class Blueprint(object):
             nf.__name__ = new_view.__class__.__name__ + ".after_request"
             self.after_request(nf)
 
-
+    def __repr__(self):
+        return "<Blueprint '{}' with {} routes>".format(self._name, len(self.routes))
 
     def add_child(self, blueprint: 'Blueprint'):
         """
