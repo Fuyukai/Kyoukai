@@ -6,8 +6,8 @@ the time.
 """
 import collections
 
-from kyokai.route import Route
-from kyokai.views import View
+from kyoukai.route import Route
+from kyoukai.views import View
 
 
 class Blueprint(object):

@@ -8,9 +8,9 @@ import functools
 
 import asyncio
 
-from kyokai import Kyokai, Request
-from kyokai.context import HTTPRequestContext
-from kyokai.response import redirect, Response
+from kyoukai import Kyokai, Request
+from kyoukai.context import HTTPRequestContext
+from kyoukai.response import redirect, Response
 
 try:
     import itsdangerous

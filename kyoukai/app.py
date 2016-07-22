@@ -12,7 +12,7 @@ import traceback
 import logging
 import typing
 
-from kyokai.views import View
+from kyoukai.views import View
 
 try:
     import magic
@@ -25,31 +25,31 @@ from asphalt.core import Context
 from asphalt.core.runner import run_application
 from typeguard import check_argument_types
 
-from kyokai.blueprints import Blueprint
-from kyokai.context import HTTPRequestContext
-from kyokai.util import static_filename
+from kyoukai.blueprints import Blueprint
+from kyoukai.context import HTTPRequestContext
+from kyoukai.util import static_filename
 
-from kyokai.exc import HTTPClientException, HTTPException
-from kyokai.request import Request
-from kyokai.response import Response
-from kyokai.route import Route
+from kyoukai.exc import HTTPClientException, HTTPException
+from kyoukai.request import Request
+from kyoukai.response import Response
+from kyoukai.route import Route
 
 try:
-    from kyokai.renderers import MakoRenderer as MakoRenderer
+    from kyoukai.renderers import MakoRenderer as MakoRenderer
 
     _has_mako = True
 except ImportError:
     _has_mako = False
 
 try:
-    from kyokai.renderers import JinjaRenderer as JinjaRenderer
+    from kyoukai.renderers import JinjaRenderer as JinjaRenderer
 
     _has_jinja2 = True
 except ImportError:
     _has_jinja2 = False
 
 
-class Kyōkai(object):
+class Kyoukai(object):
     """
     A Kyoukai app.
     """
@@ -108,6 +108,19 @@ class Kyōkai(object):
 
         if self.config.get("debug") is True:
             self.debug = True
+
+    @property
+    def root(self):
+        """
+        This property is a way to access the root blueprint.
+
+        The root blueprint is the parent of all registered blueprints in the application. It can be used to directly
+        route onto the top-level, however it is recommended to just use :meth:`Kyoukai.route` and similar to run onto
+        the root blueprint.
+        :return: The root :class:`Blueprint`.
+        """
+
+        return self._root_bp
 
     def register_blueprint(self, bp: Blueprint):
         """
@@ -347,6 +360,7 @@ class Kyōkai(object):
                 await self._handle_http_error(exc, protocol, ctx)
                 return
             else:
+                # If there is no
                 self.log_request(ctx, response.code)
 
             # Respond with the response.
@@ -371,7 +385,7 @@ class Kyōkai(object):
         self.logger.warning("Kyoukai is bypassing Asphalt - contexts will not work.")
         ctx = Context()
         if not component:
-            from kyokai.asphalt import KyoukaiComponent
+            from kyoukai.asphalt import KyoukaiComponent
             self.component = KyoukaiComponent(self, ip, port)
         await self.component.start(ctx)
 
@@ -383,7 +397,7 @@ class Kyōkai(object):
         However, this is here for convenience.
         """
         if not component:
-            from kyokai.asphalt import KyoukaiComponent
+            from kyoukai.asphalt import KyoukaiComponent
             component = KyoukaiComponent(self, ip, port)
         run_application(component)
 

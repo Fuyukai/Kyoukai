@@ -4,10 +4,10 @@ This class handles the protocol side of Kyoukai.
 import asyncio
 import logging
 
-from kyokai.exc import HTTPException
-from kyokai.request import Request
-from kyokai.response import Response
-from kyokai.context import HTTPRequestContext
+from kyoukai.exc import HTTPException
+from kyoukai.request import Request
+from kyoukai.response import Response
+from kyoukai.context import HTTPRequestContext
 
 
 class KyokaiProtocol(asyncio.Protocol):

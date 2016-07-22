@@ -14,7 +14,7 @@ try:
 except ImportError:
     from http_parser.pyparser import HttpParser, IOrderedDict
 
-from kyokai.exc import HTTPClientException
+from kyoukai.exc import HTTPClientException
 
 
 class Request(object):

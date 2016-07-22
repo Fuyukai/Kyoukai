@@ -1,9 +1,12 @@
 """
-Allows making a class of views.
+Views are like grouped together routes - but not Blueprints. They allow creating classes for routes, and storing
+data, etc inside the class.
+
+This is similar to FlaskViews
 """
 import weakref
 
-from kyokai.route import Route
+from kyoukai.route import Route
 
 
 def route(regex, methods: list = None, hard_match: bool = False):

@@ -4,7 +4,7 @@ Stores HTTPRequestContext
 from asphalt.core import Context
 from typeguard import check_argument_types
 
-import kyokai
+import kyoukai
 
 
 class HTTPRequestContext(Context):
@@ -20,9 +20,9 @@ class HTTPRequestContext(Context):
         self._request = request
 
     @property
-    def request(self) -> 'kyokai.Request':
+    def request(self) -> 'kyoukai.Request':
         return self._request
 
     @request.setter
-    def request(self, req: 'kyokai.Request'):
+    def request(self, req: 'kyoukai.Request'):
         self._request = req

@@ -10,9 +10,9 @@ from typing import Union
 from asphalt.core import Component, resolve_reference, Context
 from typeguard import check_argument_types
 
-from kyokai.app import Kyokai
-from kyokai.protocol import KyokaiProtocol
-from kyokai.context import HTTPRequestContext
+from kyoukai.app import Kyokai
+from kyoukai.protocol import KyokaiProtocol
+from kyoukai.context import HTTPRequestContext
 
 logger = logging.getLogger("Kyokai")
 
