@@ -6,7 +6,6 @@ import re
 from asphalt.core import Context
 
 import kyokai
-from kyokai import blueprints
 from kyokai.context import HTTPRequestContext
 from kyokai.exc import HTTPClientException, HTTPException
 
@@ -38,6 +37,8 @@ class Route(object):
         self._bound = bound
 
         self._view_class = None
+
+        self.name = "<Undefined route>"
 
     @property
     def self(self):
@@ -79,8 +80,11 @@ class Route(object):
         Set the internal coroutine state from the passed in value.
         """
         self._wrapped_coro = coro
-        self.__name__ = coro.__name__
+        self.name = coro.__name__
         return self
+
+    def __repr__(self):
+        return "<Route `{}` in blueprint `{}`>".format(self.name, repr(self.bp))
 
     def __call__(self, coro):
         """
