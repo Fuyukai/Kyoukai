@@ -10,7 +10,7 @@ from typing import Union
 from asphalt.core import Component, resolve_reference, Context
 from typeguard import check_argument_types
 
-from kyoukai.app import Kyokai
+from kyoukai.app import Kyoukai
 from kyoukai.protocol import KyokaiProtocol
 from kyoukai.context import HTTPRequestContext
 
@@ -18,9 +18,9 @@ logger = logging.getLogger("Kyokai")
 
 
 class KyoukaiComponent(Component):
-    def __init__(self, app: Union[str, Kyokai], ip: str = '0.0.0.0', port: int = 4444, **cfg):
+    def __init__(self, app: Union[str, Kyoukai], ip: str = '0.0.0.0', port: int = 4444, **cfg):
         assert check_argument_types()
-        if not isinstance(app, Kyokai):
+        if not isinstance(app, Kyoukai):
             self.app = resolve_reference(app)
         else:
             self.app = app
