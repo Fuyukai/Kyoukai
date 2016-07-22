@@ -44,7 +44,7 @@ class Route(object):
         if self._bound:
             return self._view_class
         else:
-            return None
+            return
 
     @self.setter
     def self(self, vc):
