@@ -42,6 +42,11 @@ class Blueprint(object):
         self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
 
     def bind_view(self, view: View):
+        """
+        Binds a view class to a Blueprint.
+
+        This takes the *class*, not the instance, as a param.
+        """
         # Create a new instance of the class.
         new_view = view()
         # Don't bind if it's already binded.

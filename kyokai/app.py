@@ -11,6 +11,9 @@ import os
 import traceback
 import logging
 import typing
+
+from kyokai.views import View
+
 try:
     import magic
 except (ImportError, OSError):
@@ -251,6 +254,12 @@ class Kyōkai(object):
         """
         return self._root_bp.after_request(func)
 
+    def bind_view(self, view: View):
+        """
+        Binds a View to the default blueprint.
+        """
+        self._root_bp.bind_view(view)
+
     async def _handle_http_error(self, err: HTTPException, protocol, ctx: HTTPRequestContext):
         """
         Handles HTTP errors.
@@ -369,8 +378,6 @@ class Kyōkai(object):
     def run(self, ip = "0.0.0.0", port = 4444, component = None):
         """
         Runs the Kyoukai server from within your code.
-
-        Note that
 
         This is not normally invoked - instead Asphalt should invoke the Kyoukai component.
         However, this is here for convenience.
