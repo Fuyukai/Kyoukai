@@ -7,6 +7,7 @@ the time.
 import collections
 
 from kyokai.route import Route
+from kyokai.views import View
 
 
 class Blueprint(object):
@@ -39,6 +40,16 @@ class Blueprint(object):
         self._children = {}
 
         self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
+
+    def bind_view(self, view: View):
+        # Create a new instance of the class.
+        new_view = view()
+        # Don't bind if it's already binded.
+        if new_view._binded:
+            return
+        for route in view.get_routes():
+            route.bp = self
+            self.routes.append(route)
 
     def add_child(self, blueprint: 'Blueprint'):
         """

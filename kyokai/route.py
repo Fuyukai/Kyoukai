@@ -19,7 +19,8 @@ class Route(object):
     """
 
     def __init__(self, blueprint: 'blueprints.Blueprint',
-                 matcher: str, methods: list, hard_match: bool=False):
+                 matcher: str, methods: list, hard_match: bool = False,
+                 bound: bool = False):
         """
         Create a new Route.
         """
@@ -32,6 +33,25 @@ class Route(object):
         self._wrapped_coro = None
 
         self.bp = blueprint
+
+        # Used for bounded routes.
+        self._bound = bound
+
+        self._view_class = None
+
+    @property
+    def self(self):
+        if self._bound:
+            return self._view_class
+        else:
+            return None
+
+    @self.setter
+    def self(self, vc):
+        if self._bound:
+            self._view_class = vc
+        else:
+            raise TypeError("Attempted to update view class on unbounded route")
 
     def kyokai_match(self, path: str):
         """
@@ -60,12 +80,13 @@ class Route(object):
         """
         self._wrapped_coro = coro
         self.__name__ = coro.__name__
+        return self
 
     def __call__(self, coro):
         """
         Sets the coroutine.
         """
-        self.create(coro)
+        return self.create(coro)
 
     async def invoke(self, app, ctx: HTTPRequestContext):
         """
@@ -81,18 +102,23 @@ class Route(object):
                     # idc about the subtype, as long as it's a context.
                     raise TypeError("Hook {} returned non-context".format(hook.__name__))
 
-
         # Extract match groups.
         if not self.hard_match:
             matches = self.matcher.match(ctx.request.path).groups()
         else:
             matches = None
         # Invoke the coroutine.
-        if matches:
-            result = await self._wrapped_coro(ctx, *matches)
-        else:
-            result = await self._wrapped_coro(ctx)
+        # Construct the params.
+        params = []
+        if self._bound:
+            params.append(self.self)
 
+        params.append(ctx)
+
+        if matches:
+            params += list(matches)
+
+        result = await self._wrapped_coro(*params)
         # Wrap the result.
         result = app._wrap_response(result)
 
@@ -117,4 +143,3 @@ class Route(object):
                 raise HTTPException(405, route=self)
 
         return self.kyokai_match(route)
-
