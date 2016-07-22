@@ -56,6 +56,27 @@ class Blueprint(object):
             route.bp = self
             self.routes.append(route)
 
+        # Add before_request and after_request from the new_view.
+        def __wrapper(func):
+            async def ___internal_wrapper(*args, **kwargs):
+                await func(*args, **kwargs)
+
+            return ___internal_wrapper
+
+        if hasattr(new_view, "before_request"):
+            # Create wrappers for the new views.
+            nf = __wrapper(new_view.before_request)
+            nf.__name__ = new_view.__class__.__name__ + ".before_request"
+            self.before_request(nf)
+
+        if hasattr(new_view, "after_request"):
+            # Create wrappers for the new view.
+            nf = __wrapper(new_view.after_request)
+            nf.__name__ = new_view.__class__.__name__ + ".after_request"
+            self.after_request(nf)
+
+
+
     def add_child(self, blueprint: 'Blueprint'):
         """
         Add a child Blueprint to the current blueprint.
