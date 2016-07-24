@@ -9,7 +9,7 @@ import weakref
 from kyoukai.route import Route
 
 
-def route(regex, methods: list = None, hard_match: bool = False):
+def route(regex, methods: list = None):
     """
     Create a "bound" route.
 
@@ -18,7 +18,7 @@ def route(regex, methods: list = None, hard_match: bool = False):
     """
     if not methods:
         methods = ["GET"]
-    return Route(None, regex, methods, hard_match=hard_match, bound=True)
+    return Route(None, regex, methods, bound=True)
 
 
 class ViewMeta(type):

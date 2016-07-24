@@ -52,15 +52,23 @@ except ImportError:
 class Kyoukai(object):
     """
     A Kyoukai app.
+
+    This is the core of your web application
+
     """
 
     def __init__(self, name: str, cfg: dict = None):
         """
         Create a new app.
 
-        Parameters:
-            name: str
-                The name of the app.
+        Parameters
+        ----------
+        name : str
+            The name of the app. This is passed into the root blueprint as the name, which shows up in exceptions.
+
+        cfg : Optional[dict]
+            The configuration to load the app with.
+            This is used in :meth:`reconfigure`, which actually uses the configuration values to configure the app.
         """
 
         self.name = name
@@ -77,7 +85,7 @@ class Kyoukai(object):
         }
 
         # Define the "root" blueprint, which is used for @app.request.
-        self._root_bp = Blueprint("root", None)
+        self._root_bp = Blueprint(name, None)
 
         self.debug = False
 
@@ -213,7 +221,7 @@ class Kyoukai(object):
             r = Response(200, response, {})
         return r
 
-    def route(self, regex, methods: list = None, hard_match: bool = False):
+    def route(self, regex, methods: list = None):
         """
         Create an incoming route for a function.
 
@@ -234,7 +242,7 @@ class Kyoukai(object):
                 This prevents index or lower level paths from matching 404s at higher levels.
         """
         # Rewrite it to the _root_bp method.
-        return self._root_bp.route(regex, methods, hard_match)
+        return self._root_bp.route(regex, methods)
 
     def errorhandler(self, code: int):
         """

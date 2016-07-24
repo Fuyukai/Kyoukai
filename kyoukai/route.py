@@ -18,17 +18,13 @@ class Route(object):
     """
 
     def __init__(self, blueprint: 'blueprints.Blueprint',
-                 matcher: str, methods: list, hard_match: bool = False,
+                 matcher: str, methods: list,
                  bound: bool = False):
         """
         Create a new Route.
         """
-        if hard_match:
-            self.matcher = matcher
-        else:
-            self.matcher = re.compile(matcher)
+        self.matcher = re.compile(matcher)
         self.allowed_methods = methods
-        self.hard_match = hard_match
         self._wrapped_coro = None
 
         self.bp = blueprint
@@ -59,10 +55,7 @@ class Route(object):
         Check if a given path matches the specified route.
         """
         # If it's a hard match, do an lower == match
-        if self.hard_match:
-            matched = path.lower() == self.matcher.lower()
-        else:
-            matched = self.matcher.match(path)
+        matched = self.matcher.fullmatch(path)
         return matched
 
     def kyokai_method_allowed(self, meth: str):
@@ -106,11 +99,7 @@ class Route(object):
                     # idc about the subtype, as long as it's a context.
                     raise TypeError("Hook {} returned non-context".format(hook.__name__))
 
-        # Extract match groups.
-        if not self.hard_match:
-            matches = self.matcher.match(ctx.request.path).groups()
-        else:
-            matches = None
+        matches = self.matcher.fullmatch(ctx.request.path).groups()
         # Invoke the coroutine.
         # Construct the params.
         params = []

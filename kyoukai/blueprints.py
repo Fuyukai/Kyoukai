@@ -180,7 +180,7 @@ class Blueprint(object):
             return self._prefix
         return self.parent.prefix + self._prefix
 
-    def route(self, regex, methods: list = None, hard_match: bool = False):
+    def route(self, regex, methods: list = None):
         """
         Create an incoming route for a function.
 
@@ -195,10 +195,6 @@ class Blueprint(object):
                 The list of allowed methods, e.g ["GET", "POST"].
                 You can check the method with `request.method`.
 
-            hard_match:
-                Should we match based on equality, rather than regex?
-
-                This prevents index or lower level paths from matching 404s at higher levels.
         """
         if not methods:
             methods = ["GET"]
@@ -206,7 +202,7 @@ class Blueprint(object):
         if regex == "/":
             hard_match = True
         regex = self.prefix + regex
-        r = Route(self, regex, methods, hard_match)
+        r = Route(self, regex, methods)
         self.routes.append(r)
         return r
 
