@@ -11,14 +11,15 @@ class HTTPException(Exception):
     """
     def __init__(self, errcode, msg=None,
                  route=None):
-        self.errcode = errcode
-        self.msg = msg
+        self.code = errcode
+
+        self.msg = None
 
         self.route = route
 
     def __repr__(self):
         # TODO: Add a lookup.
-        return "HTTP {} {}".format(self.errcode, self.msg)
+        return "HTTP {} {}".format(self.code, self.msg)
 
 
 class HTTPClientException(HTTPException):

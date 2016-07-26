@@ -7,7 +7,7 @@ rootpath = os.path.abspath(os.path.dirname(__file__))
 
 
 # Extract version
-def extract_version(module = 'kyokai'):
+def extract_version(module = 'kyoukai'):
     version = None
     fname = os.path.join(rootpath, module, 'util.py')
     with open(fname) as f:
@@ -31,7 +31,7 @@ if sys.platform != "win32":
     deps.append("python-magic")
 
 setup(
-    name='Kyokai',
+    name='Kyoukai',
     version=extract_version(),
     packages=find_packages(),
     url='https://mirai.veriny.tf',
