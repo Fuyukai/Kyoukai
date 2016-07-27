@@ -140,6 +140,8 @@ class Kyoukai(object):
             bp.parent = self._root_bp
         return bp
 
+    # TODO: Make renderers better
+
     def render(self, filename: str, **kwargs):
         """
         Render a template using the currently loaded rendering engine.
@@ -153,6 +155,27 @@ class Kyoukai(object):
         :return: A :class:`str` containing the rendered information.
         """
         return self._renderer(filename, **kwargs)
+
+    def render_template(self, filename: str, code=200, **kwargs):
+        """
+        Render a template using the currently loaded rendering engine.
+
+        Unlike :meth:`Kyoukai.render`, this returns a :class:`Response` object.
+
+        :param filename: The filename of the template to load and render.
+        :type filename: str
+
+        :param code: The response code to add into the Response.
+
+        :param kwargs: Additional arguments to pass to the template renderer.
+                These are directly passed to :meth:`mako.template.Template.render` to render the template.
+
+        :return: A :class:`Response` object with the rendered template.
+        """
+        data = self.render(filename, **kwargs)
+        # Wrap it in a response.
+        return Response(code, data, headers={"Content-Type": "text/html"})
+
 
     def get_static_path(self, filename: str) -> str:
         """
