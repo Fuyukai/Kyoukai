@@ -4,7 +4,7 @@ Misc utilities.
 import os
 import pathlib
 
-from kyokai.exc import HTTPException
+from kyoukai.exc import HTTPException
 
 VERSION = "1.5.1"
 VERSIONT = tuple(map(int, VERSION.split('.')))
