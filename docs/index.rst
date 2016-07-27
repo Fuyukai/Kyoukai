@@ -41,7 +41,8 @@ Contents:
    :maxdepth: 2
 
    gettingstarted.rst
-
+   asphalt.rst
+   routing.rst
 
 Indices and tables
 ==================

@@ -187,7 +187,7 @@ Running your App
 ----------------
 
 The ideal way of running a Kyoukai project is through the Asphalt
-framework. See `Asphalt usage </examples/asphalt>`__ for more
+framework. See `Asphalt usage`_ for more
 information on how to use the advanced Asphalt components.
 
 However, Kyoukai includes a built-in way of running the app from
