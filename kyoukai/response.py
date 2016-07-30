@@ -16,6 +16,7 @@ except ImportError:
     warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
 
 from . import util
+
 try:
     import magic
 except (ImportError, OSError):
@@ -99,14 +100,13 @@ class Response(object):
 
         :return: The encoded data for the response.
         """
-        self._recalculate_headers()
-
         if self.gzip:
             self.body = gzip.compress(self.body.encode(), 5)
-            # Re-calculate content-length.
-            self.headers["Content-Length"] = len(self.body)
         else:
             self.body = self.body.encode()
+
+        # Re-calculate headers to update everything as appropriate.
+        self._recalculate_headers()
 
         fmt = "HTTP/1.1 {code} {msg}\r\n{headers}{cookies}\r\n"
         headers_fmt = ""
