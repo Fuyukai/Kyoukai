@@ -3,6 +3,7 @@ Module for a Response object.
 
 A Response is returned by Routes when the underlying coroutine is done.
 """
+import gzip
 import warnings
 
 import sys
@@ -44,6 +45,19 @@ class Response(object):
         self.body = str(body)
         self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
+        self._should_gzip = False
+
+    @property
+    def gzip(self):
+        """
+        :return: If the request is to be gzip compressed.
+        """
+        return self._should_gzip
+
+    @gzip.setter
+    def gzip(self, value):
+        self._should_gzip = value
+
     def _mimetype(self, body):
         """
         Calculates the mime type of the response, using libmagic.
@@ -68,6 +82,11 @@ class Response(object):
         self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
+
+        # If it's gzip enabled, add the gzip header.
+        if self._should_gzip:
+            self.headers["Content-Encoding"] = "gzip"
+
         # Set cookies.
         self.headers["Date"] = formatdate()
         self.headers["Server"] = "Kyoukai/{} (see https://github.com/SunDwarf/Kyoukai)".format(util.VERSION)
@@ -81,15 +100,29 @@ class Response(object):
         :return: The encoded data for the response.
         """
         self._recalculate_headers()
-        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}{cookies}\r\n{body}\r\n"
+
+        if self.gzip:
+            self.body = gzip.compress(self.body.encode(), 5)
+            # Re-calculate content-length.
+            self.headers["Content-Length"] = len(self.body)
+        else:
+            self.body = self.body.encode()
+
+        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}{cookies}\r\n"
         headers_fmt = ""
         # Calculate headers
         for name, val in self.headers.items():
             headers_fmt += "{}: {}\r\n".format(name, val)
         built = fmt.format(code=self.code, msg=util.HTTP_CODES.get(self.code, "Unknown"), headers=headers_fmt,
-                           body=self.body, cookies=(self.cookies.output() + "\r\n") if len(self.cookies) else "")
+                           cookies=(self.cookies.output() + "\r\n") if len(self.cookies) else "")
 
-        return built.encode()
+        # Encode the built string so far.
+        built = built.encode()
+
+        # Append the body, plus the terminator.
+        built += self.body + b"\r\n"
+
+        return built
 
     @classmethod
     def redirect(cls, location, code=302):

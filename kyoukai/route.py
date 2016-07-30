@@ -93,6 +93,15 @@ class Route(object):
         """
         Invoke the route, calling the underlying coroutine.
         """
+        # Intercept the request data; check ctx.request
+        if not ctx.request:
+            can_gzip = False
+        else:
+            content_encoding = ctx.request.headers.get("Accept-Encoding", "")
+            if 'gzip' in content_encoding:
+                can_gzip = True
+            else:
+                can_gzip = False
         # Run pre-request hooks.
         hooks = self.bp.get_pre_hooks(ctx)
         if hooks:
@@ -126,6 +135,11 @@ class Route(object):
                 if not isinstance(result, kyoukai.Response):
                     raise TypeError("Hook {} returned non-response".format(hook.__name__))
                 result = wrap_response(result)
+
+        if result.gzip:
+            if not can_gzip:
+                # Forcibly set gzip off, the client doesn't want it.
+                result.gzip = False
 
         return result
 
