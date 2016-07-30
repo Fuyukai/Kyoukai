@@ -1,6 +1,3 @@
-"""
-This class handles the protocol side of Kyoukai.
-"""
 import asyncio
 import logging
 
@@ -32,7 +29,7 @@ class KyokaiProtocol(asyncio.Protocol):
 
     def connection_made(self, transport: asyncio.Transport):
         """
-        Set the appropriate self vals.
+        Called when a connection is made, and is used to store the connection data.
         """
         self.ip, self.client_port = transport.get_extra_info("peername")
         self._transport = transport
@@ -43,7 +40,7 @@ class KyokaiProtocol(asyncio.Protocol):
         """
         Handle a response.
 
-        Sends the Response to the client.
+        :param res: The response to write into the transport.
         """
         data = res.to_bytes()
         self._transport.write(data)

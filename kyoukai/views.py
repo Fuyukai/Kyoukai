@@ -15,6 +15,8 @@ def route(regex, methods: list = None):
 
     This should then be updated by ViewMeta with the correct self param, and added to the blueprint with the
     Blueprint.bind_view() method.
+
+    This route is meant to be placed in a class that inherits from :class:`View`.
     """
     if not methods:
         methods = ["GET"]
@@ -24,6 +26,8 @@ def route(regex, methods: list = None):
 class ViewMeta(type):
     """
     Defines a way to automatically update routes.
+
+    Internal metaclass.
     """
     __registry = {}
 

@@ -23,9 +23,22 @@ class Request(object):
 
     This should not be manually created. Instead, it is automatically provided by Kyokai.
 
-    Attributes:
-        method: str
-            The method of the request.
+    If you must create one, use :meth:`from_data` or :meth:`parse`.
+
+    :ivar method: The HTTP method (GET, POST, PUT, etc)
+    :ivar path: The full path of the request (``/api/v1/whatever``)
+    :ivar headers: A :class:`IOrderedDict` representing the headers of the request.
+    :ivar query: The raw query string (``a=b&c=d``)
+    :ivar body: The raw body of the request.
+
+    :ivar cookies: A :class:`cookies.SimpleCookie` containing the cookies of the request.
+    :ivar raw_data: The raw data of the request.
+
+    :ivar args: The arguments from the query string, parsed out.
+    :ivar form: The form data for the request. If the request was JSON, this is automatically parsed out.
+    :ivar values: THe arguments and the form combined.
+
+    :ivar source: The source IP of the request.
     """
 
     __slots__ = ["_parser", "method", "path", "headers", "query", "body", "raw_data", "source", "args",
@@ -86,6 +99,9 @@ class Request(object):
     def parse(self, data: bytes, source: str):
         """
         Parse the request.
+
+        :param data: The HTTP request's raw data.
+        :param source: The source address of the
         """
         parser = HttpParser()
         data_len = len(data)

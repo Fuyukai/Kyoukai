@@ -301,7 +301,7 @@ class Kyoukai(object):
             resp = Response(code, body, {"Content-Type": "text/plain"})
         else:
             # Invoke the error handler specified.
-            resp = wrap_response(await error_handler.invoke(self, ctx))
+            resp = wrap_response(await error_handler.invoke(ctx))
         protocol.handle_resp(resp)
 
         # Check if we should close the connection.
@@ -351,7 +351,7 @@ class Kyoukai(object):
                 # This is because routes are responsible for pre-route and post-route hooks, calling them in the
                 # blueprint as appropriate.
                 # So we just pass ourselves to the route and hope it invokes properly.
-                response = await route.invoke(self, ctx)
+                response = await route.invoke(ctx)
             except HTTPException as e:
                 # Handle a HTTPException normally.
                 self.log_request(ctx, e.code)
@@ -395,7 +395,7 @@ class Kyoukai(object):
         :param ip: The IP address to bind to.
         :param port: The port to bind to.
         :param component: The component to set on the application.
-            If
+            If this is not passed in, it will create an empty one.
         """
         self.logger.warning("Kyoukai is bypassing Asphalt - contexts will not work.")
         ctx = Context()

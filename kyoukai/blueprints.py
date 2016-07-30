@@ -19,6 +19,15 @@ class Blueprint(object):
 
     Note that if a Blueprint that is not the root blueprint has a parent value of None, it is automatically set to
     inherit the root blueprint of the app.
+
+    :param name: The name identifier of the blueprint.
+    :param parent: The parent blueprint.
+        Children blueprint inherit routes from the parent, accessible via ``Parent.routes``.
+        They are also used for searching in routes when a blueprint is checked.
+
+        If this is None, then it will be automatically set when
+
+    :param url_prefix: The prefix to automatically add to the start of each route.
     """
 
     def __init__(self, name: str, parent: 'Blueprint' = None,
@@ -41,14 +50,16 @@ class Blueprint(object):
 
         self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
 
-    def bind_view(self, view: View):
+    def bind_view(self, view: View, *args, **kwargs):
         """
         Binds a view class to a Blueprint.
 
         This takes the *class*, not the instance, as a param.
+
+        It also takes args and keyword args to instantiate the class with.
         """
         # Create a new instance of the class.
-        new_view = view()
+        new_view = view(*args, **kwargs)
         # Don't bind if it's already binded.
         if new_view._binded:
             return
@@ -81,8 +92,14 @@ class Blueprint(object):
     def add_child(self, blueprint: 'Blueprint'):
         """
         Add a child Blueprint to the current blueprint.
+
+        .. note:
+            This will override the parent of the blueprint, replacing it with this one.
+
+        :param blueprint: The child blueprint.
         """
         self._children[blueprint._name] = blueprint
+        blueprint.parent = self
 
     def before_request(self, coro):
         """
@@ -99,7 +116,7 @@ class Blueprint(object):
         """
         Set a coroutine to run after the request.
 
-        Unlike the before counterpart, this should take in the ctx and a response, and produce a Response.
+        This coroutine should take in a :class:`Response`, and return a :class:`Response`.
         """
         self._request_hooks["post"][coro.__name__] = coro
 
@@ -108,6 +125,8 @@ class Blueprint(object):
         Get the pre-request hooks in a list.
 
         This goes from top-level blueprint to bottom-level blueprint in terms of order.
+
+        :param ctx: The context of the request.
         """
         if self.parent is not None:
             bps = self.parent.get_pre_hooks(ctx)
@@ -122,6 +141,8 @@ class Blueprint(object):
         Get the post-request hooks in a list.
 
         This goes from top-level blueprint to bottom-level blueprint in terms of order.
+
+        :param ctx: The context of the request.
         """
         if self.parent is not None:
             bps = self.parent.get_post_hooks(ctx)
@@ -137,6 +158,12 @@ class Blueprint(object):
 
         This will search down our routes, and then down our children's routes, to see if we can find a match for the
         specified route.
+
+        :param route: The route to match, e.g ``/abc/def``.
+        :param method: The method of the route.
+
+        :raises: A :class:`kyoukai.exc.HTTPException` with code 415 if the method is not valid.
+        :returns: The :class:`Route` if the route was matched, or None.
         """
         for route_obb in self.routes:
             assert isinstance(route_obb, Route)
@@ -153,7 +180,7 @@ class Blueprint(object):
     @property
     def parent(self) -> 'Blueprint':
         """
-        Returns the parent Blueprint of the currentl Blueprint.
+        :returns: The parent of this blueprint.
         """
         return self._parent
 
@@ -167,7 +194,7 @@ class Blueprint(object):
     @property
     def children(self):
         """
-        Gets the children blueprint of this one.
+        :returns: A :class:`list` of the children of this blueprint.
         """
         return self._children
 
@@ -184,17 +211,11 @@ class Blueprint(object):
         """
         Create an incoming route for a function.
 
-        Parameters:
-            regex:
-                The regular expression to match the path to.
-                In standard Python `re` forme.
-
+        :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
                 Group matches are automatically extracted from the regex, and passed as arguments.
 
-            methods:
-                The list of allowed methods, e.g ["GET", "POST"].
+        :param methods: The list of allowed methods, e.g ["GET", "POST"].
                 You can check the method with `request.method`.
-
         """
         if not methods:
             methods = ["GET"]

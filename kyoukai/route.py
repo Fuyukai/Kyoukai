@@ -8,13 +8,17 @@ from asphalt.core import Context
 import kyoukai
 from kyoukai.context import HTTPRequestContext
 from kyoukai.exc import HTTPClientException, HTTPException
+from kyoukai.util import wrap_response
 
 
 class Route(object):
     """
     A route is simply a wrapped coroutine object for a request.
 
-    It takes in a regular expression as a matcher, for the path, and a list of accepted methods.
+    :param blueprint: The blueprint this route is associated with.
+    :param matcher: The regular expression to match routes against.
+    :param methods: A :class:`list` of methods that are allowed in this route.
+    :param bound: Internal 
     """
 
     def __init__(self, blueprint: 'blueprints.Blueprint',
@@ -85,7 +89,7 @@ class Route(object):
         """
         return self.create(coro)
 
-    async def invoke(self, app, ctx: HTTPRequestContext):
+    async def invoke(self, ctx: HTTPRequestContext):
         """
         Invoke the route, calling the underlying coroutine.
         """
@@ -113,7 +117,7 @@ class Route(object):
 
         result = await self._wrapped_coro(*params)
         # Wrap the result.
-        result = app._wrap_response(result)
+        result = wrap_response(result)
 
         hooks = self.bp.get_post_hooks(ctx)
         if hooks:
@@ -121,7 +125,7 @@ class Route(object):
                 result = await hook(ctx, result)
                 if not isinstance(result, kyoukai.Response):
                     raise TypeError("Hook {} returned non-response".format(hook.__name__))
-                result = app._wrap_response(result)
+                result = wrap_response(result)
 
         return result
 
