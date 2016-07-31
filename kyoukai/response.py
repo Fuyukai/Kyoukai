@@ -54,6 +54,7 @@ class Response(object):
         self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
         self._should_gzip = False
+        self._is_head = False
 
         self.request = None
 
@@ -89,7 +90,8 @@ class Response(object):
 
         This is an **internal method**.
         """
-        self.headers["Content-Length"] = len(self.body)
+        if not self._is_head:
+            self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
 
@@ -109,6 +111,10 @@ class Response(object):
 
         :return: The encoded data for the response.
         """
+        if self.request:
+            if self.request.method.lower() == "head":
+                self._is_head = True
+
         # Check the Request's headers.
         if self.request is None:
             self.gzip = False
