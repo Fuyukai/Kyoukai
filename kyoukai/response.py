@@ -75,7 +75,7 @@ class Response(object):
         This is an **internal method**.
         """
         if _has_magic:
-            mime = magic.from_buffer(body)
+            mime = magic.from_buffer(body, mime=True)
             if mime:
                 return mime.decode() if isinstance(mime, bytes) else mime
             else:
@@ -119,6 +119,7 @@ class Response(object):
             self.body = self.body.encode()
 
         if self.gzip:
+            self.headers["Content-Type"] = self._mimetype(self.body)
             self.body = gzip.compress(self.body, 5)
 
         # Re-calculate headers to update everything as appropriate.
