@@ -45,14 +45,17 @@ def static_filename(filename: str) -> str:
     return built[:-1]
 
 
-def wrap_response(response):
+def wrap_response(response, response_cls=None):
     """
     Wrap up a response, if applicable.
 
     This allows Flask-like `return ""`.
     """
     # Import inside here to prevent circular imports.
-    from kyoukai.response import Response
+    if response_cls is None:
+        from kyoukai.response import Response
+    else:
+        Response = response_cls
 
     if response is None:
         r = Response(204, "", {})

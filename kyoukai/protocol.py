@@ -27,6 +27,11 @@ class KyokaiProtocol(asyncio.Protocol):
 
         self.buffer = b""
 
+        # Request lock.
+        # This ensures that requests are processed serially, and responded to in the correct order, as the lock is
+        # released after processing a request completely.
+        self.lock = asyncio.Lock()
+
     def connection_made(self, transport: asyncio.Transport):
         """
         Called when a connection is made, and is used to store the connection data.

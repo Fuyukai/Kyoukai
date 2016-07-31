@@ -176,7 +176,6 @@ class Kyoukai(object):
         # Wrap it in a response.
         return Response(code, data, headers={"Content-Type": "text/html"})
 
-
     def get_static_path(self, filename: str) -> str:
         """
         Gets a sanitized static path.
@@ -323,70 +322,72 @@ class Kyoukai(object):
         This is an **internal** method, and should not be used outside of the protocol, or for testing.
         """
         async with ctx:
-            # First, try and match the route.
-            try:
-                route = self._match_route(ctx.request.path, ctx.request.method)
-            except HTTPException as e:
-                # We matched it; but the route doesn't work for this method.
-                # So we catch the 405 error,
-                if e.code == 405:
-                    self.log_request(ctx, code=e.code)
+            # Acquire the lock on the protocol.
+            async with protocol.lock:
+                # First, try and match the route.
+                try:
+                    route = self._match_route(ctx.request.path, ctx.request.method)
+                except HTTPException as e:
+                    # We matched it; but the route doesn't work for this method.
+                    # So we catch the 405 error,
+                    if e.code == 405:
+                        self.log_request(ctx, code=e.code)
+                        await self.handle_http_error(e, protocol, ctx)
+                        return
+                    else:
+                        self.logger.error("??????? Something went terribly wrong.")
+                        return
+
+                # If the route did not match, return a 404.
+                if not route:
+                    fof = HTTPException(404)
+                    self.log_request(ctx, code=404)
+                    await self.handle_http_error(fof, protocol, ctx)
+                    return
+
+                # Try and invoke the Route.
+                try:
+                    # Note that this will already be a Response.
+                    # The route should call `app._wrap_response` when handling the response.
+                    # This is because routes are responsible for pre-route and post-route hooks, calling them in the
+                    # blueprint as appropriate.
+                    # So we just pass ourselves to the route and hope it invokes properly.
+                    response = await route.invoke(ctx)
+                except HTTPException as e:
+                    # Handle a HTTPException normally.
+                    self.log_request(ctx, e.code)
+                    # Set the route of the exception.
+                    e.route = route
                     await self.handle_http_error(e, protocol, ctx)
                     return
-                else:
-                    self.logger.error("??????? Something went terribly wrong.")
+                except Exception as e:
+                    # An uncaught exception has propogated down to our level - oh dear.
+                    # Catch it, turn it into a 500, and return.
+                    self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
+                    exc = HTTPException(500)
+                    # Set the route of the exception.
+                    exc.route = route
+                    self.log_request(ctx, 500)
+                    await self.handle_http_error(exc, protocol, ctx)
                     return
+                else:
+                    # If there is no
+                    self.log_request(ctx, response.code)
 
-            # If the route did not match, return a 404.
-            if not route:
-                fof = HTTPException(404)
-                self.log_request(ctx, code=404)
-                await self.handle_http_error(fof, protocol, ctx)
-                return
+                # Respond with the response.
+                protocol.handle_resp(response)
 
-            # Try and invoke the Route.
-            try:
-                # Note that this will already be a Response.
-                # The route should call `app._wrap_response` when handling the response.
-                # This is because routes are responsible for pre-route and post-route hooks, calling them in the
-                # blueprint as appropriate.
-                # So we just pass ourselves to the route and hope it invokes properly.
-                response = await route.invoke(ctx)
-            except HTTPException as e:
-                # Handle a HTTPException normally.
-                self.log_request(ctx, e.code)
-                # Set the route of the exception.
-                e.route = route
-                await self.handle_http_error(e, protocol, ctx)
-                return
-            except Exception as e:
-                # An uncaught exception has propogated down to our level - oh dear.
-                # Catch it, turn it into a 500, and return.
-                self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
-                exc = HTTPException(500)
-                # Set the route of the exception.
-                exc.route = route
-                self.log_request(ctx, 500)
-                await self.handle_http_error(exc, protocol, ctx)
-                return
-            else:
-                # If there is no
-                self.log_request(ctx, response.code)
-
-            # Respond with the response.
-            protocol.handle_resp(response)
-
-            # Copy/pasted, but it doesn't really matter.
-            # Check if we should close the conn.
-            if hasattr(ctx.request, "headers"):
-                # The hasattr check is required because in a 400, the request is bad and doesn't have headers.
-                if ctx.request.headers.get("connection") != "keep-alive":
+                # Copy/pasted, but it doesn't really matter.
+                # Check if we should close the conn.
+                if hasattr(ctx.request, "headers"):
+                    # The hasattr check is required because in a 400, the request is bad and doesn't have headers.
+                    if ctx.request.headers.get("connection") != "keep-alive":
+                        protocol.close()
+                else:
+                    # If it's that bad, just close it anyway.
                     protocol.close()
-            else:
-                # If it's that bad, just close it anyway.
-                protocol.close()
 
-    async def start(self, ip = "0.0.0.0", port = 4444, component = None):
+    async def start(self, ip="0.0.0.0", port=4444, component=None):
         """
         Run the Kyoukai component asynchronously.
 
@@ -404,7 +405,7 @@ class Kyoukai(object):
             self.component = KyoukaiComponent(self, ip, port)
         await self.component.start(ctx)
 
-    def run(self, ip = "0.0.0.0", port = 4444, component = None):
+    def run(self, ip="0.0.0.0", port=4444, component=None):
         """
         Runs the Kyoukai server from within your code.
 
