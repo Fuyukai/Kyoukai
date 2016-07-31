@@ -35,6 +35,13 @@ class Response(object):
     A response is responsible (no pun intended) for delivering data to the client, again.
 
     The method :meth:`to_bytes` transforms this into a bytes response.
+
+    :ivar code: The response code.
+    :ivar cookies: The cookies to send down with the response.
+    :ivar body: The string or bytes body of the request.
+    :ivar headers: A dict of headers for the response.
+    :ivar request: The request object this Response is handling.
+            This is automatically set inside Kyoukai.
     """
 
     def __init__(self, code: int, body: str, headers: dict = None):
@@ -47,6 +54,8 @@ class Response(object):
         self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
         self._should_gzip = False
+
+        self.request = None
 
     @property
     def gzip(self):
@@ -100,10 +109,17 @@ class Response(object):
 
         :return: The encoded data for the response.
         """
-        if self.gzip:
-            self.body = gzip.compress(self.body.encode(), 5)
+        # Check the Request's headers.
+        if self.request is None:
+            self.gzip = False
         else:
+            self.gzip = 'gzip' in self.request.headers.get("Accept-Encoding", "")
+
+        if isinstance(self.body, str):
             self.body = self.body.encode()
+
+        if self.gzip:
+            self.body = gzip.compress(self.body, 5)
 
         # Re-calculate headers to update everything as appropriate.
         self._recalculate_headers()
