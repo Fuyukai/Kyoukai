@@ -115,14 +115,11 @@ class Response(object):
             if self.request.method.lower() == "head":
                 self._is_head = True
             version = ".".join(map(str, self.request.version))
+
+            self.gzip = 'gzip' in self.request.headers.get("Accept-Encoding", "")
         else:
             version = "1.0"
-
-        # Check the Request's headers.
-        if self.request is None:
             self.gzip = False
-        else:
-            self.gzip = 'gzip' in self.request.headers.get("Accept-Encoding", "")
 
         if isinstance(self.body, str):
             self.body = self.body.encode()
@@ -147,7 +144,7 @@ class Response(object):
         built = built.encode()
 
         # Append the body, plus the terminator.
-        built += self.body + b"\r\n"
+        built += self.body + b"\r\n\r\n"
 
         return built
 
