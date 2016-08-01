@@ -116,7 +116,7 @@ class Response(object):
                 self._is_head = True
             version = ".".join(map(str, self.request.version))
 
-            self.gzip = 'gzip' in self.request.headers.get("Accept-Encoding", "")
+            self.gzip = self.gzip and 'gzip' in self.request.headers.get("Accept-Encoding", "")
         else:
             version = "1.0"
             self.gzip = False
