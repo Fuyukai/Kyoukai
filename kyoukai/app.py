@@ -304,9 +304,8 @@ class Kyoukai(object):
         protocol.handle_resp(resp)
 
         # Check if we should close the connection.
-        if hasattr(ctx.request, "headers"):
-            # The hasattr check is required because in a 400, the request is bad and doesn't have headers.
-            if ctx.request.headers.get("connection") != "keep-alive":
+        if hasattr(ctx.request, "should_keep_alive"):
+            if not ctx.request.should_keep_alive:
                 protocol.close()
         else:
             # If it's that bad, just close it anyway.
@@ -324,6 +323,14 @@ class Kyoukai(object):
         async with ctx:
             # Acquire the lock on the protocol.
             async with protocol.lock:
+                # Check if there's a host header.
+                if ctx.request.version == (1, 1):
+                    host = ctx.request.headers.get("host", None)
+                    if not host:
+                        exc = HTTPException(400)
+                        self.log_request(ctx, code=400)
+                        await self.handle_http_error(exc, protocol, ctx)
+                        return
                 # First, try and match the route.
                 try:
                     route = self._match_route(ctx.request.path, ctx.request.method)
@@ -377,14 +384,8 @@ class Kyoukai(object):
                 # Respond with the response.
                 protocol.handle_resp(response)
 
-                # Copy/pasted, but it doesn't really matter.
-                # Check if we should close the conn.
-                if hasattr(ctx.request, "headers"):
-                    # The hasattr check is required because in a 400, the request is bad and doesn't have headers.
-                    if ctx.request.headers.get("connection") != "keep-alive":
-                        protocol.close()
-                else:
-                    # If it's that bad, just close it anyway.
+                # Check if we should Keep-Alive it.
+                if not ctx.request.should_keep_alive:
                     protocol.close()
 
     async def start(self, ip="0.0.0.0", port=4444, component=None):

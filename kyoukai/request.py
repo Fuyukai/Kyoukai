@@ -41,14 +41,12 @@ class Request(object):
     :ivar source: The source IP of the request.
     """
 
-    __slots__ = ["_parser", "method", "path", "headers", "query", "body", "raw_data", "source", "args",
-                 "form", "values", "cookies", "extra", "json"]
-
     def _parse(self, parser: HttpParser):
         """
         Parse the data.
         """
         self._parser = parser
+        self.version = parser.get_version()
         self.method = parser.get_method()
         self.path = uparse.unquote(parser.get_path())
         self.headers = parser.get_headers()
@@ -92,8 +90,14 @@ class Request(object):
         self.values = IOrderedDict(self.args)
         self.values.update(self.form if self.form else {})
 
+        self.should_keep_alive = parser.should_keep_alive()
+
+        self.version = parser.get_version()
+
     @property
     def fully_parsed(self):
+        if not hasattr(self, "_parser"):
+            return False
         return self._parser.is_message_complete()
 
     def parse(self, data: bytes, source: str):

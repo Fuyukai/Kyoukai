@@ -111,9 +111,12 @@ class Response(object):
 
         :return: The encoded data for the response.
         """
-        if self.request:
+        if self.request.fully_parsed:
             if self.request.method.lower() == "head":
                 self._is_head = True
+            version = ".".join(map(str, self.request.version))
+        else:
+            version = "1.0"
 
         # Check the Request's headers.
         if self.request is None:
@@ -131,13 +134,14 @@ class Response(object):
         # Re-calculate headers to update everything as appropriate.
         self._recalculate_headers()
 
-        fmt = "HTTP/1.1 {code} {msg}\r\n{headers}{cookies}\r\n"
+        fmt = "HTTP/{version} {code} {msg}\r\n{headers}{cookies}\r\n"
         headers_fmt = ""
         # Calculate headers
         for name, val in self.headers.items():
             headers_fmt += "{}: {}\r\n".format(name, val)
         built = fmt.format(code=self.code, msg=util.HTTP_CODES.get(self.code, "Unknown"), headers=headers_fmt,
-                           cookies=(self.cookies.output() + "\r\n") if len(self.cookies) else "")
+                           cookies=(self.cookies.output() + "\r\n") if len(self.cookies) else "",
+                           version=version)
 
         # Encode the built string so far.
         built = built.encode()

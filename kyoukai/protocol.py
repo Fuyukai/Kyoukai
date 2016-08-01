@@ -83,4 +83,8 @@ class KyokaiProtocol(asyncio.Protocol):
                 return
 
     def close(self):
+        # Close the protocol and empty the locks.
+        for waiter in self.lock._waiters:
+            self.logger.warn("Cancelling waiter {} for {}...".format(waiter, self.lock))
+            waiter.cancel()
         self._transport.close()
