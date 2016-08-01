@@ -93,6 +93,7 @@ class Request(object):
         self.should_keep_alive = parser.should_keep_alive()
 
         self.version = parser.get_version()
+        self.sversion = '.'.join(map(str, self.version))
 
     @property
     def fully_parsed(self):
