@@ -50,7 +50,7 @@ class Response(object):
         """
         self.code = code
         self.cookies = SimpleCookie()
-        self.body = str(body)
+        self.body = body
         self.headers = IOrderedDict(headers) if headers else IOrderedDict()
 
         self._should_gzip = False
@@ -123,6 +123,10 @@ class Response(object):
 
         if isinstance(self.body, str):
             self.body = self.body.encode()
+        elif isinstance(self.body, bytes):
+            pass
+        else:
+            self.body = str(self.body).encode()
 
         if self.gzip:
             self.headers["Content-Type"] = self._mimetype(self.body)
