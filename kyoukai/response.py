@@ -111,7 +111,7 @@ class Response(object):
 
         :return: The encoded data for the response.
         """
-        if self.request.fully_parsed:
+        if self.request and self.request.fully_parsed:
             if self.request.method.lower() == "head":
                 self._is_head = True
             version = ".".join(map(str, self.request.version))
