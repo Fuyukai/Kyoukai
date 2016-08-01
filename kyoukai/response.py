@@ -129,7 +129,8 @@ class Response(object):
             self.body = str(self.body).encode()
 
         if self.gzip:
-            self.headers["Content-Type"] = self._mimetype(self.body)
+            if 'Content-Type' not in self.headers:
+                self.headers["Content-Type"] = self._mimetype(self.body)
             self.body = gzip.compress(self.body, 5)
 
         # Re-calculate headers to update everything as appropriate.
