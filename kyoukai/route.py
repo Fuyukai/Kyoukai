@@ -105,7 +105,12 @@ class Route(object):
                     # idc about the subtype, as long as it's a context.
                     raise TypeError("Hook {} returned non-context".format(hook.__name__))
 
-        matches = self.matcher.fullmatch(ctx.request.path).groups()
+        m_obj = self.matcher.fullmatch(ctx.request.path)
+        if m_obj:
+            matches = m_obj.groups()
+        else:
+            matches = []
+
         # Invoke the coroutine.
         # Construct the params.
         params = []
