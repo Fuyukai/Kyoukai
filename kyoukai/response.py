@@ -103,8 +103,7 @@ class Response(object):
         # Set cookies.
         self.headers["Date"] = formatdate()
         self.headers["Server"] = "Kyoukai/{} (see https://github.com/SunDwarf/Kyoukai)".format(util.VERSION)
-        self.headers["X-Powered-By"] = "Kyoukai/{} on Python {}".format(util.VERSION,
-                                                                        '.'.join(map(str, sys.version_info[0:2])))
+        self.headers["X-Powered-By"] = "Kyoukai"
 
     def to_bytes(self):
         """
