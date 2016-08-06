@@ -91,7 +91,8 @@ class Response(object):
         This is an **internal method**.
         """
         if not self._is_head:
-            self.headers["Content-Length"] = len(self.body)
+            # The +2 is for the \r\n at the end.
+            self.headers["Content-Length"] = len(self.body) + 2
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
 
