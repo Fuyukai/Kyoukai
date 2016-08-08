@@ -164,10 +164,10 @@ class Response(object):
         """
         # https://github.com/pallets/werkzeug/blob/master/werkzeug/utils.py#L373
         # response body used from Werkzeug
-        location = uparse.quote(location)
+        #location = uparse.quote(location)
 
         res = cls(
-            code=302,
+            code=code,
             body=
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
             '<title>Redirecting...</title>\n'
