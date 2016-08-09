@@ -27,6 +27,7 @@ class Route(object):
         """
         Create a new Route.
         """
+        self._match_str = matcher
         self.matcher = re.compile(matcher)
         self.allowed_methods = methods
         self._wrapped_coro = None

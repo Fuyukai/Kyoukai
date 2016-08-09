@@ -6,6 +6,8 @@ the time.
 """
 import collections
 
+import re
+
 from kyoukai.route import Route
 from kyoukai.views import View
 
@@ -65,6 +67,7 @@ class Blueprint(object):
             return
         for route in view.get_routes():
             route.bp = self
+            route.matcher = re.compile(self.prefix + route._match_str)
             self.routes.append(route)
 
         # Add before_request and after_request from the new_view.
