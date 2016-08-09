@@ -18,12 +18,14 @@ class Route(object):
     :param blueprint: The blueprint this route is associated with.
     :param matcher: The regular expression to match routes against.
     :param methods: A :class:`list` of methods that are allowed in this route.
-    :param bound: Internal 
+    :param bound: Internal. Used for views.
+    :param run_hooks: If the request should run pre and post hooks, or be exempt.
     """
 
     def __init__(self, blueprint: 'blueprints.Blueprint',
                  matcher: str, methods: list,
-                 bound: bool = False):
+                 bound: bool = False,
+                 run_hooks: bool=True):
         """
         Create a new Route.
         """
@@ -40,6 +42,8 @@ class Route(object):
         self._view_class = None
 
         self.name = "<Undefined route>"
+
+        self._should_run_hooks = run_hooks
 
     @property
     def self(self):
@@ -96,15 +100,16 @@ class Route(object):
         """
         Invoke the route, calling the underlying coroutine.
         """
-        # Run pre-request hooks.
-        hooks = self.bp.get_pre_hooks(ctx)
-        if hooks:
-            for hook in hooks:
-                # Await the hook.
-                ctx = await hook(ctx)
-                if not isinstance(ctx, Context):
-                    # idc about the subtype, as long as it's a context.
-                    raise TypeError("Hook {} returned non-context".format(hook.__name__))
+        if self._should_run_hooks:
+            # Run pre-request hooks.
+            hooks = self.bp.get_pre_hooks(ctx)
+            if hooks:
+                for hook in hooks:
+                    # Await the hook.
+                    ctx = await hook(ctx)
+                    if not isinstance(ctx, Context):
+                        # idc about the subtype, as long as it's a context.
+                        raise TypeError("Hook {} returned non-context".format(hook.__name__))
 
         m_obj = self.matcher.fullmatch(ctx.request.path)
         if m_obj:
@@ -127,13 +132,14 @@ class Route(object):
         # Wrap the result.
         result = wrap_response(result)
 
-        hooks = self.bp.get_post_hooks(ctx)
-        if hooks:
-            for hook in hooks:
-                result = await hook(ctx, result)
-                if not isinstance(result, kyoukai.Response):
-                    raise TypeError("Hook {} returned non-response".format(hook.__name__))
-                result = wrap_response(result)
+        if self._should_run_hooks:
+            hooks = self.bp.get_post_hooks(ctx)
+            if hooks:
+                for hook in hooks:
+                    result = await hook(ctx, result)
+                    if not isinstance(result, kyoukai.Response):
+                        raise TypeError("Hook {} returned non-response".format(hook.__name__))
+                    result = wrap_response(result)
 
         # Set the request object.
         result.request = ctx.request

@@ -210,7 +210,7 @@ class Blueprint(object):
             return self._prefix
         return self.parent.prefix + self._prefix
 
-    def route(self, regex, methods: list = None):
+    def route(self, regex, *, methods: list = None, run_hooks=True):
         """
         Create an incoming route for a function.
 
@@ -222,11 +222,8 @@ class Blueprint(object):
         """
         if not methods:
             methods = ["GET"]
-        # Override hard match if it's a `/` route.
-        if regex == "/":
-            hard_match = True
         regex = self.prefix + regex
-        r = Route(self, regex, methods)
+        r = Route(self, regex, methods, run_hooks=run_hooks)
         self.routes.append(r)
         return r
 
@@ -245,12 +242,12 @@ class Blueprint(object):
 
         return self.parent.get_errorhandler(code)
 
-    def errorhandler(self, code: int):
+    def errorhandler(self, code: int, run_hooks=False):
         """
         Create an error handler for the specified code.
 
         This will wrap the function in a Route.
         """
-        r = Route(self, "", [])
+        r = Route(self, "", [], run_hooks=run_hooks)
         self.errhandlers[code] = r
         return r
