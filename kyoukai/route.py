@@ -148,12 +148,10 @@ class Route(object):
 
     def match(self, route: str, method: str):
         """
-        Short way of checkinf if the route matches.
+        Short way of checking if the route matches.
+
+        This does *not* check if the method matches.
         """
         matched = self.kyokai_match(route)
         if matched:
-            if not self.kyokai_method_allowed(method):
-                # Raise a HTTPException.
-                raise HTTPException(405, route=self)
-
-        return self.kyokai_match(route)
+            return self

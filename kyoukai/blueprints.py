@@ -8,6 +8,7 @@ import collections
 
 import re
 
+from kyoukai.exc import HTTPException
 from kyoukai.route import Route
 from kyoukai.views import View
 
@@ -168,17 +169,31 @@ class Blueprint(object):
         :raises: A :class:`kyoukai.exc.HTTPException` with code 415 if the method is not valid.
         :returns: The :class:`Route` if the route was matched, or None.
         """
+        matches = []
         for route_obb in self.routes:
             assert isinstance(route_obb, Route)
             matched = route_obb.match(route, method)
             if matched:
-                return route_obb
+                matches.append(matched)
 
         # Search through the children
         for child in self.children.values():
             matched = child.match(route, method)
             if matched:
-                return matched
+                matches.append(matched)
+
+        if not matches:
+            return None
+        else:
+            # Loop through each route, and check the method.
+            # If no method matches, then raise the HTTPException. Otherwise, return the route.
+            # This allows for multiple routes with the same method.
+            for route in matches:
+                if route.kyokai_method_allowed(method):
+                    return route
+            else:
+                # This is called when no return successfully hit.
+                raise HTTPException(405)
 
     @property
     def parent(self) -> 'Blueprint':

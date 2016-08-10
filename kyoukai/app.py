@@ -233,7 +233,7 @@ class Kyoukai(object):
 
     def route(self, regex, methods: list = None):
         # Rewrite it to the _root_bp method.
-        return self._root_bp.route(regex, methods)
+        return self._root_bp.route(regex, methods=methods)
 
     route.__doc__ = Blueprint.route.__doc__
 
