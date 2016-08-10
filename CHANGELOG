@@ -1,3 +1,8 @@
+1.5.5 -
+	- Several bugfixes to the underlying HTTP server.
+	- Feature: The ability to ignore pre/post hooks in a route with `ignore_hooks=True` in the decorator
+	- Feature: Routes can now have the same path, but with different methods allowed.
+
 1.5.1 -
 	- Remove hard dependency on libmagic.
 
