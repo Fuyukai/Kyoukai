@@ -300,7 +300,7 @@ class Kyoukai(object):
             resp = Response(code, body, {"Content-Type": "text/plain"})
         else:
             # Invoke the error handler specified.
-            resp = wrap_response(await error_handler.invoke(ctx))
+            resp = wrap_response(await error_handler.invoke(ctx, exception=err))
         protocol.handle_resp(resp)
 
         # Check if we should close the connection.

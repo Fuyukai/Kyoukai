@@ -5,6 +5,7 @@ Defines how to convert arguments in a Route via the signature.
 """
 import inspect
 # Converters: A dict of `type` -> `callable` where callable takes one argument, the item to convert, and produces a new item of the type.
+from kyoukai.exc import HTTPException
 from kyoukai.context import HTTPRequestContext
 
 _converters = {
@@ -20,6 +21,9 @@ def add_converter(type_: type, cb):
     :param cb: A callable.
             Takes one parameter, which is the value of the argument.
             Should return a value of `type_`.
+
+            This callable should raise a TypeError or a ValueError on failing to convert, at which point a 400 error will be raised.
+            Anything else will cause a normal 500 error.
     """
     if not callable(cb):
         raise TypeError("cb should be callable")
@@ -68,6 +72,10 @@ def convert_args(coro, *args, bound=False):
         else:
             _converter = _converters[type_]
             # Convert the arg.
-            new_args.append(_converter(item))
+            try:
+                new_args.append(_converter(item))
+            except (TypeError, ValueError):
+                # Raise a bad request error.
+                raise HTTPException(400)
 
     return new_args

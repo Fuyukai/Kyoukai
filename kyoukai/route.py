@@ -96,7 +96,7 @@ class Route(object):
         """
         return self.create(coro)
 
-    async def invoke(self, ctx: HTTPRequestContext):
+    async def invoke(self, ctx: HTTPRequestContext, exception=None):
         """
         Invoke the route, calling the underlying coroutine.
         """
@@ -124,6 +124,10 @@ class Route(object):
             params.append(self.self)
 
         params.append(ctx)
+
+        if exception:
+            # This is an error handler, so add the exception.
+            params.append(exception)
 
         if matches:
             params += list(matches)
