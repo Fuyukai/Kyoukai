@@ -1,3 +1,11 @@
+1.6.0 -
+	- Feature: Add converters.
+	These converters allow annotations to be added to parameters which will automatically convert the argument passed in to that type, if
+	possible.
+
+	- Change: Error handlers now take an `exception` param as the second arg. This is the HTTPException, which (should) have the original
+	 exception as __cause__ if it's a 500, otherwise just a normal exception.
+
 1.5.5 -
 	- Several bugfixes to the underlying HTTP server.
 	- Feature: The ability to ignore pre/post hooks in a route with `ignore_hooks=True` in the decorator

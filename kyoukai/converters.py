@@ -74,8 +74,8 @@ def convert_args(coro, *args, bound=False):
             # Convert the arg.
             try:
                 new_args.append(_converter(item))
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as e:
                 # Raise a bad request error.
-                raise HTTPException(400)
+                raise HTTPException(400) from e
 
     return new_args

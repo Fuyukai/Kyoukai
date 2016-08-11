@@ -372,13 +372,15 @@ class Kyoukai(object):
                     # Catch it, turn it into a 500, and return.
                     self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
                     exc = HTTPException(500)
+                    # Set the cause of the HTTP exception. Useful for 500 error handlers.
+                    exc.__cause__ = e
                     # Set the route of the exception.
                     exc.route = route
                     self.log_request(ctx, 500)
                     await self.handle_http_error(exc, protocol, ctx)
                     return
                 else:
-                    # If there is no
+                    # If there is no error happening, just log it as normal.
                     self.log_request(ctx, response.code)
 
                 # Respond with the response.
