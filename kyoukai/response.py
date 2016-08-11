@@ -4,6 +4,7 @@ Module for a Response object.
 A Response is returned by Routes when the underlying coroutine is done.
 """
 import gzip
+import http
 import warnings
 
 import sys
@@ -141,7 +142,11 @@ class Response(object):
         # Calculate headers
         for name, val in self.headers.items():
             headers_fmt += "{}: {}\r\n".format(name, val)
-        built = fmt.format(code=self.code, msg=util.HTTP_CODES.get(self.code, "Unknown"), headers=headers_fmt,
+
+        # Get the HTTP code.
+        code = http.HTTPStatus(self.code).name.replace("_", " ")
+
+        built = fmt.format(code=self.code, msg=code, headers=headers_fmt,
                            cookies=(self.cookies.output() + "\r\n") if len(self.cookies) else "",
                            version=version)
 
