@@ -7,13 +7,27 @@ import inspect
 # Converters: A dict of `type` -> `callable` where callable takes one argument, the item to convert, and produces a new item of the type.
 from kyoukai.context import HTTPRequestContext
 
-converters = {
+_converters = {
     str: str,
     int: int
 }
 
 
-def convert(coro, *args, bound=False):
+def add_converter(type_: type, cb):
+    """
+    Adds a converter to the conversions list/
+    :param type_: The type to use as the annotation param.
+    :param cb: A callable.
+            Takes one parameter, which is the value of the argument.
+            Should return a value of `type_`.
+    """
+    if not callable(cb):
+        raise TypeError("cb should be callable")
+
+    _converters[type_] = cb
+
+
+def convert_args(coro, *args, bound=False):
     """
     Converts a the arguments of a function using it's signature.
 
@@ -48,11 +62,11 @@ def convert(coro, *args, bound=False):
         # Extract the annotation from the parameter.
         assert isinstance(value, inspect.Parameter)
         type_ = value.annotation
-        if type_ not in converters:
+        if type_ not in _converters:
             # Just add the argument, without converting.
             new_args.append(item)
         else:
-            _converter = converters[type_]
+            _converter = _converters[type_]
             # Convert the arg.
             new_args.append(_converter(item))
 

@@ -8,7 +8,7 @@ from asphalt.core import Context
 import kyoukai
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import wrap_response
-from kyoukai.converters import converters, convert
+from kyoukai.converters import _converters, convert_args
 
 
 class Route(object):
@@ -129,7 +129,7 @@ class Route(object):
             params += list(matches)
 
         # Convert the arguments.
-        args = convert(self._wrapped_coro, *params, bound=self._bound)
+        args = convert_args(self._wrapped_coro, *params, bound=self._bound)
 
         result = await self._wrapped_coro(*args)
         # Wrap the result.
