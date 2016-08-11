@@ -5,6 +5,7 @@ They're a simpler way of grouping your routes together instead of having to impo
 the time.
 """
 import collections
+import logging
 
 import re
 
@@ -53,6 +54,8 @@ class Blueprint(object):
 
         self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
 
+        self.logger = logging.getLogger("Kyoukai.Blueprint." + self._name if self._name else "root")
+
     def bind_view(self, view: View, *args, **kwargs):
         """
         Binds a view class to a Blueprint.
@@ -90,6 +93,8 @@ class Blueprint(object):
             nf.__name__ = new_view.__class__.__name__ + ".after_request"
             self.after_request(nf)
 
+        self.logger.info("Bound view {}".format(view.__name__))
+
     def __repr__(self):
         return "<Blueprint '{}' with {} routes>".format(self._name, len(self.routes))
 
@@ -103,6 +108,7 @@ class Blueprint(object):
         :param blueprint: The child blueprint.
         """
         self._children[blueprint._name] = blueprint
+        self.logger.info("Registered Blueprint {} with {} new routes".format(blueprint._name, len(blueprint.routes)))
         blueprint.parent = self
 
     def before_request(self, coro):

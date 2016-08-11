@@ -70,7 +70,7 @@ class Kyoukai(object):
         self.name = name
         self.loop = asyncio.get_event_loop()
 
-        self.logger = logging.getLogger("Kyokai")
+        self.logger = logging.getLogger("Kyoukai")
 
         self.error_handlers = {}
 
@@ -99,7 +99,7 @@ class Kyoukai(object):
                 def isEnabledFor(self, level):
                     return False
 
-            logging.Logger.manager.loggerDict["Kyokai"] = _FakeLogging("Kyokai")
+            logging.Logger.manager.loggerDict["Kyoukai"] = _FakeLogging("Kyoukai")
 
         # Create a renderer.
         if self.config.get("template_renderer") == "mako":

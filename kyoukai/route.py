@@ -7,8 +7,8 @@ from asphalt.core import Context
 
 import kyoukai
 from kyoukai.context import HTTPRequestContext
-from kyoukai.exc import HTTPClientException, HTTPException
 from kyoukai.util import wrap_response
+from kyoukai.converters import converters, convert
 
 
 class Route(object):
@@ -25,7 +25,7 @@ class Route(object):
     def __init__(self, blueprint: 'blueprints.Blueprint',
                  matcher: str, methods: list,
                  bound: bool = False,
-                 run_hooks: bool=True):
+                 run_hooks: bool = True):
         """
         Create a new Route.
         """
@@ -128,7 +128,10 @@ class Route(object):
         if matches:
             params += list(matches)
 
-        result = await self._wrapped_coro(*params)
+        # Convert the arguments.
+        args = convert(self._wrapped_coro, *params, bound=self._bound)
+
+        result = await self._wrapped_coro(*args)
         # Wrap the result.
         result = wrap_response(result)
 

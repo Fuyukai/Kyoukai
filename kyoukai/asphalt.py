@@ -14,7 +14,7 @@ from kyoukai.app import Kyoukai
 from kyoukai.protocol import KyokaiProtocol
 from kyoukai.context import HTTPRequestContext
 
-logger = logging.getLogger("Kyokai")
+logger = logging.getLogger("Kyoukai")
 
 
 class KyoukaiComponent(Component):
@@ -44,4 +44,4 @@ class KyoukaiComponent(Component):
         """
         protocol = partial(self.get_protocol, ctx)
         self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port)
-        logger.info("Kyokai serving on {}:{}.".format(self.ip, self.port))
+        logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
