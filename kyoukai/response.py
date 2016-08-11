@@ -149,7 +149,7 @@ class Response(object):
         built = built.encode()
 
         # Append the body, plus the terminator.
-        built += self.body + b"\r\n\r\n"
+        built += self.body + b"\r\n"
 
         return built
 
