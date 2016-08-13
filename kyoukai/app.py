@@ -142,7 +142,7 @@ class Kyoukai(object):
 
     # TODO: Make renderers better
 
-    def render(self, filename: str, **kwargs):
+    def render(self, filename: str, **kwargs) -> str:
         """
         Render a template using the currently loaded rendering engine.
 
@@ -156,7 +156,7 @@ class Kyoukai(object):
         """
         return self._renderer(filename, **kwargs)
 
-    def render_template(self, filename: str, code=200, **kwargs):
+    def render_template(self, filename: str, code=200, **kwargs) -> Response:
         """
         Render a template using the currently loaded rendering engine.
 

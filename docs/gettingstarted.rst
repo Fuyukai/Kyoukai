@@ -112,7 +112,10 @@ your code must also be async.
 .. code:: python
 
     @app.route("/")
-    async def index(request): ...
+    async def index(ctx): ...
+
+Routes are automatically passed a new instance of :class:`HTTPRequestContext` which stores the request object and
+other useful data on the context for usage in your route.
 
 Inside our route, we are going to return a string containing the
 rendered text from our template.
@@ -153,7 +156,7 @@ You can add it to your brand new route like so:
 .. code:: python
 
     @app.route("/")
-    async def index(request):
+    async def index(ctx):
         return app.render_template("index.html")
 
 The ``app.render_template`` function automatically loads and renders the template
