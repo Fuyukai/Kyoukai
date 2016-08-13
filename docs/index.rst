@@ -44,6 +44,8 @@ Contents:
    asphalt.rst
    routing.rst
 
+   apireference.rst
+
 Indices and tables
 ==================
 

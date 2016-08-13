@@ -11,7 +11,7 @@ from asphalt.core import Component, resolve_reference, Context
 from typeguard import check_argument_types
 
 from kyoukai.app import Kyoukai
-from kyoukai.protocol import KyokaiProtocol
+from kyoukai.protocol import KyoukaiProtocol
 from kyoukai.context import HTTPRequestContext
 
 logger = logging.getLogger("Kyoukai")
@@ -36,7 +36,7 @@ class KyoukaiComponent(Component):
         self.app.reconfigure(cfg)
 
     def get_protocol(self, ctx: Context):
-        return KyokaiProtocol(self.app, ctx)
+        return KyoukaiProtocol(self.app, ctx)
 
     async def start(self, ctx: Context):
         """

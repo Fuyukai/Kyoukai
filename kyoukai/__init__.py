@@ -8,4 +8,4 @@ from .views import View
 from .asphalt import KyoukaiComponent
 from .exc import HTTPException, HTTPClientException
 from .util import VERSION, VERSIONT, static_filename
-from .protocol import KyokaiProtocol
+from .protocol import KyoukaiProtocol

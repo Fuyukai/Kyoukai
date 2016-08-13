@@ -7,7 +7,7 @@ from kyoukai.response import Response
 from kyoukai.context import HTTPRequestContext
 
 
-class KyokaiProtocol(asyncio.Protocol):
+class KyoukaiProtocol(asyncio.Protocol):
     """
     The Kyoukai protocol.
     """

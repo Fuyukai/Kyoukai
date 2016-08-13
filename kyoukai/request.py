@@ -126,7 +126,10 @@ class Request(object):
         """
         Create a new request from request data.
 
-        Shortcut for ```r = Request(); r.parse(data, source)```
+        Shortcut for:
+
+        r = Request()
+        r.parse(data, source)
         """
         # Create a new request.
         req = cls()

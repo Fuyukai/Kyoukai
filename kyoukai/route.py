@@ -22,7 +22,7 @@ class Route(object):
     :param run_hooks: If the request should run pre and post hooks, or be exempt.
     """
 
-    def __init__(self, blueprint: 'blueprints.Blueprint',
+    def __init__(self, blueprint,
                  matcher: str, methods: list,
                  bound: bool = False,
                  run_hooks: bool = True):
