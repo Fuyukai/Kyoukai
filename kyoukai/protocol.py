@@ -65,7 +65,7 @@ class KyoukaiProtocol(asyncio.Protocol):
         # Create a request
         self.buffer += data
         req = Request()
-        ctx = HTTPRequestContext(req, self.parent_context)
+        ctx = HTTPRequestContext(req, self.app, self.parent_context)
         try:
             req.parse(self.buffer, self.ip)
         except HTTPException as e:
