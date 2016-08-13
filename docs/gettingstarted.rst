@@ -80,11 +80,12 @@ Routes are made up of three parts:
 -  The route itself
 
    -  Your route is a coroutine that accepts one argument, by default:
-      the client's request object.
+      the a new :class:`HTTPRequestContext`, containing the request data
+      and other context specific data.
 
    .. code:: python
 
-       async def some_route(request: kyokai.Request): ...
+       async def some_route(ctx: HTTPRequestContext): ...
 
 We are going to write a very simple route that returns a
 ``Hello, world!`` file.
@@ -114,8 +115,6 @@ your code must also be async.
     @app.route("/")
     async def index(ctx): ...
 
-Routes are automatically passed a new instance of :class:`HTTPRequestContext` which stores the request object and
-other useful data on the context for usage in your route.
 
 Inside our route, we are going to return a string containing the
 rendered text from our template.
