@@ -231,6 +231,32 @@ class Blueprint(object):
             return self._prefix
         return self.parent.prefix + self._prefix
 
+    def add_route(self, regex, coroutine, *, methods: list = None, run_hooks=True):
+        """
+        Adds a route to the routing list.
+
+        :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
+                Group matches are automatically extracted from the regex, and passed as arguments.
+
+        :param methods: The list of allowed methods, e.g ["GET", "POST"].
+                You can check the method with `request.method`.
+
+        :param coroutine: The coroutine handler to take in, which will be called.
+
+        :param run_hooks: If pre and post request hooks are ran.
+
+        :return: The new :class:`Route` object.
+        """
+        if not methods:
+            methods = ["GET"]
+
+        regex = self.prefix + regex
+        r = Route(self, regex, methods, run_hooks=run_hooks)
+        r.create(coroutine)
+        self.routes.append(r)
+
+        return r
+
     def route(self, regex, *, methods: list = None, run_hooks=True):
         """
         Create an incoming route for a function.
@@ -241,12 +267,10 @@ class Blueprint(object):
         :param methods: The list of allowed methods, e.g ["GET", "POST"].
                 You can check the method with `request.method`.
         """
-        if not methods:
-            methods = ["GET"]
-        regex = self.prefix + regex
-        r = Route(self, regex, methods, run_hooks=run_hooks)
-        self.routes.append(r)
-        return r
+        def _add_route_inner(coro):
+            return self.add_route(regex, coro, methods=methods, run_hooks=run_hooks)
+
+        return _add_route_inner
 
     def get_errorhandler(self, code: int) -> Route:
         """
