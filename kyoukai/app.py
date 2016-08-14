@@ -78,7 +78,7 @@ class Kyoukai(object):
         # Define the "root" blueprint, which is used for @app.request.
         self._root_bp = Blueprint(name, None)
 
-        self.debug = False
+        self.debug = kwargs.get("debug", False)
 
         # Define the component here so it can be checked easily.
         self.component = None
@@ -95,7 +95,6 @@ class Kyoukai(object):
                 raise ImportError("Jinja2 is not installed; cannot be used as a renderer")
             else:
                 self._renderer = jinja_renderer.Jinja2Renderer(kwargs.get("loader"))
-
 
     @property
     def renderer(self) -> Renderer:
