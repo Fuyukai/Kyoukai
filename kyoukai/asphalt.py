@@ -33,8 +33,6 @@ class KyoukaiComponent(Component):
 
         self.server = None
 
-        self.app.reconfigure(cfg)
-
     def get_protocol(self, ctx: Context):
         return KyoukaiProtocol(self.app, ctx)
 

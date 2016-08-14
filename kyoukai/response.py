@@ -28,7 +28,6 @@ else:
 
 from email.utils import formatdate
 from http.cookies import SimpleCookie
-import urllib.parse as uparse
 
 
 class Response(object):
@@ -63,12 +62,44 @@ class Response(object):
     def gzip(self):
         """
         :return: If the request is to be gzip compressed.
+
+        Note: This will always return False on a newly created Response, unless the ``request`` instance variable is
+        set on the Response.
         """
-        return self._should_gzip
+        if self.request and self.request.fully_parsed:
+            return ('gzip' in self.request.headers.get("Accept-Encoding", "")) and self._should_gzip
+        else:
+            return False
+            # return self._should_gzip
 
     @gzip.setter
     def gzip(self, value):
         self._should_gzip = value
+
+    # Utility functions.
+
+    def get_compressed_body(self, body: bytes) -> bytes:
+        """
+        Returns the compressed body, if gzip is enabled.
+
+        Otherwise, returns the normal body.
+        :param body: The body to compress.
+        :return: The compressed body, or just the body.
+        """
+        if self.gzip:
+            return gzip.compress(body, 5)
+        else:
+            return body
+
+    def get_response_http_version(self):
+        """
+        Gets what HTTP version the response should use.
+        """
+        if self.request and self.request.fully_parsed:
+            return self.request.version
+
+        else:
+            return "1.0"
 
     def _mimetype(self, body):
         """
@@ -98,7 +129,7 @@ class Response(object):
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
 
         # If it's gzip enabled, add the gzip header.
-        if self._should_gzip:
+        if self.gzip:
             self.headers["Content-Encoding"] = "gzip"
 
         # Set cookies.
@@ -115,12 +146,8 @@ class Response(object):
         if self.request and self.request.fully_parsed:
             if self.request.method.lower() == "head":
                 self._is_head = True
-            version = ".".join(map(str, self.request.version))
 
-            self.gzip = self.gzip and 'gzip' in self.request.headers.get("Accept-Encoding", "")
-        else:
-            version = "1.0"
-            self.gzip = False
+        version = self.get_response_http_version()
 
         if isinstance(self.body, str):
             self.body = self.body.encode()
@@ -132,7 +159,7 @@ class Response(object):
         if self.gzip:
             if 'Content-Type' not in self.headers:
                 self.headers["Content-Type"] = self._mimetype(self.body)
-            self.body = gzip.compress(self.body, 5)
+            self.body = self.get_compressed_body(self.body)
 
         # Re-calculate headers to update everything as appropriate.
         self._recalculate_headers()
@@ -169,7 +196,6 @@ class Response(object):
         """
         # https://github.com/pallets/werkzeug/blob/master/werkzeug/utils.py#L373
         # response body used from Werkzeug
-        #location = uparse.quote(location)
 
         res = cls(
             code=code,
@@ -182,3 +208,6 @@ class Response(object):
             headers={"Location": location}
         )
         return res
+
+# Alias for ease of usage
+redirect = Response.redirect

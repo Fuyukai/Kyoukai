@@ -10,6 +10,7 @@ import traceback
 import logging
 import typing
 
+from kyoukai.renderers.base import Renderer
 from kyoukai.views import View
 
 try:
@@ -32,17 +33,19 @@ from kyoukai.response import Response
 from kyoukai.route import Route
 
 try:
-    from kyoukai.renderers import MakoRenderer as MakoRenderer
+    from kyoukai.renderers import mako_renderer
 
     _has_mako = True
 except ImportError:
+    mako_renderer = None
     _has_mako = False
 
 try:
-    from kyoukai.renderers import JinjaRenderer as JinjaRenderer
+    from kyoukai.renderers import jinja_renderer
 
     _has_jinja2 = True
 except ImportError:
+    jinja_renderer = None
     _has_jinja2 = False
 
 
@@ -55,14 +58,9 @@ class Kyoukai(object):
     :param name:
         The name of the app. This is passed into the root blueprint as the name, which shows up in exceptions.
     :type name: :class:`str`
-
-    :param cfg:
-        The configuration to load the app with.
-        This is used in :meth:`reconfigure`, which actually uses the configuration values to configure the app.
-    :type cfg: dict
     """
 
-    def __init__(self, name: str, cfg: dict = None):
+    def __init__(self, name: str, **kwargs):
         """
         Create a new app.
         """
@@ -74,11 +72,8 @@ class Kyoukai(object):
 
         self.error_handlers = {}
 
-        self.config = cfg if cfg else {}
-        self.request_hooks = {
-            "pre": [],
-            "post": []
-        }
+        # Define the config.
+        self.config = kwargs
 
         # Define the "root" blueprint, which is used for @app.request.
         self._root_bp = Blueprint(name, None)
@@ -88,33 +83,26 @@ class Kyoukai(object):
         # Define the component here so it can be checked easily.
         self.component = None
 
-    def reconfigure(self, config: dict):
-        self.config = {**config, **self.config}
-        # Should we use logging speedhack?
-        # This speeds up Kyoukai MASSIVELY - 0.3ms off each request, which is around 75% on an empty request.
-        if self.config.get("use_logging_speedhack"):
-            print("Using logging speed hack.")
-
-            class _FakeLogging(logging.Logger):
-                def isEnabledFor(self, level):
-                    return False
-
-            logging.Logger.manager.loggerDict["Kyoukai"] = _FakeLogging("Kyoukai")
-
-        # Create a renderer.
-        if self.config.get("template_renderer") == "mako":
+        # Define the renderer.
+        render = kwargs.get("renderer")
+        if render == "mako":
             if not _has_mako:
-                raise ImportError("Mako is not installed; cannot use for templates.")
+                raise ImportError("Mako is not installed; cannot be used as a renderer")
             else:
-                self._renderer = MakoRenderer.render
-        elif self.config.get("template_renderer") == "jinja2":
+                self._renderer = mako_renderer.MakoRenderer(kwargs.get("template_directory"))
+        elif render == "jinja2":
             if not _has_jinja2:
-                raise ImportError("Jinja2 is not installed; cannot use for templates.")
+                raise ImportError("Jinja2 is not installed; cannot be used as a renderer")
             else:
-                self._renderer = JinjaRenderer.render
+                self._renderer = jinja_renderer.Jinja2Renderer(kwargs.get("loader"))
 
-        if self.config.get("debug") is True:
-            self.debug = True
+
+    @property
+    def renderer(self) -> Renderer:
+        """
+        :return: The current :class:`kyoukai.renderers.Renderer` configured for this application.
+        """
+        return self._renderer
 
     @property
     def root(self):
@@ -140,8 +128,6 @@ class Kyoukai(object):
             bp.parent = self._root_bp
         return bp
 
-    # TODO: Make renderers better
-
     def render(self, filename: str, **kwargs) -> str:
         """
         Render a template using the currently loaded rendering engine.
@@ -154,7 +140,7 @@ class Kyoukai(object):
 
         :return: A :class:`str` containing the rendered information.
         """
-        return self._renderer(filename, **kwargs)
+        return self.renderer.render(filename, **kwargs)
 
     def render_template(self, filename: str, code=200, **kwargs) -> Response:
         """
