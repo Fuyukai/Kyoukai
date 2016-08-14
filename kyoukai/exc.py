@@ -18,5 +18,4 @@ class HTTPException(Exception):
         self.route = route
 
     def __repr__(self):
-        # TODO: Add a lookup.
         return "HTTP {} {}".format(self.code, self.msg)

@@ -1,9 +1,16 @@
+1.7.0 -
+	- Feature: Add a better rendering framework.
+	This is better than the old onr as it allows environments and globals and all that, similar to Flask's
+	environment. There is also a new Jinja2 rendering engine.
+
 1.6.0 -
 	- Feature: Add converters.
-	These converters allow annotations to be added to parameters which will automatically convert the argument passed in to that type, if
+	These converters allow annotations to be added to parameters which will automatically convert the argument passed in
+	 to that type, if
 	possible.
 
-	- Change: Error handlers now take an `exception` param as the second arg. This is the HTTPException, which (should) have the original
+	- Change: Error handlers now take an `exception` param as the second arg. This is the HTTPException, which (should)
+	have the original
 	 exception as __cause__ if it's a 500, otherwise just a normal exception.
 
 1.5.5 -
