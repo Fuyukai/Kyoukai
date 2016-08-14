@@ -1,6 +1,6 @@
 ## Kyōkai (境界)
 
-![https://codecov.io/github/SunDwarf/Kyoukai/coverage.svg]()
+![Coverage](https://codecov.io/github/SunDwarf/Kyoukai/coverage.svg)
 [![CircleCI](https://img.shields.io/circleci/project/SunDwarf/Kyoukai.svg?maxAge=2592000)]()
 
 Kyōkai is a fast asynchronous Python server-side web framework. It is built upon
