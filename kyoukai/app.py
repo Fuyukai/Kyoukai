@@ -196,7 +196,7 @@ class Kyoukai(object):
         """
         content = self.get_static_file(filename)
         if not content:
-            raise HTTPClientException(404)
+            raise HTTPException(404)
 
         with content:
             path = self.get_static_path(filename)

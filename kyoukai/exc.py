@@ -20,9 +20,3 @@ class HTTPException(Exception):
     def __repr__(self):
         # TODO: Add a lookup.
         return "HTTP {} {}".format(self.code, self.msg)
-
-
-class HTTPClientException(HTTPException):
-    """
-    Raised when a client causes an error.
-    """
