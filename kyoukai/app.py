@@ -28,7 +28,7 @@ from kyoukai.blueprints import Blueprint
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import static_filename, wrap_response
 
-from kyoukai.exc import HTTPClientException, HTTPException
+from kyoukai.exc import HTTPException
 from kyoukai.response import Response
 from kyoukai.route import Route
 

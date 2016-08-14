@@ -6,6 +6,6 @@ from .blueprints import Blueprint
 from .route import Route
 from .views import View
 from .asphalt import KyoukaiComponent
-from .exc import HTTPException, HTTPClientException
+from .exc import HTTPException
 from .util import VERSION, VERSIONT, static_filename
 from .protocol import KyoukaiProtocol

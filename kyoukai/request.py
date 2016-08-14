@@ -14,7 +14,7 @@ try:
 except ImportError:
     from http_parser.pyparser import HttpParser, IOrderedDict
 
-from kyoukai.exc import HTTPClientException
+from kyoukai.exc import HTTPException
 
 
 class Request(object):
@@ -113,7 +113,7 @@ class Request(object):
         # Execute the parser.
         parsed_len = parser.execute(data, data_len)
         if parsed_len == 0 or (data_len != parsed_len and parser.is_message_complete()):
-            raise HTTPClientException(400, "Bad Request")
+            raise HTTPException(400, "Bad Request")
 
         self.raw_data = data
         self.source = source
