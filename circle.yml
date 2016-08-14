@@ -6,7 +6,7 @@ machine:
 dependencies:
   override:
     - pip install tox tox-pyenv codecov
-    - pyenv local 3.5.2
+    - pyenv local 3.5.1
 
 test:
   post:
