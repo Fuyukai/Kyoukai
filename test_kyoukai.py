@@ -73,3 +73,12 @@ Content-Length: 18
 """)
     bdy = json.loads(response.body)
     assert bdy["world"] == "hello"
+
+
+@pytest.mark.asyncio
+async def test_response_recalculate_headers():
+    response = await kyk.feed_request("""GET / HTTP/1.1
+host: localhost
+    """)
+    response._recalculate_headers()
+    assert response.headers["Content-Length"] == 4

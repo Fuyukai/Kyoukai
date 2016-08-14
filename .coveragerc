@@ -1,0 +1,4 @@
+[run]
+omit =
+    # omit testing/
+    kyoukai/testing/*
