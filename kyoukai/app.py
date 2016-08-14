@@ -376,7 +376,7 @@ class Kyoukai(object):
                 if not ctx.request.should_keep_alive:
                     protocol.close()
 
-    async def start(self, ip="0.0.0.0", port=4444, component=None):
+    async def start(self, ip="0.0.0.0", port=4444, component=None):  # pragma: no cover
         """
         Run the Kyoukai component asynchronously.
 
@@ -394,7 +394,7 @@ class Kyoukai(object):
             self.component = KyoukaiComponent(self, ip, port)
         await self.component.start(ctx)
 
-    def run(self, ip="0.0.0.0", port=4444, component=None):
+    def run(self, ip="0.0.0.0", port=4444, component=None):  # pragma: no cover
         """
         Runs the Kyoukai server from within your code.
 

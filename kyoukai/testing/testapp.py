@@ -54,7 +54,7 @@ class TestingKyk(Kyoukai):
         :return: The Response object produced from `delegate_request`.
         """
         if isinstance(data, str):
-            request = Request.from_data(data.encode(), "127.0.0.1")
+            request = Request.from_data(data.replace("\n", "\r\n").encode(), "127.0.0.1")
         else:
             request = data
 
