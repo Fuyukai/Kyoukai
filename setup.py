@@ -48,5 +48,9 @@ setup(
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Application Frameworks"
     ],
-    install_requires=deps
+    install_requires=deps,
+    test_requires=[
+        "pytest",
+        "pytest-asyncio"
+    ]
 )

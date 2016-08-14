@@ -5,6 +5,11 @@ import json
 
 import pytest
 
+try:
+    from http_parser.parser import HttpParser
+except ImportError:
+    from http_parser.pyparser import HttpParser
+
 from kyoukai.testing.testdata import kyk
 
 
@@ -82,3 +87,24 @@ host: localhost
     """)
     response._recalculate_headers()
     assert response.headers["Content-Length"] == 4
+    assert response.headers["Content-Type"] == "text/plain"
+
+
+@pytest.mark.xfail
+@pytest.mark.asyncio
+async def test_bad_request():
+    response = await kyk.feed_request("dhusadba")
+    assert response.code == 200
+
+
+@pytest.mark.asyncio
+async def test_get_encoded_request():
+    response = await kyk.feed_request("""GET / HTTP/1.1
+host: localhost
+""")
+    by = response.to_bytes()
+    parser = HttpParser()
+    parser.execute(by, len(by))
+
+    body = parser.recv_body()
+    assert body == b"OK\r\n"

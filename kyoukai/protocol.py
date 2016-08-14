@@ -7,7 +7,9 @@ from kyoukai.response import Response
 from kyoukai.context import HTTPRequestContext
 
 
-class KyoukaiProtocol(asyncio.Protocol):
+# This probably can't be reasonably tested.
+# And besides, the TestProtocol emulates this as well.
+class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     """
     The Kyoukai protocol.
     """

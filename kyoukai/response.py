@@ -7,11 +7,9 @@ import gzip
 import http
 import warnings
 
-import sys
-
 try:
     from http_parser.parser import IOrderedDict
-except ImportError:
+except ImportError:  # pragma: no cover
     from http_parser.pyparser import IOrderedDict
 
     warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
@@ -20,7 +18,7 @@ from . import util
 
 try:
     import magic
-except (ImportError, OSError):
+except (ImportError, OSError):  # pragma: no cover
     _has_magic = False
     warnings.warn("Cannot load libmagic - Cannot determine file types automatically...")
 else:
@@ -108,7 +106,12 @@ class Response(object):
         This is an **internal method**.
         """
         if _has_magic:
-            mime = magic.from_buffer(body, mime=True)
+            # libmagic is unreliable when the body is str.
+            # so encode it to make sure it returns correctly
+            if isinstance(self.body, str):
+                mime = magic.from_buffer(body.encode(), mime=True)
+            else:
+                mime = magic.from_buffer(body, mime=True)
             if mime:
                 return mime.decode() if isinstance(mime, bytes) else mime
             else:
