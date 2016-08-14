@@ -16,8 +16,18 @@ from kyoukai.testing.testdata import kyk
 @pytest.mark.asyncio
 async def test_http_10():
     response = await kyk.feed_request("GET / HTTP/1.0")
+    assert response.get_response_http_version() == "1.0"
     assert response.code == 200
-    assert response.body == "OK"
+
+
+@pytest.mark.asyncio
+async def test_http_11():
+    response = await kyk.feed_request("""GET / HTTP/1.1
+host: localhost
+
+""")
+    assert response.get_response_http_version() == "1.1"
+    assert response.code == 200
 
 
 @pytest.mark.asyncio
@@ -100,8 +110,7 @@ async def test_bad_request():
 @pytest.mark.asyncio
 async def test_get_encoded_request():
     response = await kyk.feed_request("""GET / HTTP/1.1
-host: localhost
-""")
+host: localhost""")
     by = response.to_bytes()
     parser = HttpParser()
     parser.execute(by, len(by))

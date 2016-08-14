@@ -94,8 +94,7 @@ class Response(object):
         Gets what HTTP version the response should use.
         """
         if self.request and self.request.fully_parsed:
-            return self.request.version
-
+            return '.'.join(map(str, self.request.version))
         else:
             return "1.0"
 
