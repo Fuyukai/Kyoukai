@@ -3,6 +3,7 @@ A Kyoukai app is the core container of a web application based upon the framewor
 """
 
 import asyncio
+import inspect
 import io
 import mimetypes
 import os
@@ -82,6 +83,9 @@ class Kyoukai(object):
 
         # Define the component here so it can be checked easily.
         self.component = None
+
+        # On startup function.
+        self._on_startup = lambda: None
 
         # Define the renderer.
         render = kwargs.get("renderer")
@@ -270,6 +274,29 @@ class Kyoukai(object):
         self._root_bp.bind_view(view)
 
     bind_view.__doc__ = Blueprint.bind_view.__doc__
+
+    async def call_on_startup(self):
+        """
+        Calls the on_startup handler.
+        """
+        item = self._on_startup()
+        # If it's a coroutine or otherwise awaitable, await it.
+        # This is so that coroutines can be passed in to handle.
+        if inspect.isawaitable(item):
+            await item
+
+    def on_startup(self, coro_or_callable: typing.Callable[[], None]):
+        """
+        Registers a function to be called on startup.
+
+        The function should be a callable.
+        :return: The unmodified callable.
+        """
+        if not callable(coro_or_callable):
+            raise TypeError("Object {} is not callable".format(coro_or_callable))
+        self._on_startup = coro_or_callable
+
+        return coro_or_callable
 
     async def handle_http_error(self, err: HTTPException, protocol, ctx: HTTPRequestContext):
         """
