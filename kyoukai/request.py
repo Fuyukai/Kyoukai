@@ -96,10 +96,14 @@ class Request(object):
         if self.headers.get("Content-Type") == "application/json":
             # Parse as JSON
             try:
-                self.form = json.loads(self.body)
+                self.form = json.loads(self.body.decode())
             except json.JSONDecodeError:
-                # The form isn't quite complete yet.
-                self.form = {}
+                # Malformed JSON.
+                raise HTTPException(400)
+
+            # JSOn obviously doesn't have file upload support.
+            self.files = {}
+
         else:
             # Parse the form data out.
             f_parser = formparser.FormDataParser()

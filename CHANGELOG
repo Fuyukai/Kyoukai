@@ -1,3 +1,8 @@
+1.7.2 -
+	- Change: Body parsing is now handled by Werkzeug.
+	This ensures better form handling.
+	- Fix: A request being called to parse multiple times is no longer possible.
+
 1.7.0 -
 	- Feature: Add a better rendering framework.
 	This is better than the old onr as it allows environments and globals and all that, similar to Flask's
