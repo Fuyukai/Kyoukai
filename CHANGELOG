@@ -1,3 +1,6 @@
+1.7.3 -
+	- Feature: Add the ability to register a callable to run on startup.
+
 1.7.2 -
 	- Change: Body parsing is now handled by Werkzeug.
 	This ensures better form handling.
