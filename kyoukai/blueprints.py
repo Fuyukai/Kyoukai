@@ -20,16 +20,36 @@ class Blueprint(object):
 
     Blueprints have 'parent' blueprints - they inherit error handlers and hooks from them. The root blueprint has no
     parent, so it does not inherit from anything.
-
     Note that if a Blueprint that is not the root blueprint has a parent value of None, it is automatically set to
     inherit the root blueprint of the app.
+
+    Blueprints allow routes like normal application objects - in fact, the application object's route function is
+    implemented with an underlying root blueprint.
+
+    .. code:: python
+
+        bp = Blueprint("test_bp")
+
+        @bp.route("/hello/world")
+        async def hello_world(ctx: HTTPRequestContext):
+            return "Hello, world"!
+
+    Per-blueprint error handlers can also be added:
+
+    .. code:: python
+
+        @bp.errorhandler(500)
+        async def handle_500(ctx: HTTPRequestContext, e: Exception):
+            async with threadpool():
+                ctx.dbsession.rollback()
 
     :param name: The name identifier of the blueprint.
     :param parent: The parent blueprint.
         Children blueprint inherit routes from the parent, accessible via ``Parent.routes``.
         They are also used for searching in routes when a blueprint is checked.
 
-        If this is None, then it will be automatically set when
+        If this is None, then it will be automatically set when the blueprint is added as a child to a parent
+        blueprint.
 
     :param url_prefix: The prefix to automatically add to the start of each route.
 
@@ -106,7 +126,7 @@ class Blueprint(object):
         """
         Add a child Blueprint to the current blueprint.
 
-        .. note:
+        .. warning::
             This will override the parent of the blueprint, replacing it with this one.
 
         :param blueprint: The child blueprint.
@@ -231,6 +251,7 @@ class Blueprint(object):
     def prefix(self):
         """
         Calculates the prefix using the parent blueprints.
+        :return: The full prefix, including the parent prefix.
         """
         if self.parent is None:
             return self._prefix
@@ -238,7 +259,10 @@ class Blueprint(object):
 
     def wrap_route(self, regex, coroutine, *, methods: list = None, run_hooks=True):
         """
-        Wraps a route in a Route object.
+        Wraps a route in a :class:`Route` object.
+
+        The class that this returns can be configured with the ``route_cls`` attribute of the Blueprint. it is
+        automatically called with the specified regular expression.
 
         :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
                 Group matches are automatically extracted from the regex, and passed as arguments.
@@ -246,7 +270,7 @@ class Blueprint(object):
         :param methods: The list of allowed methods, e.g ["GET", "POST"].
                 You can check the method with `request.method`.
 
-        :param coroutine: The coroutine handler to take in, which will be called.
+        :param coroutine: The coroutine handler to take in, which
 
         :param run_hooks: If pre and post request hooks are ran.
 
@@ -265,7 +289,9 @@ class Blueprint(object):
         """
         Adds a route object to the routing table.
 
-        This allows you to have Route subclasses more easily.
+        .. note::
+
+            This will set the blueprint of the specified route to ourselves, overwriting any other routes.
 
         :param route: The route object to add.
         :return: The Route.
@@ -277,14 +303,26 @@ class Blueprint(object):
 
     def route(self, regex, *, methods: list = None, run_hooks=True):
         """
-        Create an incoming route for a function.
+        Convenience decorator to create a new route.
+
+        This is equivalent to:
+
+        .. code:: python
+
+            route = bp.wrap_route(regex, callable, methods, run_hooks)
+            bp.add_route(route)
+
 
         :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
                 Group matches are automatically extracted from the regex, and passed as arguments.
 
         :param methods: The list of allowed methods, e.g ["GET", "POST"].
                 You can check the method with `request.method`.
+
+        :param run_hooks: Should the pre and post request hooks run automatically?
+                This is set to True by default.
         """
+
         def _add_route_inner(coro):
             route = self.wrap_route(regex, coro, methods=methods, run_hooks=run_hooks)
             self.add_route(route)
@@ -307,12 +345,37 @@ class Blueprint(object):
 
         return self.parent.get_errorhandler(code)
 
+    def add_errorhandler(self, code: int, err_handler: Route):
+        """
+        Adds an error handler to the dictionary of error handlers for this route.
+
+        :param code: The error code that this error handler should handle.
+
+        :param err_handler: A :class:`Route` object that handles the error.
+                Error handlers are just modified routes, so the use of a Route object here is correct.
+
+        :return: The original Route, but with the ``bp`` attribute set to this Blueprint.
+        """
+        err_handler.bp = self
+        self.errhandlers[code] = err_handler
+
+        return err_handler
+
     def errorhandler(self, code: int, run_hooks=False):
         """
-        Create an error handler for the specified code.
+        Convenience decorator to add an error handler.
 
-        This will wrap the function in a Route.
+        This is equivalent to:
+
+        .. code:: python
+
+            route = bp.wrap_route("", coro, methods=[], run_hooks=False)
+            bp.add_errorhandler(code, route)
         """
-        r = Route(self, "", [], run_hooks=run_hooks)
-        self.errhandlers[code] = r
-        return r
+
+        def _add_route_inner(coro):
+            route = self.wrap_route("", coro, methods=[], run_hooks=run_hooks)
+            self.add_errorhandler(code, route)
+            return route
+
+        return _add_route_inner

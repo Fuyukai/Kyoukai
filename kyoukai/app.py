@@ -233,13 +233,47 @@ class Kyoukai(object):
         """
         return self._root_bp.match(path, meth)
 
-    def route(self, regex, methods: list = None):
-        # Rewrite it to the _root_bp method.
-        return self._root_bp.route(regex, methods=methods)
+    def route(self, regex, *, methods: list = None, run_hooks=True):
+        """
+        Convenience decorator to create a new route.
 
-    route.__doc__ = Blueprint.route.__doc__
+        This is equivalent to:
+
+        .. code:: python
+
+            route = bp.wrap_route(regex, callable, methods, run_hooks)
+            bp.add_route(route)
+
+        .. note::
+
+            This function is a shortcut to ``app.root.route(*args, **kwargs)``.
+
+        :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
+                Group matches are automatically extracted from the regex, and passed as arguments.
+
+        :param methods: The list of allowed methods, e.g ["GET", "POST"].
+                You can check the method with `request.method`.
+
+        :param run_hooks: Should the pre and post request hooks run automatically?
+                This is set to True by default.
+        """
+        return self._root_bp.route(regex, methods=methods, run_hooks=run_hooks)
 
     def errorhandler(self, code: int):
+        """
+        Convenience decorator to add an error handler.
+
+        This is equivalent to:
+
+        .. code:: python
+
+            route = bp.wrap_route("", coro, methods=[], run_hooks=False)
+            bp.add_errorhandler(code, route)
+
+        .. note::
+
+            This function is a shortcut to ``app.root.errorhandler(code)``.
+        """
         return self._root_bp.errorhandler(code)
 
     errorhandler.__doc__ = Blueprint.errorhandler.__doc__
@@ -261,23 +295,49 @@ class Kyoukai(object):
         self.logger.info("HTTP/{} {} {} - {}".format(ctx.request.sversion, ctx.request.method, route, code))
 
     def before_request(self, func):
+        """
+        Set a coroutine to run as before the request.
+
+        This coroutine should take in the HTTPRequestContext, and return a new HTTPRequestContext.
+
+        .. note::
+
+            This function is a shortcut to ``app.root.before_request(func)``.
+        """
         return self._root_bp.before_request(func)
 
-    before_request.__doc__ = Blueprint.before_request.__doc__
-
     def after_request(self, func):
+        """
+        Set a coroutine to run after the request.
+
+        This coroutine should take in a :class:`Response`, and return a :class:`Response`.
+
+        .. note::
+
+            This function is a shortcut to ``app.root.after_request(func)``.
+        """
+
         return self._root_bp.after_request(func)
 
-    after_request.__doc__ = Blueprint.after_request.__doc__
-
     def bind_view(self, view: View):
-        self._root_bp.bind_view(view)
+        """
+        Binds a view class to a Blueprint.
 
-    bind_view.__doc__ = Blueprint.bind_view.__doc__
+        This takes the *class*, not the instance, as a param.
+
+        It also takes args and keyword args to instantiate the class with.
+
+        .. note::
+
+            This function is a shortcut to ``app.root.bind_view(view)``.
+        """
+        self._root_bp.bind_view(view)
 
     async def call_on_startup(self):
         """
         Calls the on_startup handler.
+
+        This should not be called, unless you wish to call the startup function again (?).
         """
         item = self._on_startup()
         # If it's a coroutine or otherwise awaitable, await it.
@@ -302,7 +362,8 @@ class Kyoukai(object):
         """
         Handle a :class:`kyoukai.exc.HTTPException`.
 
-        This will invoke the appropriate error handler as registered in the root blueprint, or the
+        This will invoke the appropriate error handler as registered in the blueprint of the route, if we can.
+        Otherwise, it will invoke the default error handler.
         """
         code = err.code
         route = err.route
