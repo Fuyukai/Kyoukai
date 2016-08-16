@@ -32,7 +32,11 @@ class Blueprint(object):
         If this is None, then it will be automatically set when
 
     :param url_prefix: The prefix to automatically add to the start of each route.
+
+    :cvar route_cls: The Route class to use for wrapping new Routes.
     """
+
+    route_cls = Route
 
     def __init__(self, name: str, parent: 'Blueprint' = None,
                  url_prefix: str = ""):
@@ -231,9 +235,9 @@ class Blueprint(object):
             return self._prefix
         return self.parent.prefix + self._prefix
 
-    def add_route(self, regex, coroutine, *, methods: list = None, run_hooks=True):
+    def wrap_route(self, regex, coroutine, *, methods: list = None, run_hooks=True):
         """
-        Adds a route to the routing list.
+        Wraps a route in a Route object.
 
         :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
                 Group matches are automatically extracted from the regex, and passed as arguments.
@@ -251,11 +255,24 @@ class Blueprint(object):
             methods = ["GET"]
 
         regex = self.prefix + regex
-        r = Route(self, regex, methods, run_hooks=run_hooks)
+        r = self.route_cls(self, regex, methods, run_hooks=run_hooks)
         r.create(coroutine)
-        self.routes.append(r)
 
         return r
+
+    def add_route(self, route: Route):
+        """
+        Adds a route object to the routing table.
+
+        This allows you to have Route subclasses more easily.
+
+        :param route: The route object to add.
+        :return: The Route.
+        """
+        route.bp = self
+        self.routes.append(route)
+
+        return route
 
     def route(self, regex, *, methods: list = None, run_hooks=True):
         """
@@ -268,7 +285,9 @@ class Blueprint(object):
                 You can check the method with `request.method`.
         """
         def _add_route_inner(coro):
-            return self.add_route(regex, coro, methods=methods, run_hooks=run_hooks)
+            route = self.wrap_route(regex, coro, methods=methods, run_hooks=run_hooks)
+            self.add_route(route)
+            return route
 
         return _add_route_inner
 
