@@ -28,6 +28,9 @@ class KyoukaiComponent(Component):
         self.port = port
         self._extra_cfg = cfg
 
+        # Reconfigure the app with the extra config.
+        app.reconfigure(**self._extra_cfg)
+
         # Set HTTPRequestContext's `cfg` val to the extra config.
         HTTPRequestContext.cfg = self._extra_cfg
 

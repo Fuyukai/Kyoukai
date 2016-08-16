@@ -21,9 +21,10 @@ def extract_version(module = 'kyoukai'):
 
 deps = [
     "http-parser>=0.8.3",
-    "PyYAML>=3.11",
+    "PyYAML==3.11",
     "typeguard>=1.2.1",
-    "asphalt"
+    "asphalt>=2.0.0",
+    "werkzeug>=0.11.10"
 ]
 
 if sys.platform != "win32":

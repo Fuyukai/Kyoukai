@@ -96,6 +96,19 @@ class Kyoukai(object):
             else:
                 self._renderer = jinja_renderer.Jinja2Renderer(kwargs.get("loader"))
 
+    def reconfigure(self, **cfg: dict):
+        """
+        Reconfigures the app using the parameters passed in from the config.
+
+        This is used, for example, with Asphalt's config and the KyoukaiComponent's consume rest behaviour when
+        dealing with keyword arguments.
+
+        :param cfg: A dictionary of config values to reconfigure the application with.
+        :return: The new configuration.
+        """
+        self.config = {**self.config, **cfg}
+        return self.config
+
     @property
     def renderer(self) -> Renderer:
         """
