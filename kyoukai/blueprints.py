@@ -133,6 +133,7 @@ class Blueprint(object):
         This coroutine should take in a :class:`Response`, and return a :class:`Response`.
         """
         self._request_hooks["post"][coro.__name__] = coro
+        return coro
 
     def get_pre_hooks(self, ctx):
         """
