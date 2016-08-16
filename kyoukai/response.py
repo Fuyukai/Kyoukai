@@ -211,5 +211,6 @@ class Response(object):
         )
         return res
 
+
 # Alias for ease of usage
 redirect = Response.redirect

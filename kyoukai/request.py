@@ -6,13 +6,21 @@ This is automatically passed into your app route when an appropriate path is rec
 import json
 import urllib.parse as uparse
 
-# Use the C parser if applicable.
 from http import cookies
+
+# Use the C parser if applicable.
+from io import BytesIO
+
+from werkzeug.datastructures import Accept, Authorization
+from werkzeug.exceptions import ClientDisconnected
 
 try:
     from http_parser.parser import HttpParser, IOrderedDict
 except ImportError:
     from http_parser.pyparser import HttpParser, IOrderedDict
+
+# Used for parsing headers.
+from werkzeug import http, formparser
 
 from kyoukai.exc import HTTPException
 
@@ -46,12 +54,19 @@ class Request(object):
         Parse the data.
         """
         self._parser = parser
+        # Check if fully parsed before continuing.
+        if not self.fully_parsed:
+            # This is due to Kyoukai's buffer handling.
+            # The request is called to parse multiple times.
+            # Now, we just return if we're not 100% ready, meaning we won't get parsed needlessly.
+            # This saves CPU and memory parsing stuff.
+            return
         self.version = parser.get_version()
         self.method = parser.get_method()
         self.path = uparse.unquote(parser.get_path())
         self.headers = parser.get_headers()
         self.query = parser.get_query_string()
-        self.body = parser.recv_body().decode()
+        self.body = parser.recv_body()
 
         self.cookies = cookies.SimpleCookie()
         self.cookies.load(self.headers.get("Cookie", "")) or {}
@@ -61,6 +76,11 @@ class Request(object):
         self.source = "0.0.0.0"
 
         self.extra = {}
+
+        self.should_keep_alive = parser.should_keep_alive()
+
+        self.version = parser.get_version()
+        self.sversion = '.'.join(map(str, self.version))
 
         # urlparse out the items.
         _raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
@@ -81,19 +101,79 @@ class Request(object):
                 # The form isn't quite complete yet.
                 self.form = {}
         else:
-            t_f = uparse.parse_qs(self.body, keep_blank_values=True)
-            self.form = {}
-            # Unfuck parsed stuff
-            for k, v in t_f.items():
-                self.form[k] = v[0] if (isinstance(v, list) and len(v) == 1) else v
+            # Parse the form data out.
+            f_parser = formparser.FormDataParser()
+
+            # Wrap the body in a BytesIO.
+            body = BytesIO(self.body)
+
+            # The headers can't be directly passed into Werkzeug.
+            # Instead, we have to get a the custom content type, then pass in some fake WSGI options.
+            content_type = http.parse_options_header(self.headers.get("Content-Type"))
+
+            if content_type is None:
+                # Ok, no body.
+                self.form = {}
+                self.files = {}
+
+            else:
+                # Now, we get the actual mimetype out.
+                mimetype = content_type[0]
+                # Then, we construct a fake WSGI environment.
+                env = {"Content-Type": self.headers.get("Content-Type"),
+                       "Content-Length": self.headers.get("Content-Length")}
+
+                # Take the boundary out of the Content-Type, if applicable.
+                boundary = content_type[1].get("boundary")
+                if boundary is not None:
+                    env["boundary"] = boundary
+
+                # Get a good content length.
+                content_length = self.headers.get("Content-Length")
+                try:
+                    content_length = int(content_length)
+                except ValueError:
+                    content_length = len(self.body)
+
+                # Then, the form body itself is parsed.
+                try:
+                    data = f_parser.parse(body,
+                                          mimetype,
+                                          content_length,
+                                          options=env
+                                          )
+                except ClientDisconnected:
+                    # This means we were asked to parse before the request is fully made.
+                    # This is a quirk of how Kyoukai handles buffers.
+                    # We can just safely return here.
+                    return
+
+                # Extract the new data from the form parser.
+                self.form = data[1]
+                self.files = data[2]
 
         self.values = IOrderedDict(self.args)
         self.values.update(self.form if self.form else {})
 
-        self.should_keep_alive = parser.should_keep_alive()
+    @property
+    def accept(self) -> Accept:
+        """
+        Parses the Accept header
+        :return: A new :class:`werkzeug.datastructures.Accept` object.
+        """
+        header = self.headers.get("Accept", "")
+        return http.parse_accept_header(header)
 
-        self.version = parser.get_version()
-        self.sversion = '.'.join(map(str, self.version))
+    @property
+    def auth(self) -> Authorization:
+        """
+        Parses the Authorization header.
+
+        Note: this will return None in the case of an authorization header that is not Basic or Digest.
+        :return: A new :class:`werkzeug.datastructures.Authorization` object.
+        """
+        header = self.headers.get("Authorization", "")
+        return http.parse_authorization_header(header)
 
     @property
     def fully_parsed(self):
