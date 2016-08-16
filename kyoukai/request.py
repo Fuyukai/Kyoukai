@@ -113,22 +113,20 @@ class Request(object):
 
             # The headers can't be directly passed into Werkzeug.
             # Instead, we have to get a the custom content type, then pass in some fake WSGI options.
-            content_type = http.parse_options_header(self.headers.get("Content-Type"))
+            mimetype, c_t_args = http.parse_options_header(self.headers.get("Content-Type"))
 
-            if content_type is None:
+            if not mimetype:
                 # Ok, no body.
                 self.form = {}
                 self.files = {}
 
             else:
-                # Now, we get the actual mimetype out.
-                mimetype = content_type[0]
-                # Then, we construct a fake WSGI environment.
+                # Construct a fake WSGI environment.
                 env = {"Content-Type": self.headers.get("Content-Type"),
                        "Content-Length": self.headers.get("Content-Length")}
 
                 # Take the boundary out of the Content-Type, if applicable.
-                boundary = content_type[1].get("boundary")
+                boundary = c_t_args.get("boundary")
                 if boundary is not None:
                     env["boundary"] = boundary
 
@@ -138,6 +136,9 @@ class Request(object):
                     content_length = int(content_length)
                 except ValueError:
                     content_length = len(self.body)
+                except TypeError:
+                    # NoneType...
+                    raise HTTPException(400)
 
                 # Then, the form body itself is parsed.
                 try:

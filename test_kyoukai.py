@@ -15,7 +15,7 @@ from kyoukai.testing.testdata import kyk
 
 @pytest.mark.asyncio
 async def test_http_10():
-    response = await kyk.feed_request("GET / HTTP/1.0")
+    response = await kyk.feed_request("GET / HTTP/1.0\n")
     assert response.get_response_http_version() == "1.0"
     assert response.code == 200
 
@@ -94,7 +94,7 @@ Content-Length: 18
 async def test_response_recalculate_headers():
     response = await kyk.feed_request("""GET / HTTP/1.1
 host: localhost
-    """)
+""")
     response._recalculate_headers()
     assert response.headers["Content-Length"] == 4
     assert response.headers["Content-Type"] == "text/plain"
@@ -110,7 +110,8 @@ async def test_bad_request():
 @pytest.mark.asyncio
 async def test_get_encoded_request():
     response = await kyk.feed_request("""GET / HTTP/1.1
-host: localhost""")
+host: localhost
+""")
     by = response.to_bytes()
     parser = HttpParser()
     parser.execute(by, len(by))
