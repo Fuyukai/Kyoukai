@@ -4,25 +4,26 @@ Converters.
 Defines how to convert arguments in a Route via the signature.
 """
 import inspect
-# Converters: A dict of `type` -> `callable` where callable takes one argument, the item to convert, and produces a new item of the type.
+import typing
+
 from kyoukai.exc import HTTPException
 from kyoukai.context import HTTPRequestContext
 
 _converters = {
-    str: str,
-    int: int
+    str: lambda ctx, item: item,
+    int: lambda ctx, item: int(item)
 }
 
 
-def add_converter(type_: type, cb):
+def add_converter(type_: type, cb: typing.Callable[[HTTPRequestContext, typing.Any], typing.Any]):
     """
     Adds a converter to the conversions list/
     :param type_: The type to use as the annotation param.
     :param cb: A callable.
-            Takes one parameter, which is the value of the argument.
-            Should return a value of `type_`.
+            Takes two parameters: The HTTPRequestContext, and the item to convert.
 
-            This callable should raise a TypeError or a ValueError on failing to convert, at which point a 400 error will be raised.
+            This callable should raise a TypeError or a ValueError on failing to convert, at which point a 400 error
+            will be raised.
             Anything else will cause a normal 500 error.
     """
     if not callable(cb):
@@ -31,7 +32,7 @@ def add_converter(type_: type, cb):
     _converters[type_] = cb
 
 
-def convert_args(coro, *args, bound=False):
+def convert_args(ctx, coro, *args, bound=False):
     """
     Converts a the arguments of a function using it's signature.
 
