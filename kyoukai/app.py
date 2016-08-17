@@ -7,12 +7,12 @@ import inspect
 import io
 import mimetypes
 import os
-import traceback
 import logging
 import typing
 
-from kyoukai.renderers.base import Renderer
-from kyoukai.views import View
+from werkzeug.debug import DebuggedApplication
+
+from kyoukai.debugger import KyoukaiDebugger
 
 try:
     import magic
@@ -33,17 +33,12 @@ from kyoukai.exc import HTTPException
 from kyoukai.response import Response
 from kyoukai.route import Route
 
-try:
-    from kyoukai.renderers import mako_renderer
+from kyoukai.renderers.base import Renderer
+from kyoukai.views import View
 
-    _has_mako = True
-except ImportError:
-    mako_renderer = None
-    _has_mako = False
-
+from kyoukai.renderers import mako_renderer
 try:
     from kyoukai.renderers import jinja_renderer
-
     _has_jinja2 = True
 except ImportError:
     jinja_renderer = None
@@ -80,6 +75,7 @@ class Kyoukai(object):
         self._root_bp = Blueprint(name, None)
 
         self.debug = kwargs.get("debug", False)
+        self._debugger = KyoukaiDebugger(self)
 
         # Define the component here so it can be checked easily.
         self.component = None
@@ -360,6 +356,7 @@ class Kyoukai(object):
         This will invoke the appropriate error handler as registered in the blueprint of the route, if we can.
         Otherwise, it will invoke the default error handler.
         """
+        should_err = True
         code = err.code
         route = err.route
         # Check if the route is None.
@@ -375,10 +372,13 @@ class Kyoukai(object):
             # Since there's no special error handler derived for this code, return a basic Response.
             # If it's a 500 and we're in debug mode, format the traceback.
             if err.code == 500 and self.debug:
-                body = traceback.format_exc()
+                # Use the Kyoukai debugger.
+                should_err, r = self._debugger.debug(ctx, err)
+                protocol.handle_resp(r)
+                return should_err
             else:
                 body = str(code)
-            resp = Response(code, body, {"Content-Type": "text/plain"})
+            resp = Response(code, body)
         else:
             # Invoke the error handler specified.
             resp = wrap_response(await error_handler.invoke(ctx, exception=err))
@@ -392,7 +392,7 @@ class Kyoukai(object):
             # If it's that bad, just close it anyway.
             protocol.close()
 
-        return resp
+        return True
 
     async def delegate_request(self, protocol, ctx: HTTPRequestContext):
         """
@@ -451,14 +451,15 @@ class Kyoukai(object):
                 except Exception as e:
                     # An uncaught exception has propogated down to our level - oh dear.
                     # Catch it, turn it into a 500, and return.
-                    self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
                     exc = HTTPException(500)
                     # Set the cause of the HTTP exception. Useful for 500 error handlers.
                     exc.__cause__ = e
                     # Set the route of the exception.
                     exc.route = route
                     self.log_request(ctx, 500)
-                    await self.handle_http_error(exc, protocol, ctx)
+                    should_err = await self.handle_http_error(exc, protocol, ctx)
+                    if should_err:
+                        self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
                     return
                 else:
                     # If there is no error happening, just log it as normal.
