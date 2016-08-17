@@ -101,7 +101,8 @@ class Request(object):
                 # Malformed JSON.
                 raise HTTPException(400)
 
-            # JSOn obviously doesn't have file upload support.
+            # JSON bodies obviously don't have "native" upload support.
+            # If you want to use a files key in the JSON, that's fine.
             self.files = {}
 
         else:
@@ -138,7 +139,7 @@ class Request(object):
                     content_length = len(self.body)
                 except TypeError:
                     # NoneType...
-                    raise HTTPException(400)
+                    raise HTTPException(411)
 
                 # Then, the form body itself is parsed.
                 try:
