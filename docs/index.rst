@@ -46,6 +46,7 @@ Contents:
    blueprints
 
    apireference.rst
+   changelog.rst
 
 Indices and tables
 ==================
