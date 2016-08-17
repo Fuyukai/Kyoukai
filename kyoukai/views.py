@@ -1,15 +1,11 @@
 """
 Views are like grouped together routes - but not Blueprints. They allow creating classes for routes, and storing
 data, etc inside the class.
-
-This is similar to FlaskViews
 """
-import weakref
-
 from kyoukai.route import Route
 
 
-def route(regex, methods: list = None):
+def route(regex, methods: list = None, route_cls: type=Route):
     """
     Create a "bound" route.
 
@@ -17,10 +13,28 @@ def route(regex, methods: list = None):
     Blueprint.bind_view() method.
 
     This route is meant to be placed in a class that inherits from :class:`View`.
+
+    .. versionchanged:: 1.8
+
+        This method now accepts an optional ``route_cls`` which designates which Route class to wrap the coroutines in.
+
+    :param regex: The regex to use for routing.
+
+    :param methods: The methods that are allowed for this route.
+
+    :param route_cls: The Route class to wrap this Route in.
+
+    :return: The :class:`Route` that wraps this coroutine.
     """
     if not methods:
         methods = ["GET"]
-    return Route(None, regex, methods, bound=True)
+
+    def _route_inner(coro):
+        new_route = route_cls(None, regex, methods, bound=True)
+        new_route.create(coro)
+        return new_route
+
+    return _route_inner
 
 
 class ViewMeta(type):
@@ -57,6 +71,9 @@ class ViewMeta(type):
         return new_class
 
     def get_routes(cls):
+        """
+        :return: A list of Route objects for the specified View.
+        """
         return [i for i in cls.__dict__.values() if isinstance(i, Route)]
 
 

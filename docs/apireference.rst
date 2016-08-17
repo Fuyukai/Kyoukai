@@ -42,7 +42,7 @@ Asphalt
 -------
 
 These classes are for Asphalt usage, such as contexts.
-You are not guarenteed to always have these specific objects.
+You are not guaranteed to always have these specific objects.
 
 .. autoclass:: kyoukai.context.HTTPRequestContext
 	:members:

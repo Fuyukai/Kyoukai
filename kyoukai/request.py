@@ -183,6 +183,14 @@ class Request(object):
 
     @property
     def fully_parsed(self):
+        """
+        Checks if the request is fully parsed or not.
+
+        If called inside user code, this is almost definitely True. Being not is probably a bug.
+
+        :return: If the request has been fully parsed.
+        """
+
         if not hasattr(self, "_parser"):
             return False
         return self._parser.is_message_complete()
@@ -214,8 +222,10 @@ class Request(object):
 
         Shortcut for:
 
-        r = Request()
-        r.parse(data, source)
+        .. code:: python
+
+            r = Request()
+            r.parse(data, source)
         """
         # Create a new request.
         req = cls()

@@ -1,5 +1,5 @@
 """
-Kyokai exceptions.
+Kyoukai exceptions.
 """
 
 
@@ -7,13 +7,18 @@ class HTTPException(Exception):
     """
     A basic HTTP error.
 
-    Should not be created directly, only caught, or one of the subclasses caught.
+    This is used to quickly escape out of a function, by raising the appropriate HTTP Exception.
+
+    .. code:: python
+
+        if not some_condition:
+            raise HTTPException(404)
     """
     def __init__(self, errcode, msg=None,
                  route=None):
         self.code = errcode
 
-        self.msg = None
+        self.msg = msg
 
         self.route = route
 

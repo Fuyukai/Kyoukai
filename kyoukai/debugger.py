@@ -1,4 +1,6 @@
 """
+.. versionadded:: 1.8
+
 The Kyoukai debugger is a subset of the Werkzeug debugger.
 
 It uses the Werkzeug debugger for the heavy lifting, whilst providing this as a wrapper around to ensure that it acts
@@ -21,6 +23,7 @@ class KyoukaiDebugger:
 
     You should never create this yourself. Only the application object should create this.
     """
+
     def __init__(self, app):
         self.app = app
 
@@ -33,7 +36,6 @@ class KyoukaiDebugger:
         """
         if not self.app.debug:
             return
-
 
         # Check the request's params.
         params = ctx.request.args
@@ -51,8 +53,7 @@ class KyoukaiDebugger:
                 wz_f = os.path.dirname(debug.__file__)
                 filename = os.path.join(wz_f, 'shared', os.path.basename(filename))
                 # Guess the content type from the filename.
-                mimetype = mimetypes.guess_type(filename)[0] \
-                    or 'application/octet-stream'
+                mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
                 if os.path.exists(filename):
                     with open(filename, 'rb') as f:
                         return False, Response(body=f.read(), code=200, headers={"Content-Type": mimetype})
