@@ -404,6 +404,12 @@ class Kyoukai(object):
         async with ctx:
             # Acquire the lock on the protocol.
             async with protocol.lock:
+                # Check if we should skip our own handling and go straight to the debugger.
+                if self.debug:
+                    if '__debugger__' in ctx.request.args and ctx.request.args["__debugger__"] == "yes":
+                        resp = self._debugger.debug(ctx, None)
+                        protocol.handle_resp(resp[1])
+                        return
                 # Check if there's a host header.
                 if ctx.request.version == (1, 1):
                     host = ctx.request.headers.get("host", None)

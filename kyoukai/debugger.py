@@ -33,14 +33,7 @@ class KyoukaiDebugger:
         """
         if not self.app.debug:
             return
-        # Ok, here we go.
-        # Get the traceback, now.
-        traceback = get_current_traceback(
-            skip=0, show_hidden_frames=True,
-            ignore_system_exceptions=False)
-        for frame in traceback.frames:
-            self.frames[frame.id] = frame
-        self.tracebacks[traceback.id] = traceback
+
 
         # Check the request's params.
         params = ctx.request.args
@@ -74,6 +67,13 @@ class KyoukaiDebugger:
                 result = frame.console.eval(command)
                 return False, Response(body=result, code=200, headers={"Content-Type": "text/html"})
         else:
+            # Get the traceback, now.
+            traceback = get_current_traceback(
+                skip=0, show_hidden_frames=True,
+                ignore_system_exceptions=False)
+            for frame in traceback.frames:
+                self.frames[frame.id] = frame
+            self.tracebacks[traceback.id] = traceback
             # Render the base page.
             body = traceback.render_full(evalex=True, evalex_trusted=True, )
             r = Response(code=500, body=body.encode(), headers={"X-XSS-Protection": "0"})
