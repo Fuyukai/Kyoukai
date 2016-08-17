@@ -5,6 +5,7 @@ A Response is returned by Routes when the underlying coroutine is done.
 """
 import gzip
 import http
+import typing
 import warnings
 
 try:
@@ -42,7 +43,7 @@ class Response(object):
             This is automatically set inside Kyoukai.
     """
 
-    def __init__(self, code: int, body: str, headers: dict = None):
+    def __init__(self, code: int, body: typing.Union[str, bytes], headers: dict = None):
         """
         Create a new response.
         """
