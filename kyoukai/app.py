@@ -276,8 +276,6 @@ class Kyoukai(object):
         """
         return self._root_bp.errorhandler(code)
 
-    errorhandler.__doc__ = Blueprint.errorhandler.__doc__
-
     def log_request(self, ctx: HTTPRequestContext, code: int = 200):
         """
         Logs a request to the logger.
