@@ -66,7 +66,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
         # Create a request
         self.buffer += data
-        req = Request()
+        req = self.app.request_cls()
         ctx = HTTPRequestContext(req, self.app, self.parent_context)
         try:
             req.parse(self.buffer, self.ip)

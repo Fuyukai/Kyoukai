@@ -137,7 +137,7 @@ class Route(object):
 
         result = await self._wrapped_coro(*args)
         # Wrap the result.
-        result = wrap_response(result)
+        result = wrap_response(result, response_cls=ctx.app.response_cls)
 
         if self._should_run_hooks:
             hooks = self.bp.get_post_hooks(ctx)

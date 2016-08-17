@@ -6,7 +6,7 @@ import pathlib
 
 from kyoukai.exc import HTTPException
 
-VERSION = "1.7.3"
+VERSION = "1.8.0"
 VERSIONT = tuple(map(int, VERSION.split('.')))
 
 
@@ -28,6 +28,9 @@ def wrap_response(response, response_cls=None):
     Wrap up a response, if applicable.
 
     This allows Flask-like `return ""`.
+
+    :param response: The tuple or otherwise object that is being wrapped.
+    :param response_cls: The Response class that is being used.
     """
     # Import inside here to prevent circular imports.
     if response_cls is None:

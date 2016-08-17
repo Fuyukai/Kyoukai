@@ -8,11 +8,8 @@ import io
 import mimetypes
 import os
 import logging
+import traceback
 import typing
-
-from werkzeug.debug import DebuggedApplication
-
-from kyoukai.debugger import KyoukaiDebugger
 
 try:
     import magic
@@ -25,17 +22,20 @@ from asphalt.core import Context
 from asphalt.core.runner import run_application
 from typeguard import check_argument_types
 
+from kyoukai.debugger import KyoukaiDebugger
+
 from kyoukai.blueprints import Blueprint
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import static_filename, wrap_response
-
 from kyoukai.exc import HTTPException
-from kyoukai.response import Response
-from kyoukai.route import Route
 
-from kyoukai.renderers.base import Renderer
+from kyoukai.response import Response
+from kyoukai.request import Request
+
+from kyoukai.route import Route
 from kyoukai.views import View
 
+from kyoukai.renderers.base import Renderer
 from kyoukai.renderers import mako_renderer
 try:
     from kyoukai.renderers import jinja_renderer
@@ -54,7 +54,12 @@ class Kyoukai(object):
     :param name:
         The name of the app. This is passed into the root blueprint as the name, which shows up in exceptions.
     :type name: :class:`str`
+
+    :cvar request_cls: The class to use to create Requests.
+    :cvar response_cls: The class to use to create wrapped Responses.
     """
+    request_cls = Request
+    response_cls = Response
 
     def __init__(self, name: str, **kwargs):
         """
@@ -329,14 +334,24 @@ class Kyoukai(object):
         Calls the on_startup handler.
 
         This should not be called, unless you wish to call the startup function again (?).
+
+        .. versionchanged:: 1.8
+
+            This now passes the app object.
         """
-        item = self._on_startup()
+        try:
+            item = self._on_startup(self)
+        except:
+            # Only print the bottom most traceback.
+            tb = traceback.format_exc()
+            self.logger.error("Error calling on startup function:\n{}".format(tb))
+            raise SystemExit()
         # If it's a coroutine or otherwise awaitable, await it.
         # This is so that coroutines can be passed in to handle.
         if inspect.isawaitable(item):
             await item
 
-    def on_startup(self, coro_or_callable: typing.Callable[[], None]):
+    def on_startup(self, coro_or_callable: typing.Callable[['Kyoukai'], None]):
         """
         Registers a function to be called on startup.
 
@@ -356,7 +371,6 @@ class Kyoukai(object):
         This will invoke the appropriate error handler as registered in the blueprint of the route, if we can.
         Otherwise, it will invoke the default error handler.
         """
-        should_err = True
         code = err.code
         route = err.route
         # Check if the route is None.
