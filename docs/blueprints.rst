@@ -60,4 +60,29 @@ between these however is that error handlers are local to the Blueprint and its 
 .. automethod:: kyoukai.blueprints.Blueprint.errorhandler
 
 
+Registering blueprints
+----------------------
+
+If, after creating your blueprint, you attempt to navigate to ``/some/route`` you will find a 404 error living there
+instead. This is because you did not register the Blueprint to your application.
+
+.. code:: python
+
+    app.register_blueprint(my_blueprint)
+
+Internally, this adds a child to the root blueprint, and sets the parent of the child to the root blueprint.
+If you have a blueprint that you wish to inherit from, you must register your Blueprint as a child of the Blueprint
+you wish to inherit from.
+
+.. code:: python
+
+    my_blueprint.add_child(my_other_blueprint)
+
+.. automethod:: kyoukai.app.Kyoukai.register_blueprint
+
+.. automethod:: kyoukai.blueprints.Blueprint.add_child
+
+
+
+
 
