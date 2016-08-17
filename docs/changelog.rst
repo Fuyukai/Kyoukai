@@ -24,7 +24,7 @@ Version 1.7.2
 
  - Form handling is now handled by Werkzeug.
 
- - Add a new attribute, :attribute:`kyoukai.request.Request.files` which stores uploaded files from the form passed in.
+ - Add a new attribute, :attr:`kyoukai.request.Request.files` which stores uploaded files from the form passed in.
 
  - Requests are no longer parsed multiple times.
 
