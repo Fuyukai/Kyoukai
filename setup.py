@@ -24,7 +24,8 @@ deps = [
     "PyYAML==3.11",
     "typeguard>=1.2.1",
     "asphalt>=2.0.0",
-    "werkzeug>=0.11.10"
+    "werkzeug>=0.11.10",
+    "Mako>=1.0.4"
 ]
 
 if sys.platform != "win32":

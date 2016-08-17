@@ -88,12 +88,9 @@ class Kyoukai(object):
         self._on_startup = lambda: None
 
         # Define the renderer.
-        render = kwargs.get("renderer")
+        render = kwargs.get("renderer", "mako")
         if render == "mako":
-            if not _has_mako:
-                raise ImportError("Mako is not installed; cannot be used as a renderer")
-            else:
-                self._renderer = mako_renderer.MakoRenderer(kwargs.get("template_directory"))
+            self._renderer = mako_renderer.MakoRenderer(kwargs.get("template_directory"))
         elif render == "jinja2":
             if not _has_jinja2:
                 raise ImportError("Jinja2 is not installed; cannot be used as a renderer")
