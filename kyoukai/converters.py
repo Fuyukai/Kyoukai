@@ -4,6 +4,7 @@ Converters.
 Defines how to convert arguments in a Route via the signature.
 """
 import inspect
+import traceback
 import typing
 
 from kyoukai.exc import HTTPException
@@ -74,9 +75,11 @@ def convert_args(ctx, coro, *args, bound=False):
             _converter = _converters[type_]
             # Convert the arg.
             try:
-                new_args.append(_converter(item))
+                new_args.append(_converter(ctx, item))
             except (TypeError, ValueError) as e:
                 # Raise a bad request error.
+                ctx.app.logger.error("Failed to convert {} to {}\n{}".format(item, type_,
+                                                                             ''.join(traceback.format_exc())))
                 raise HTTPException(400) from e
 
     return new_args

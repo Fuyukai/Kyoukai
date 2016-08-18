@@ -95,7 +95,6 @@ class Blueprint(object):
             return
         for route in view.get_routes():
             route.bp = self
-            route.matcher = re.compile(self.prefix + route._match_str)
             self.routes.append(route)
 
         # Add before_request and after_request from the new_view.
@@ -279,7 +278,6 @@ class Blueprint(object):
         if not methods:
             methods = ["GET"]
 
-        regex = self.prefix + regex
         r = self.route_cls(self, regex, methods, run_hooks=run_hooks)
         r.create(coroutine)
 

@@ -30,7 +30,7 @@ class Route(object):
         Create a new Route.
         """
         self._match_str = matcher
-        self.matcher = re.compile(matcher)
+        self._matcher = None
         self.allowed_methods = methods
         self._wrapped_coro = None
 
@@ -44,6 +44,16 @@ class Route(object):
         self.name = "<Undefined route>"
 
         self._should_run_hooks = run_hooks
+
+    @property
+    def matcher(self):
+        """
+        Gets the compiled matcher for the current route.
+        :return:
+        """
+        if self._matcher is None:
+            self._matcher = re.compile(self.bp.prefix + self._match_str)
+        return self._matcher
 
     @property
     def self(self):
