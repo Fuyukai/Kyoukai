@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.8.2
+-------------
+
+ - JSON forms are now lazy loaded when `.form` is called.
+
 Version 1.8.1
 -------------
 

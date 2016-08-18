@@ -82,6 +82,9 @@ class Request(object):
         self.version = parser.get_version()
         self.sversion = '.'.join(map(str, self.version))
 
+        self._form = {}
+        self.files = {}
+
         # urlparse out the items.
         _raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
         # Reparse args
@@ -147,7 +150,7 @@ class Request(object):
                 self.files = data[2]
 
         self.values = IOrderedDict(self.args)
-        self.values.update(self.form if self.form else {})
+        self.values.update(self._form if self._form else {})
 
     @property
     def form(self) -> dict:
@@ -157,12 +160,13 @@ class Request(object):
         JSON forms are lazy loaded. This means that parsing is done in the first call to `.form`, rather than when
         the request is created.
         """
-        if self._form:
+        if self._form :
             return self._form
         # Parse JSON, otherwise.
         if self.headers.get("Content-Type") == "application/json":
             self._form = json.loads(self.body.decode())
-        return
+            self.values.update(self._form if self._form else {})
+        return self._form
 
     @property
     def accept(self) -> Accept:
