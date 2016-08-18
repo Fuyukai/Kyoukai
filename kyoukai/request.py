@@ -93,19 +93,7 @@ class Request(object):
                 self.args[k] = None
             else:
                 self.args[k] = v
-        if self.headers.get("Content-Type") == "application/json":
-            # Parse as JSON
-            try:
-                self.form = json.loads(self.body.decode())
-            except json.JSONDecodeError:
-                # Malformed JSON.
-                raise HTTPException(400)
-
-            # JSON bodies obviously don't have "native" upload support.
-            # If you want to use a files key in the JSON, that's fine.
-            self.files = {}
-
-        else:
+        if self.headers.get("Content-Type") != "application/json":
             # Parse the form data out.
             f_parser = formparser.FormDataParser()
 
@@ -118,7 +106,7 @@ class Request(object):
 
             if not mimetype:
                 # Ok, no body.
-                self.form = {}
+                self._form = {}
                 self.files = {}
 
             else:
@@ -155,11 +143,26 @@ class Request(object):
                     return
 
                 # Extract the new data from the form parser.
-                self.form = data[1]
+                self._form = data[1]
                 self.files = data[2]
 
         self.values = IOrderedDict(self.args)
         self.values.update(self.form if self.form else {})
+
+    @property
+    def form(self) -> dict:
+        """
+        Returns the form data for the specified request.
+
+        JSON forms are lazy loaded. This means that parsing is done in the first call to `.form`, rather than when
+        the request is created.
+        """
+        if self._form:
+            return self._form
+        # Parse JSON, otherwise.
+        if self.headers.get("Content-Type") == "application/json":
+            self._form = json.loads(self.body.decode())
+        return
 
     @property
     def accept(self) -> Accept:
