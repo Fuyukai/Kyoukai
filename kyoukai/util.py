@@ -6,7 +6,7 @@ import pathlib
 
 from kyoukai.exc import HTTPException
 
-VERSION = "1.8.0"
+VERSION = "1.8.0.1"
 VERSIONT = tuple(map(int, VERSION.split('.')))
 
 

@@ -86,7 +86,7 @@ class Kyoukai(object):
         self.component = None
 
         # On startup function.
-        self._on_startup = lambda: None
+        self._on_startup = lambda app: None
 
         # Define the renderer.
         render = kwargs.get("renderer", "mako")

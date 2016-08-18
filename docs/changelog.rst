@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.8.0.1
+---------------
+
+ - Fix crashing at startup without a startup function registered.
+
 Version 1.8.0
 -------------
 
