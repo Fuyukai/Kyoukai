@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.8.3
+-------------
+
+ - Converters can now be awaitables.
+
 Version 1.8.2
 -------------
 

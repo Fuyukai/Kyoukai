@@ -143,7 +143,7 @@ class Route(object):
             params += list(matches)
 
         # Convert the arguments.
-        args = convert_args(ctx, self._wrapped_coro, *params, bound=self._bound)
+        args = await convert_args(ctx, self._wrapped_coro, *params, bound=self._bound)
 
         result = await self._wrapped_coro(*args)
         # Wrap the result.

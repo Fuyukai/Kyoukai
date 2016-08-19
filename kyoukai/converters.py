@@ -33,7 +33,7 @@ def add_converter(type_: type, cb: typing.Callable[[HTTPRequestContext, typing.A
     _converters[type_] = cb
 
 
-def convert_args(ctx, coro, *args, bound=False):
+async def convert_args(ctx, coro, *args, bound=False):
     """
     Converts a the arguments of a function using it's signature.
 
@@ -75,7 +75,12 @@ def convert_args(ctx, coro, *args, bound=False):
             _converter = _converters[type_]
             # Convert the arg.
             try:
-                new_args.append(_converter(ctx, item))
+                converted = _converter(ctx, item)
+                if inspect.isawaitable(converted):
+                    result = await converted
+                else:
+                    result = converted
+                new_args.append(result)
             except (TypeError, ValueError) as e:
                 # Raise a bad request error.
                 ctx.app.logger.error("Failed to convert {} to {}\n{}".format(item, type_,
