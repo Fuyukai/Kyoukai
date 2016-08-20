@@ -60,8 +60,7 @@ class Route(object):
                 # Raise a new HTTPException(500) from this.
                 exc = HTTPException(500)
                 exc.route = self
-                exc.__cause__ = e
-                raise exc
+                raise exc from e
         return self._matcher
 
     @property

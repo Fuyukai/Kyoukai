@@ -3,6 +3,13 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.8.4
+-------------
+
+ - Error handlers can now error themselves, and this is handled gracefully.
+
+ - If a match is invalid, it will raise a 500 error at compile time, which is usually when routes are first matched.
+
 Version 1.8.3
 -------------
 
