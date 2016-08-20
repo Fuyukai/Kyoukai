@@ -2,6 +2,7 @@
 Module for Kyokai routes.
 """
 import re
+import sre_constants
 
 from asphalt.core import Context
 
@@ -9,6 +10,7 @@ import kyoukai
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import wrap_response
 from kyoukai.converters import _converters, convert_args
+from kyoukai.exc import HTTPException
 
 
 class Route(object):
@@ -52,7 +54,14 @@ class Route(object):
         :return:
         """
         if self._matcher is None:
-            self._matcher = re.compile(self.bp.prefix + self._match_str)
+            try:
+                self._matcher = re.compile(self.bp.prefix + self._match_str)
+            except sre_constants.error as e:
+                # Raise a new HTTPException(500) from this.
+                exc = HTTPException(500)
+                exc.route = self
+                exc.__cause__ = e
+                raise exc
         return self._matcher
 
     @property

@@ -395,7 +395,13 @@ class Kyoukai(object):
             resp = Response(code, body)
         else:
             # Invoke the error handler specified.
-            resp = wrap_response(await error_handler.invoke(ctx, exception=err))
+            try:
+                resp = wrap_response(await error_handler.invoke(ctx, exception=err), self.response_cls)
+            except Exception:
+                self.logger.error("Unhandled exception in error handler:\n {}".format(
+                    ''.join(traceback.format_exc())
+                ))
+                resp = wrap_response("500", self.response_cls)
         protocol.handle_resp(resp)
 
         # Check if we should close the connection.
@@ -441,6 +447,14 @@ class Kyoukai(object):
                     if e.code == 405:
                         self.log_request(ctx, code=e.code)
                         await self.handle_http_error(e, protocol, ctx)
+                        return
+                    elif e.code == 500:
+                        # Failure matching, probably.
+                        self.log_request(ctx, code=e.code)
+                        await self.handle_http_error(e, protocol, ctx)
+                        self.logger.error("Unhandled exception in route matching:\n {}".format(
+                            ''.join(traceback.format_exc())
+                        ))
                         return
                     else:
                         self.logger.error("??????? Something went terribly wrong.")
