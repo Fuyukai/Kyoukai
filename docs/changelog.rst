@@ -3,6 +3,12 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.8.5
+-------------
+
+ - Routing tree has been improved by allowing two routes with the same path but different methods to reside in two
+   different blueprints.
+
 Version 1.8.4
 -------------
 
