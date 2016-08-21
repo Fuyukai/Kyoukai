@@ -44,6 +44,7 @@ to routing on an underlying Blueprint object used as the "root" blueprint.
         return "Some route"
 
 .. automethod:: kyoukai.blueprints.Blueprint.route
+    :noindex:
 
 Error handlers
 --------------
@@ -58,6 +59,7 @@ between these however is that error handlers are local to the Blueprint and its 
         return "Handled an error"
 
 .. automethod:: kyoukai.blueprints.Blueprint.errorhandler
+    :noindex:
 
 
 Registering blueprints
@@ -79,8 +81,10 @@ you wish to inherit from.
     my_blueprint.add_child(my_other_blueprint)
 
 .. automethod:: kyoukai.app.Kyoukai.register_blueprint
+    :noindex:
 
 .. automethod:: kyoukai.blueprints.Blueprint.add_child
+    :noindex:
 
 
 
