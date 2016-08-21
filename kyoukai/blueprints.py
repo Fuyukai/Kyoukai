@@ -52,6 +52,8 @@ class Blueprint(object):
         If this is None, then it will be automatically set when the blueprint is added as a child to a parent
         blueprint.
 
+        The only Blueprint that should have no parent during the run time of the app is the root blueprint.
+
     :param url_prefix: The prefix to automatically add to the start of each route.
 
     :cvar route_cls: The Route class to use for wrapping new Routes.
@@ -80,6 +82,19 @@ class Blueprint(object):
         self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
 
         self.logger = logging.getLogger("Kyoukai.Blueprint." + self._name if self._name else "root")
+
+    def __len__(self):
+        """
+        Gets the number of routes attached to this Blueprint.
+
+        This takes into account children routes.
+        """
+        tmplen = len(self.routes)
+        for child in self.children.values():
+            tmplen += len(child)
+
+        return tmplen
+
 
     def bind_view(self, view: View, *args, **kwargs):
         """
@@ -132,7 +147,7 @@ class Blueprint(object):
         :param blueprint: The child blueprint.
         """
         self._children[blueprint._name] = blueprint
-        self.logger.info("Registered Blueprint {} with {} new routes".format(blueprint._name, len(blueprint.routes)))
+        self.logger.info("Registered Blueprint {} with {} new routes".format(blueprint._name, len(blueprint)))
         blueprint.parent = self
 
     def before_request(self, coro):
@@ -194,6 +209,8 @@ class Blueprint(object):
         This will traverse down all children blueprints, and call .match() on them.
         Then it will traverse down our routes, and check if the routes match.
 
+        .. versionadded:: 1.8.5
+
         :param route: The path to match.
         :param method: The method to match. Used only for `HEAD` and `ANY` matching.
         :return: A list of routes that matched.
@@ -219,6 +236,11 @@ class Blueprint(object):
 
         This will search down our routes, and then down our children's routes, to see if we can find a match for the
         specified route.
+
+        .. versionchanged:: 1.8.5
+
+            This is now effectively only used on the root blueprint. Children blueprints should have this called
+            explicitly by other handlers to match routes only on those blueprints.
 
         :param route: The route to match, e.g ``/abc/def``.
         :param method: The method of the route.
