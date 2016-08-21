@@ -8,6 +8,7 @@ import collections
 import logging
 
 import re
+import typing
 
 from kyoukai.exc import HTTPException
 from kyoukai.route import Route
@@ -186,6 +187,32 @@ class Blueprint(object):
         # Return the list of our hooks, merged with the other list.
         return bps + list(self._request_hooks["post"].values())
 
+    def gather_routes(self, route: str, method: str) -> typing.List[Route]:
+        """
+        Gathers a list of routes from all children which match the specified path.
+
+        This will traverse down all children blueprints, and call .match() on them.
+        Then it will traverse down our routes, and check if the routes match.
+
+        :param route: The path to match.
+        :param method: The method to match. Used only for `HEAD` and `ANY` matching.
+        :return: A list of routes that matched.
+        """
+        matches = []
+        for route_obb in self.routes:
+            assert isinstance(route_obb, Route)
+            matched = route_obb.match(route, method)
+            if matched:
+                matches.append(matched)
+
+        # Gather the routes on the children.
+        for child in self.children.values():
+            matched = child.gather_routes(route, method)
+            if matched:
+                matches += matched
+
+        return matches
+
     def match(self, route: str, method: str):
         """
         Match a route.
@@ -199,18 +226,7 @@ class Blueprint(object):
         :raises: A :class:`kyoukai.exc.HTTPException` with code 415 if the method is not valid.
         :returns: The :class:`Route` if the route was matched, or None.
         """
-        matches = []
-        for route_obb in self.routes:
-            assert isinstance(route_obb, Route)
-            matched = route_obb.match(route, method)
-            if matched:
-                matches.append(matched)
-
-        # Search through the children
-        for child in self.children.values():
-            matched = child.match(route, method)
-            if matched:
-                matches.append(matched)
+        matches = self.gather_routes(route, method)
 
         if not matches:
             return None
