@@ -10,6 +10,7 @@ import os
 import logging
 import traceback
 import typing
+from urllib.parse import urlsplit
 
 try:
     import magic
@@ -37,8 +38,10 @@ from kyoukai.views import View
 
 from kyoukai.renderers.base import Renderer
 from kyoukai.renderers import mako_renderer
+
 try:
     from kyoukai.renderers import jinja_renderer
+
     _has_jinja2 = True
 except ImportError:
     jinja_renderer = None
@@ -88,15 +91,11 @@ class Kyoukai(object):
         # On startup function.
         self._on_startup = lambda app: None
 
-        # Define the renderer.
-        render = kwargs.get("renderer", "mako")
-        if render == "mako":
-            self._renderer = mako_renderer.MakoRenderer(kwargs.get("template_directory"))
-        elif render == "jinja2":
-            if not _has_jinja2:
-                raise ImportError("Jinja2 is not installed; cannot be used as a renderer")
-            else:
-                self._renderer = jinja_renderer.Jinja2Renderer(kwargs.get("loader"))
+        self._renderer = None
+
+        self.udsh = None
+
+        self.reconfigure(**kwargs)
 
     def reconfigure(self, **cfg: dict):
         """
@@ -109,6 +108,25 @@ class Kyoukai(object):
         :return: The new configuration.
         """
         self.config = {**self.config, **cfg}
+
+        # Define the renderer.
+        if self._renderer is None:
+            render = self.config.get("renderer", "mako")
+            if render == "mako":
+                self._renderer = mako_renderer.MakoRenderer(self.config.get("template_directory"))
+            elif render == "jinja2":
+                if not _has_jinja2:
+                    raise ImportError("Jinja2 is not installed; cannot be used as a renderer")
+                else:
+                    self._renderer = jinja_renderer.Jinja2Renderer(self.config.get("loader"))
+
+        # Check if we should use the default static handler.
+        if self.udsh is None:
+            self.udsh = self.config.get("use_static_handler", True)
+            if self.udsh:
+                new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
+                self.root.add_route(new_route)
+
         return self.config
 
     @property
@@ -217,10 +235,27 @@ class Kyoukai(object):
             mimetype = mimetypes.guess_type(path)[0]
             if not mimetype:
                 if _has_magic:
-                    mimetype = magic.from_file(path, mime=True).decode()
+                    mimetype = magic.from_file(path, mime=True)
+                    if isinstance(mimetype, bytes):
+                        mimetype = mimetype.decode()
                 else:
                     mimetype = "application/octet-stream"
             return Response(200, body=content.read(), headers={"Content-Type": mimetype})
+
+    async def default_static_handler(self, ctx: HTTPRequestContext, filename: str):
+        """
+        A default static file handler.
+
+        This is automatically registered as ``/static/`` on the root blueprint, unless ``use_static_handler=False``
+        is passed into the app's configuration.
+
+        .. versionadded:: 1.8.6
+        """
+        # Unparse the filename.
+        newpath = urlsplit(filename).path
+
+        # Get the static file.
+        return self.get_static(newpath)
 
     def _match_route(self, path, meth) -> Route:
         """

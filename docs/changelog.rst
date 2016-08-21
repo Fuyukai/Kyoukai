@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.8.6
+-------------
+
+ - Add a default static file handler.
+
 Version 1.8.5
 -------------
 
