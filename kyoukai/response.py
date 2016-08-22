@@ -8,12 +8,7 @@ import http
 import typing
 import warnings
 
-try:
-    from http_parser.parser import IOrderedDict
-except ImportError:  # pragma: no cover
-    from http_parser.pyparser import IOrderedDict
-
-    warnings.warn("Using fallback Python HTTP parser - this will negatively affect performance.")
+from werkzeug.datastructures import Headers
 
 from . import util
 
@@ -50,7 +45,7 @@ class Response(object):
         self.code = code
         self.cookies = SimpleCookie()
         self.body = body
-        self.headers = IOrderedDict(headers) if headers else IOrderedDict()
+        self.headers = Headers(headers) if headers else Headers()
 
         self._should_gzip = False
         self._is_head = False
