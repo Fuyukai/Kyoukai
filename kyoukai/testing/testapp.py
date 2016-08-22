@@ -6,23 +6,17 @@ import collections
 import typing
 
 from asphalt.core import Context
+from kyoukai import KyoukaiProtocol
 
-from kyoukai import HTTPRequestContext
 from kyoukai import Request
 from kyoukai import Response
 from kyoukai.app import Kyoukai
 
 
-class TestProtocol:
+class TestProtocol(KyoukaiProtocol):
     """
     A fake test protocol, that has a mock close and send method to emulate a real transport for the app.
     """
-    def __init__(self, app: 'TestKyk'):
-        self.app = app
-
-        # Make a fake lock, for the Request lock.
-        self.lock = asyncio.Lock()
-
     def handle_resp(self, response: Response):
         self.app._responses.put_nowait(response)
 
@@ -42,7 +36,7 @@ class TestingKyk(Kyoukai):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._testing_protocol = TestProtocol(self)
+        self._testing_protocol = TestProtocol(self, Context())
 
         self._responses = asyncio.Queue()
 
@@ -57,16 +51,15 @@ class TestingKyk(Kyoukai):
             data = data.replace("\n", "\r\n")
             if not data.endswith("\r\n\r\n"):
                 data += "\r\n"
-            request = Request.from_data(data.encode(), "127.0.0.1")
-        else:
-            request = data
+            data = data.encode()
 
-        # Create a new HTTPRequestContext.
-        ctx = HTTPRequestContext(request, self, Context())
+        # Call data_received on the protocol.
+        self._testing_protocol.parser.feed_data(data)
+        try:
+            await self._testing_protocol._wait()
+        finally:
+            self._testing_protocol._empty_state()
 
-        # Delegate the request.
-        await self.delegate_request(self._testing_protocol, ctx)
-        # This should return None, as the queue was updated during delegate_request.
         return self._responses.get_nowait()
 
     def clean(self):

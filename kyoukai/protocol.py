@@ -68,7 +68,7 @@ class HTTPToolsHandler:  # pragma: no cover
 
         This sets self.current_request.body.
         """
-        self.current_request.body += body
+        self.current_request.body += body.decode()
 
     def on_url(self, url: bytes):
         """
@@ -105,8 +105,6 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         # Asphalt contexts
         self.parent_context = parent_context
 
-        # No need for a buffer with httptools.
-
         # Request lock.
         # This ensures that requests are processed serially, and responded to in the correct order, as the lock is
         # released after processing a request completely.
@@ -139,20 +137,27 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         :param exception: The exception to send down the line.
         :return:
         """
-        self.logger.critical("Unhandled exception inside Kyoukai!")
-        self.logger.critical("This is a bug. Please report it!")
-        self.logger.critical("".join(traceback.format_exc()))
+        self.logger.warning("Exception happened during HTTP parsing.")
+        self.logger.warning("This is not necessarily a bug.")
         # Convert the exception.
         new_e = exc_from(exception)
         try:
             await self.app.handle_http_error(new_e, self, context)
         except Exception:
             # Critical error.
-            self.logger.critical("Unhandled exception inside Kyoukai!")
+            self.logger.critical("Unhandled exception inside Kyoukai, when processing a HTTP error!")
             self.logger.critical("This is a bug. Please report it!")
             self.logger.critical("".join(traceback.format_exc()))
             self.write(CRITICAL_ERROR_TEXT.encode())
             self.close()
+
+    def reset(self):
+        """
+        Resets the HTTP parser.
+        """
+        self.parser_obb.reset()
+        # Reset the current protocol.
+        self.parser = httptools.HttpRequestParser(self.parser_obb)
 
     async def _wait(self):
         """
@@ -183,6 +188,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         except Exception as e:
             await self._safe_handle_error(ctx, e)
             return
+        finally:
+            self.reset()
 
         # Reset the parser.
         self.parser_obb.reset()
@@ -192,6 +199,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             await self.app.delegate_request(self, ctx)
         except Exception as exc:
             await self._safe_handle_error(ctx, exc)
+        finally:
+            self.reset()
 
     def connection_made(self, transport: asyncio.Transport):
         """
@@ -215,7 +224,20 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         This is the bulk of the processing.
         """
         # Feed the data to the parser.
-        self.parser.feed_data(data)
+        try:
+            self.parser.feed_data(data)
+        except httptools.HttpParserInvalidMethodError as e:
+            ctx = HTTPRequestContext(None, self.app, self.parent_context)
+            # Transform it into a 405.
+            exc = exc_from(e)
+            exc.code = 405
+            self.loop.create_task(self._safe_handle_error(ctx, exc))
+        except httptools.HttpParserError as e:
+            ctx = HTTPRequestContext(None, self.app, self.parent_context)
+            # Transform it into a 400.
+            exc = exc_from(e)
+            exc.code = 400
+            self.loop.create_task(self._safe_handle_error(ctx, exc))
 
         # Wait on the event.
         if self.waiter is None:

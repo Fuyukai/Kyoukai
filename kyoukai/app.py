@@ -466,7 +466,7 @@ class Kyoukai(object):
                         protocol.handle_resp(resp[1])
                         return
                 # Check if there's a host header.
-                if ctx.request.version == (1, 1):
+                if ctx.request.version != "1.0":
                     host = ctx.request.headers.get("host", None)
                     if not host:
                         exc = HTTPException(400)

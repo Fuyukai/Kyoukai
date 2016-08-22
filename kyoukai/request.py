@@ -3,13 +3,13 @@ A request represents a client wanting to get a resource from the server.
 
 This is automatically passed into your app route when an appropriate path is recieved.
 """
+import json
 from http import cookies
 import urllib.parse as uparse
 from io import BytesIO
 
 from werkzeug import formparser
 from werkzeug.datastructures import Headers, MultiDict, OrderedMultiDict
-from werkzeug.exceptions import ClientDisconnected
 from werkzeug.http import parse_options_header
 
 from kyoukai.exc import HTTPException
@@ -56,7 +56,7 @@ class Request(object):
         self.version = ""
 
         # Empty body, as this isn't known until it's passed in.
-        self.body = b""
+        self.body = ""
 
         self.cookies = cookies.SimpleCookie()
 
@@ -73,6 +73,21 @@ class Request(object):
 
         self.should_keep_alive = False
 
+    @property
+    def form(self) -> dict:
+        """
+        Returns the form data for the specified request.
+        JSON forms are lazy loaded. This means that parsing is done in the first call to `.form`, rather than when
+        the request is created.
+        """
+        if self._form:
+            return self._form
+        # Parse JSON, otherwise.
+        if self.headers.get("Content-Type") == "application/json":
+            self._form = json.loads(self.body)
+            self.values.update(self._form if self._form else {})
+        return self._form
+
     def _parse_path(self):
         """
         urlsplits the full path.
@@ -87,7 +102,7 @@ class Request(object):
         """
         new_args = uparse.parse_qs(self.query)
         # Unpack the urlparsed arguments.
-        for name, value in new_args:
+        for name, value in new_args.items():
             if len(value) == 1:
                 self.args[name] = value[0]
             elif len(value) == 0:
@@ -104,7 +119,7 @@ class Request(object):
             f_parser = formparser.FormDataParser()
 
             # Wrap the body in a BytesIO.
-            body = BytesIO(self.body)
+            body = BytesIO(self.body.encode())
 
             # The headers can't be directly passed into Werkzeug.
             # Instead, we have to get a the custom content type, then pass in some fake WSGI options.
