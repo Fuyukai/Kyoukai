@@ -3,27 +3,16 @@ A request represents a client wanting to get a resource from the server.
 
 This is automatically passed into your app route when an appropriate path is recieved.
 """
-import json
-import urllib.parse as uparse
-
 from http import cookies
-
-# Use the C parser if applicable.
+import urllib.parse as uparse
 from io import BytesIO
 
-from werkzeug.datastructures import Accept, Authorization
+from werkzeug import formparser
+from werkzeug.datastructures import Headers, MultiDict, OrderedMultiDict
 from werkzeug.exceptions import ClientDisconnected
-
-try:
-    from http_parser.parser import HttpParser, IOrderedDict
-except ImportError:
-    from http_parser.pyparser import HttpParser, IOrderedDict
-
-# Used for parsing headers.
-from werkzeug import http, formparser
+from werkzeug.http import parse_options_header
 
 from kyoukai.exc import HTTPException
-
 
 class Request(object):
     """
@@ -40,7 +29,6 @@ class Request(object):
     :ivar body: The raw body of the request.
 
     :ivar cookies: A :class:`cookies.SimpleCookie` containing the cookies of the request.
-    :ivar raw_data: The raw data of the request.
 
     :ivar args: The arguments from the query string, parsed out.
     :ivar form: The form data for the request. If the request was JSON, this is automatically parsed out.
@@ -49,53 +37,68 @@ class Request(object):
     :ivar source: The source IP of the request.
     """
 
-    def _parse(self, parser: HttpParser):
+    def __init__(self):
         """
-        Parse the data.
+        Creates a new request.
+
+        The request is probably useless right now, but the HTTP parser will then go on to set the right attributes on
+        it.
         """
-        self._parser = parser
-        # Check if fully parsed before continuing.
-        if not self.fully_parsed:
-            # This is due to Kyoukai's buffer handling.
-            # The request is called to parse multiple times.
-            # Now, we just return if we're not 100% ready, meaning we won't get parsed needlessly.
-            # This saves CPU and memory parsing stuff.
-            return
-        self.version = parser.get_version()
-        self.method = parser.get_method()
-        self.path = uparse.unquote(parser.get_path())
-        self.headers = parser.get_headers()
-        self.query = parser.get_query_string()
-        self.body = parser.recv_body()
+        # Empty values.
+        self.method = ""
+
+        # This differs from path/query because it's the full `/a/b/?c=d`.
+        # This is then urlsplit into a path and query string in _parse_path.
+        self.full_path = b""
+
+        self.path = ""
+        self.query = ""
+        self.version = ""
+
+        # Empty body, as this isn't known until it's passed in.
+        self.body = b""
 
         self.cookies = cookies.SimpleCookie()
-        self.cookies.load(self.headers.get("Cookie", "")) or {}
 
-        self.raw_data = b""
+        # We use a Headers object here as it serves our purposes the best.
+        self.headers = Headers()
 
-        self.source = "0.0.0.0"
+        # Args, values, and forms are OrderedMultiDicts.
+        self.args = OrderedMultiDict()
+        self._form = OrderedMultiDict()
+        self.values = OrderedMultiDict()
 
-        self.extra = {}
+        # Files are not, however.
+        self.files = None
 
-        self.should_keep_alive = parser.should_keep_alive()
+        self.should_keep_alive = False
 
-        self.version = parser.get_version()
-        self.sversion = '.'.join(map(str, self.version))
+    def _parse_path(self):
+        """
+        urlsplits the full path.
+        """
+        split = uparse.urlsplit(self.full_path.decode())
+        self.path = split.path
+        self.query = split.query
 
-        self._form = {}
-        self.files = {}
-
-        # urlparse out the items.
-        _raw_args = uparse.parse_qs(self.query, keep_blank_values=True)
-        # Reparse args
-        self.args = IOrderedDict()
-        for k, v in _raw_args.items():
-            if len(v) == 1:
-                self.args[k] = v[0]
-            elif len(v) == 0:
-                self.args[k] = None
+    def _parse_query(self):
+        """
+        Parses the query string, and updates `args` with it as appropriate.
+        """
+        new_args = uparse.parse_qs(self.query)
+        # Unpack the urlparsed arguments.
+        for name, value in new_args:
+            if len(value) == 1:
+                self.args[name] = value[0]
+            elif len(value) == 0:
+                self.args[name] = None
             else:
-                self.args[k] = v
+                self.args[name] = value
+
+    def _parse_body(self):
+        """
+        Parses the body data.
+        """
         if self.headers.get("Content-Type") != "application/json":
             # Parse the form data out.
             f_parser = formparser.FormDataParser()
@@ -105,14 +108,13 @@ class Request(object):
 
             # The headers can't be directly passed into Werkzeug.
             # Instead, we have to get a the custom content type, then pass in some fake WSGI options.
-            mimetype, c_t_args = http.parse_options_header(self.headers.get("Content-Type"))
+            mimetype, c_t_args = parse_options_header(self.headers.get("Content-Type"))
 
-            if not mimetype:
-                # Ok, no body.
-                self._form = {}
-                self.files = {}
+            if mimetype:
+                # We have a valid mimetype.
+                # This is good!
+                # Now parse the body.
 
-            else:
                 # Construct a fake WSGI environment.
                 env = {"Content-Type": self.headers.get("Content-Type"),
                        "Content-Length": self.headers.get("Content-Length")}
@@ -133,110 +135,30 @@ class Request(object):
                     raise HTTPException(411)
 
                 # Then, the form body itself is parsed.
-                try:
-                    data = f_parser.parse(body,
-                                          mimetype,
-                                          content_length,
-                                          options=env
-                                          )
-                except ClientDisconnected:
-                    # This means we were asked to parse before the request is fully made.
-                    # This is a quirk of how Kyoukai handles buffers.
-                    # We can just safely return here.
-                    return
+
+                data = f_parser.parse(body,
+                                      mimetype,
+                                      content_length,
+                                      options=env
+                                      )
 
                 # Extract the new data from the form parser.
-                self._form = data[1]
-                self.files = data[2]
+                self._form.update(data[1])
+                self.files.update(data[2])
 
-        self.values = IOrderedDict(self.args)
-        self.values.update(self._form if self._form else {})
-
-    @property
-    def form(self) -> dict:
+    def parse_all(self):
         """
-        Returns the form data for the specified request.
+        Called when all data is parsed.
 
-        JSON forms are lazy loaded. This means that parsing is done in the first call to `.form`, rather than when
-        the request is created.
+        This tells the request to re-parse everything based off of the raw data.
+
+        This is an internal method.
+
+        .. versionadded:: 1.9
         """
-        if self._form :
-            return self._form
-        # Parse JSON, otherwise.
-        if self.headers.get("Content-Type") == "application/json":
-            self._form = json.loads(self.body.decode())
-            self.values.update(self._form if self._form else {})
-        return self._form
-
-    @property
-    def accept(self) -> Accept:
-        """
-        Parses the Accept header
-        :return: A new :class:`werkzeug.datastructures.Accept` object.
-        """
-        header = self.headers.get("Accept", "")
-        return http.parse_accept_header(header)
-
-    @property
-    def auth(self) -> Authorization:
-        """
-        Parses the Authorization header.
-
-        Note: this will return None in the case of an authorization header that is not Basic or Digest.
-        :return: A new :class:`werkzeug.datastructures.Authorization` object.
-        """
-        header = self.headers.get("Authorization", "")
-        return http.parse_authorization_header(header)
-
-    @property
-    def fully_parsed(self):
-        """
-        Checks if the request is fully parsed or not.
-
-        If called inside user code, this is almost definitely True. Being not is probably a bug.
-
-        :return: If the request has been fully parsed.
-        """
-
-        if not hasattr(self, "_parser"):
-            return False
-        return self._parser.is_message_complete()
-
-    def parse(self, data: bytes, source: str):
-        """
-        Parse the request.
-
-        :param data: The HTTP request's raw data.
-        :param source: The source address of the
-        """
-        parser = HttpParser()
-        data_len = len(data)
-        # Execute the parser.
-        parsed_len = parser.execute(data, data_len)
-        if parsed_len == 0 or (data_len != parsed_len and parser.is_message_complete()):
-            raise HTTPException(400, "Bad Request")
-
-        self.raw_data = data
-        self.source = source
-
-        # Parse the data.
-        self._parse(parser)
-
-    @classmethod
-    def from_data(cls, data: bytes, source: str):
-        """
-        Create a new request from request data.
-
-        Shortcut for:
-
-        .. code:: python
-
-            r = Request()
-            r.parse(data, source)
-        """
-        # Create a new request.
-        req = cls()
-
-        req.parse(data, source)
-
-        return req
+        # Call _parse_path to parse the path.
+        self._parse_path()
+        # Call _parse_query to parse the query string.
+        self._parse_query()
+        # Call _parse_body to parse the body.
+        self._parse_body()

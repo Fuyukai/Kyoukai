@@ -65,7 +65,7 @@ class Response(object):
         Note: This will always return False on a newly created Response, unless the ``request`` instance variable is
         set on the Response.
         """
-        if self.request and self.request.fully_parsed:
+        if self.request:
             return ('gzip' in self.request.headers.get("Accept-Encoding", "")) and self._should_gzip
         else:
             return False
@@ -94,8 +94,8 @@ class Response(object):
         """
         Gets what HTTP version the response should use.
         """
-        if self.request and self.request.fully_parsed:
-            return '.'.join(map(str, self.request.version))
+        if self.request:
+            return self.request.version
         else:
             return "1.0"
 
@@ -146,7 +146,7 @@ class Response(object):
 
         :return: The encoded data for the response.
         """
-        if self.request and self.request.fully_parsed:
+        if self.request:
             if self.request.method.lower() == "head":
                 self._is_head = True
 

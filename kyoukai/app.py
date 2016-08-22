@@ -323,7 +323,7 @@ class Kyoukai(object):
         except AttributeError:
             # *really* bad request - ignore it.
             return
-        self.logger.info("HTTP/{} {} {} - {}".format(ctx.request.sversion, ctx.request.method, route, code))
+        self.logger.info("HTTP/{} {} {} - {}".format(ctx.request.version, ctx.request.method, route, code))
 
     def before_request(self, func):
         """

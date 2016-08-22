@@ -1,14 +1,92 @@
+"""
+httptools based HTTP protocol.
+"""
 import asyncio
 import logging
+import traceback
 
-from kyoukai.exc import HTTPException
+import httptools
+
 from kyoukai.request import Request
 from kyoukai.response import Response
+from kyoukai.exc import HTTPException, exc_from
 from kyoukai.context import HTTPRequestContext
 
+CRITICAL_ERROR_TEXT = """HTTP/1.0 500 INTERNAL SERVER ERROR
+Server: Kyoukai
+X-Powered-By: Kyoukai
+Content-Type: text/html; charset=utf-8
 
-# This probably can't be reasonably tested.
-# And besides, the TestProtocol emulates this as well.
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>Critical Server Error</title>
+<h1>Critical Server Error</h1>
+<p>An unrecoverable error has occurred within Kyoukai.
+If you are the developer, please report this at <a href="https://github.com/SunDwarf/Kyoukai">the Kyoukai issue
+tracker.</a>
+""".replace("\n", "\r\n")
+
+
+class HTTPToolsHandler:  # pragma: no cover
+    """
+    A callback handler that works with the HTTPTools library.
+
+    This class does some downright horrible things in order to be compatible with httptool's weird mix of callbacks
+    and normal functions, involving asyncio events.
+    """
+
+    def __init__(self, protocol: 'KyoukaiProtocol'):
+        self.protocol = protocol
+
+        # This defines the current request.
+        self.current_request = None
+
+    def reset(self):
+        """
+        Resets the current request.
+        Should be called after the message is complete.
+        """
+        self.current_request = None
+
+    def on_message_begin(self):
+        """
+        Called when a message has begun.
+
+        This creates the new Request.
+        """
+        self.current_request = Request()
+
+    def on_header(self, name: bytes, value: bytes):
+        """
+        Called when a header is set.
+        """
+        # Decode the name and the values to get the header.
+        self.current_request.headers[name.decode()] = value.decode()
+
+    def on_body(self, body: bytes):
+        """
+        Called when the body is received.
+
+        This sets self.current_request.body.
+        """
+        self.current_request.body += body
+
+    def on_url(self, url: bytes):
+        """
+        Called when a URL is recieved.
+
+        This is undocumented in the HTTPTools README.
+        """
+        self.current_request.full_path = url
+
+    def on_message_complete(self):
+        """
+        Called when a message is complete.
+
+        This calls the event set() to ensure the protocol continues on with parsing.
+        """
+        self.protocol.parser_ready.set()
+
+
 class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     """
     The Kyoukai protocol.
@@ -20,19 +98,100 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.ip = None
         self.client_port = None
 
-        self.logger = logging.getLogger("Kyokai")
+        self.logger = logging.getLogger("Kyoukai")
 
         self.loop = asyncio.get_event_loop()
 
         # Asphalt contexts
         self.parent_context = parent_context
 
-        self.buffer = b""
+        # No need for a buffer with httptools.
 
         # Request lock.
         # This ensures that requests are processed serially, and responded to in the correct order, as the lock is
         # released after processing a request completely.
         self.lock = asyncio.Lock()
+
+        # Parser event.
+        # Set when the HTTPTools parser is ready to hand over the new request to Kyoukai.
+        self.parser_ready = asyncio.Event()
+
+        # The parser itself.
+        # This is created per connection.
+        self.parser_obb = HTTPToolsHandler(self)
+        self.parser = httptools.HttpRequestParser(self.parser_obb)
+
+        # Define a waiter, that 'waits' on the event to clear.
+        # Once the wait is over, it then delegates the request.
+        self.waiter = None
+
+    async def _safe_handle_error(self, context: HTTPRequestContext, exception: Exception):
+        """
+        "Safely" handle a HTTP exception.
+
+        This is **only** called when Kyoukai fails to process a HTTP error.
+        ``delegate_request`` safely attempts to process errors properly. If an error within Kyoukai happens,
+        it will pass back down to this layer, which is very very bad.
+
+        This first calls ``app.handle_http_exception``.
+        If that fails, it sends the critical error text.
+
+        :param exception: The exception to send down the line.
+        :return:
+        """
+        self.logger.critical("Unhandled exception inside Kyoukai!")
+        self.logger.critical("This is a bug. Please report it!")
+        self.logger.critical("".join(traceback.format_exc()))
+        # Convert the exception.
+        new_e = exc_from(exception)
+        try:
+            await self.app.handle_http_error(new_e, self, context)
+        except Exception:
+            # Critical error.
+            self.logger.critical("Unhandled exception inside Kyoukai!")
+            self.logger.critical("This is a bug. Please report it!")
+            self.logger.critical("".join(traceback.format_exc()))
+            self.write(CRITICAL_ERROR_TEXT.encode())
+            self.close()
+
+    async def _wait(self):
+        """
+        Waits for the request to be ready.
+        :return:
+        """
+        await self.parser_ready.wait()
+        # Remove the current waiter.
+        self.waiter = None
+        # Unset the event. We're ready to begin processing.
+        self.parser_ready.clear()
+
+        # Take in the request, and call parse_all().
+        request = self.parser_obb.current_request
+        # Set a handful of properties manually.
+        request.version = self.parser.get_http_version()
+        request.method = self.parser.get_method().decode()
+        request.should_keep_alive = self.parser.should_keep_alive()
+        # Create the new HTTPRequestContext.
+        ctx = HTTPRequestContext(request, self.app, self.parent_context)
+        # Parse all fields in the Exception.
+        try:
+            request.parse_all()
+        except HTTPException as e:
+            # Handle the HTTP exception.
+            await self._safe_handle_error(ctx, e)
+            return
+        except Exception as e:
+            await self._safe_handle_error(ctx, e)
+            return
+
+        # Reset the parser.
+        self.parser_obb.reset()
+
+        # Create the delegate_request task.
+        try:
+            await self.app.delegate_request(self, ctx)
+        except Exception as exc:
+            await self._safe_handle_error(ctx, exc)
 
     def connection_made(self, transport: asyncio.Transport):
         """
@@ -43,50 +202,78 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
         self.logger.debug("Recieved connection from {}:{}".format(*transport.get_extra_info("peername")))
 
-    def handle_resp(self, res: Response):
+    def connection_lost(self, exc):
         """
-        Handle a response.
-
-        :param res: The response to write into the transport.
+        Called when a connection is lost.
         """
-        data = res.to_bytes()
-        self._transport.write(data)
+        self._empty_state()
 
     def data_received(self, data: bytes):
         """
-        Create a new Request, and delegate Kyokai to process it.
-        """
-        self.logger.debug(
-            "Recieved {} bytes of data from client {}:{}, feeding.".format(
-                len(data), *self._transport.get_extra_info("peername")
-            )
-        )
+        Called when data is received.
 
-        # Delegate as response.
-        self.logger.debug("Delegating response for client {}:{}.".format(*self._transport.get_extra_info("peername")))
-        # Create a request
-        self.buffer += data
-        req = self.app.request_cls()
-        ctx = HTTPRequestContext(req, self.app, self.parent_context)
-        try:
-            req.parse(self.buffer, self.ip)
-        except HTTPException as e:
-            # Delegate the HTTP exception, probably a 400.
-            self.app.log_request(e, code=e.code)
-            self.loop.create_task(self.app.handle_http_error(e, self, ctx))
-        else:
-            if req.fully_parsed:
-                # Reset buffer.
-                self.logger.debug("Request for `{}` fully parsed, passing.".format(req.path))
-                self.buffer = b""
-                self.loop.create_task(self.app.delegate_request(self, ctx))
-            else:
-                # Continue.
-                return
+        This is the bulk of the processing.
+        """
+        # Feed the data to the parser.
+        self.parser.feed_data(data)
+
+        # Wait on the event.
+        if self.waiter is None:
+            self.waiter = self.loop.create_task(self._wait())
+            return
+
+    def handle_resp(self, response: Response):
+        """
+        Shortcut for :meth:``write_response``.
+        """
+        return self.write_response(response)
+
+    def write_response(self, response: Response):
+        """
+        Writes a :class:`Response` to the protocol
+
+        :param response: The response to write.
+        """
+        data = response.to_bytes()
+        self.write(data)
+
+    # Protocol level methods.
+    def write(self, data: bytes):
+        """
+        Writes to the transport stream.
+
+        This is an **internal method.** This should not be used by the developer.
+
+        .. versionadded:: 1.9
+
+        :param data: The data to send, byte encoded.
+        """
+        self._transport.write(data)
+
+    def _empty_state(self):
+        """
+        Closes locks and the waiter.
+        """
+        # Turn off the waiter.
+        if self.waiter is not None:
+            self.waiter.cancel()
+
+        self.waiter = None
+
+        # Empty out the lock waiters by cancelling the tasks.
+        for waiter in self.lock._waiters:
+            waiter.cancel()
 
     def close(self):
-        # Close the protocol and empty the locks.
-        for waiter in self.lock._waiters:
-            self.logger.warn("Cancelling waiter {} for {}...".format(waiter, self.lock))
-            waiter.cancel()
+        """
+        Closes the transport stream.
+
+        This an **internal method.** This should not be used by the developer.
+
+        .. versionadded:: 1.9
+        """
+        # Empty the state.
+        self._empty_state()
+
+        # Then, close the transport.
         self._transport.close()

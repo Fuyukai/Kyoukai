@@ -24,3 +24,18 @@ class HTTPException(Exception):
 
     def __repr__(self):
         return "HTTP {} {}".format(self.code, self.msg)
+
+
+def exc_from(exc: Exception):
+    """
+    Creates a new HTTP 500 INTERNAL SERVER ERROR exception from a previous exception.
+
+    :param exc: The exception to convert.
+    :return: The new :class:`HTTPException`.
+    """
+    if isinstance(exc, HTTPException):
+        return exc
+    nwexc = HTTPException(500)
+    # Set the context.
+    nwexc.__context__ = exc
+    return nwexc
