@@ -1,7 +1,7 @@
 ## Kyōkai (境界)
 
-![Coverage](https://codecov.io/github/SunDwarf/Kyoukai/coverage.svg)
-[![CircleCI](https://img.shields.io/circleci/project/SunDwarf/Kyoukai.svg?maxAge=2592000)]()
+[![Coverage](https://codecov.io/github/SunDwarf/Kyoukai/coverage.svg)](https://codecov.io/gh/SunDwarf/Kyoukai)
+[![CircleCI](https://img.shields.io/circleci/project/SunDwarf/Kyoukai.svg?maxAge=2592000)](https://circleci.com/gh/SunDwarf/Kyoukai/)
 
 Kyōkai is a fast asynchronous Python server-side web framework. It is built upon
 [asyncio](https://docs.python.org/3/library/asyncio.html) and the
@@ -11,12 +11,12 @@ Setting up a Kyōkai app is incredibly simple. Here's a simple server that echoe
 
 ```python
 import json
-from kyokai import Kyokai, Request
+from kyoukai import Kyoukai, HTTPRequestContext
 
-kyk = Kyokai("example_app")
+kyk = Kyoukai("example_app")
 
 @kyk.route("/")
-async def index(request: Request):
+async def index(ctx: HTTPRequestContext):
     return json.dumps(request.headers), 200, {"Content-Type": "application/json"}
     
 kyk.run()
