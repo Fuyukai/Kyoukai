@@ -68,6 +68,9 @@ class Request(object):
         self._form = OrderedMultiDict()
         self.values = OrderedMultiDict()
 
+        # Extra values, for hooks.
+        self.extra = {}
+
         # Files are not, however.
         self.files = None
 

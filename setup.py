@@ -20,7 +20,7 @@ def extract_version(module = 'kyoukai'):
 
 
 deps = [
-    "http-parser>=0.8.3",
+    "httptools>=0.0.9",
     "PyYAML==3.11",
     "typeguard>=1.2.1",
     "asphalt>=2.0.0",

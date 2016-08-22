@@ -53,7 +53,7 @@ class HTTPToolsHandler:  # pragma: no cover
 
         This creates the new Request.
         """
-        self.current_request = Request()
+        self.current_request = self.protocol.app.request_cls()
 
     def on_header(self, name: bytes, value: bytes):
         """
