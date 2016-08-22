@@ -3,6 +3,12 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.9.1
+-------------
+
+ - Large amount of code clean up relating to the embedded HTTP server.
+   The HTTP server now uses httptools to create requests which is more reliable than http_parser.
+
 Version 1.8.6
 -------------
 
