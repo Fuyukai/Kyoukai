@@ -12,6 +12,10 @@ Version 1.9.2 (Unreleased)
 
  - Add ``tree_path`` property which shows the full tree path to a Blueprint.
 
+ - Add the ability to set 405 error handlers on Blueprints.
+   The routing engine will automatically try and match the 405 on the lowest common ancestor of all routes that
+   failed to match in the blueprint tree.
+
 Version 1.9.1
 -------------
 

@@ -252,6 +252,10 @@ class Blueprint(object):
             This is now effectively only used on the root blueprint. Children blueprints should have this called
             explicitly by other handlers to match routes only on those blueprints.
 
+        .. versionchanged:: 1.9.2
+
+            This now does a best attempt at getting the correct blueprint for the 405 in the tree.
+
         :param route: The route to match, e.g ``/abc/def``.
         :param method: The method of the route.
 
@@ -271,7 +275,28 @@ class Blueprint(object):
                     return route
             else:
                 # This is called when no return successfully hit.
-                raise HTTPException(405)
+                # Do a best attempt at getting the common ancestor blueprint.
+                common_blueprints = None
+                for route in matches:
+                    full_match = set(route.bp.tree_path)
+                    # If common_blueprints is defined, we can do an intersection on it.
+                    # Otherwise, we just set it to the current set of Blueprints.
+                    if common_blueprints is not None:
+                        common_blueprints = common_blueprints.intersection(full_match)
+                    else:
+                        common_blueprints = full_match
+
+                # Turn that set back into a list, and sort it by depth.
+                cmn_bp = list(common_blueprints)
+                cmn_bp = sorted(cmn_bp, key=lambda bp: bp.depth)
+                # Get the bottom most blueprint, which is the best ancestor for both of these in the tree.
+                blueprint_to_use = cmn_bp[-1]
+
+                # Build the exception with the new blueprint.
+                exc = HTTPException(405)
+                exc.bp = blueprint_to_use
+
+                raise exc
 
     @property
     def parent(self) -> 'Blueprint':

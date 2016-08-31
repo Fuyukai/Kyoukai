@@ -22,6 +22,8 @@ class HTTPException(Exception):
 
         self.route = route
 
+        self.bp = None
+
     def __repr__(self):
         return "HTTP {} {}".format(self.code, self.msg)
 
