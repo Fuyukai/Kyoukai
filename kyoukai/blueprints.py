@@ -336,7 +336,7 @@ class Blueprint(object):
         :param methods: The list of allowed methods, e.g ["GET", "POST"].
                 You can check the method with `request.method`.
 
-        :param coroutine: The coroutine handler to take in, which
+        :param coroutine: The coroutine handler to take in, which is called when the route is matched.
 
         :param run_hooks: If pre and post request hooks are ran.
 
