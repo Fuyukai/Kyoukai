@@ -313,6 +313,16 @@ class Blueprint(object):
             return self._prefix
         return self.parent.prefix + self._prefix
 
+    @property
+    def tree_path(self) -> typing.List['Blueprint']:
+        """
+        :returns: The full tree path to this blueprint.
+        """
+        if self._parent is None:
+            return [self]
+
+        return self._parent.tree_path + [self]
+
     def wrap_route(self, regex, coroutine, *, methods: list = None, run_hooks=True):
         """
         Wraps a route in a :class:`Route` object.
