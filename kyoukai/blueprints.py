@@ -95,7 +95,6 @@ class Blueprint(object):
 
         return tmplen
 
-
     def bind_view(self, view: View, *args, **kwargs):
         """
         Binds a view class to a Blueprint.
@@ -283,6 +282,15 @@ class Blueprint(object):
         :returns: A :class:`list` of the children of this blueprint.
         """
         return self._children
+
+    @property
+    def depth(self) -> int:
+        """
+        :returns: The depth in the tree this blueprint is at.
+        """
+        if self._parent is None:
+            return 0
+        return self._parent.depth + 1
 
     @property
     def prefix(self):

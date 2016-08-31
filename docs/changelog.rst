@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 1.9.2 (Unreleased)
+--------------------------
+
+ - Add depth property which signifies how deep in the tree the Blueprint is.
+
 Version 1.9.1
 -------------
 
