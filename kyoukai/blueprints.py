@@ -210,10 +210,21 @@ class Blueprint(object):
 
         .. versionadded:: 1.8.5
 
+        .. versionchanged:: 1.9.2
+
+            This will no longer return any children routes if the start of the path does not match the Blueprint's
+            prefix.
+
         :param route: The path to match.
         :param method: The method to match. Used only for `HEAD` and `ANY` matching.
         :return: A list of routes that matched.
         """
+
+        # Check if the path we're trying to match starts with our prefix.
+        # If it doesn't we return an empty list because it obviously won't match any child.
+        if not route.startswith(self.prefix):
+            return []
+
         matches = []
         for route_obb in self.routes:
             assert isinstance(route_obb, Route)

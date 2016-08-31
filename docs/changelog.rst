@@ -8,6 +8,8 @@ Version 1.9.2 (Unreleased)
 
  - Add depth property which signifies how deep in the tree the Blueprint is.
 
+ - The routing tree no longer considers matching routes that don't start with the prefix of the blueprint.
+
 Version 1.9.1
 -------------
 
