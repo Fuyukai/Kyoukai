@@ -91,9 +91,14 @@ class Kyoukai(object):
         # On startup function.
         self._on_startup = lambda app: None
 
+        # Renderer class.
         self._renderer = None
 
+        # Default static file handler.
         self.udsh = None
+
+        # Extensions dict. Used to get the current extensions added.
+        self.extensions = {}
 
         self.reconfigure(**kwargs)
 
