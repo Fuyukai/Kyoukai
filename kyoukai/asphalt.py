@@ -31,9 +31,6 @@ class KyoukaiComponent(Component):
         # Reconfigure the app with the extra config.
         self.app.reconfigure(**self._extra_cfg)
 
-        # Set HTTPRequestContext's `cfg` val to the extra config.
-        HTTPRequestContext.cfg = self._extra_cfg
-
         self.server = None
 
     def get_protocol(self, ctx: Context):
@@ -45,6 +42,10 @@ class KyoukaiComponent(Component):
         """
         # Call on_startup.
         await self.app.call_on_startup()
+        # Put the config on the HTTPRequestContext.
+        HTTPRequestContext.cfg = self.app.config
+
+        # Start serving on the specified ports.
         protocol = partial(self.get_protocol, ctx)
         self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port)
         logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))

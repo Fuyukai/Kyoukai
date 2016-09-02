@@ -472,6 +472,7 @@ class Kyoukai(object):
                         resp = self._debugger.debug(ctx, None)
                         protocol.handle_resp(resp[1])
                         return
+
                 # Check if there's a host header.
                 if ctx.request.version != "1.0":
                     host = ctx.request.headers.get("host", None)
@@ -480,6 +481,7 @@ class Kyoukai(object):
                         self.log_request(ctx, code=400)
                         await self.handle_http_error(exc, protocol, ctx)
                         return
+
                 # First, try and match the route.
                 try:
                     route = self._match_route(ctx.request.path, ctx.request.method)
@@ -508,6 +510,10 @@ class Kyoukai(object):
                     self.log_request(ctx, code=404)
                     await self.handle_http_error(fof, protocol, ctx)
                     return
+
+                # Set the `route` and `bp` items on the context.
+                ctx.blueprint = route.bp
+                ctx.route = route
 
                 # Try and invoke the Route.
                 try:

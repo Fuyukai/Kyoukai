@@ -21,6 +21,12 @@ class HTTPRequestContext(Context):
 
         self._app = app
 
+        # These are filled in by the app.
+        self.blueprint = None  # type: 'kyoukai.Blueprint'
+        self.route = None  # type: 'kyoukai.Route'
+
+    # Various properties, to make request access easier for IDEs.
+
     @property
     def request(self) -> 'kyoukai.Request':
         return self._request
