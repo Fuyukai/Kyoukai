@@ -16,6 +16,8 @@ Version 1.9.2 (Unreleased)
    The routing engine will automatically try and match the 405 on the lowest common ancestor of all routes that
    failed to match in the blueprint tree.
 
+ - Add ``blueprint`` and ``route`` attributes to :class:`HTTPRequestContext`.
+
 Version 1.9.1
 -------------
 
