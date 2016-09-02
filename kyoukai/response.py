@@ -122,7 +122,7 @@ class Response(object):
         """
         if not self._is_head:
             # The +2 is for the \r\n at the end.
-            self.headers["Content-Length"] = len(self.body) + 2
+            self.headers["Content-Length"] = len(self.body)
         if 'Content-Type' not in self.headers:
             self.headers["Content-Type"] = self._mimetype(self.body) or "text/plain"
 
@@ -179,7 +179,7 @@ class Response(object):
         built = built.encode()
 
         # Append the body, plus the terminator.
-        built += self.body + b"\r\n"
+        built += self.body
 
         return built
 
