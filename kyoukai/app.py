@@ -25,7 +25,7 @@ from typeguard import check_argument_types
 
 from kyoukai.debugger import KyoukaiDebugger
 
-from kyoukai.blueprints import Blueprint
+from kyoukai.blueprints.base import ABCBlueprint as Blueprint
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import static_filename, wrap_response
 from kyoukai.exc import HTTPException
@@ -142,7 +142,7 @@ class Kyoukai(object):
         return self._renderer
 
     @property
-    def root(self):
+    def root(self) -> 'Blueprint':
         """
         This property is a way to access the root blueprint.
 
