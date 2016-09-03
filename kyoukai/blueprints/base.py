@@ -31,14 +31,10 @@ class ABCBlueprint(abc.ABC):
         """
 
     @abc.abstractmethod
-    def gather_routes(self, route: str, method: str = None) -> list:
+    def gather_routes(self) -> list:
         """
-        Gathers a list of routes from all children which match the specified path.
-
-        :param route: The path to match.
-        :param method: The method to match. This is unused.
-
-        :return: A list of routes that matched.
+        Gathers a list of routes from all children.
+        :return: A list of route objects.
         """
 
     @abc.abstractmethod
