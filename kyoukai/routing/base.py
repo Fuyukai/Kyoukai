@@ -46,7 +46,7 @@ class ABCRoute(abc.ABC):
         self._should_run_hooks = run_hooks
 
     @abc.abstractmethod
-    async def invoke(self, ctx: HTTPRequestContext, args: typing.Iterable=None, exception: Exception=None):
+    async def invoke(self, ctx: HTTPRequestContext, args: typing.Iterable = None, exception: Exception = None):
         """
         Invokes the route, running it.
 
@@ -85,6 +85,15 @@ class ABCRoute(abc.ABC):
             self._view_class = vc
         else:
             raise TypeError("Attempted to update view class on unbounded route")
+
+    def method_allowed(self, method: str):
+        """
+        Checks if a method is allowed in a route.
+
+        :param method: The HTTP method.
+        :return: True if it is allowed for this route, False if not.
+        """
+        return method.lower() in [_.lower() for _ in self.allowed_methods]
 
 
 class ABCRouter(abc.ABC):
@@ -138,6 +147,6 @@ class ABCRouter(abc.ABC):
             An iterable of items to be passed to invoke. This can be any iterable - the route invoke method must
             handle it appropriately.
 
-        :raises: :class:`HTTPException` with 404 if the route was matched.
+        :raises: :class:`HTTPException` with 404 if the route was not matched.
         :raises: :class:`HTTPException` with 405 if the route was matched but no methods matched.
         """
