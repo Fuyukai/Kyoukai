@@ -3,6 +3,7 @@ Defines the ABC for a router.
 """
 
 import abc
+import typing
 
 import kyoukai.app
 from kyoukai import HTTPRequestContext
@@ -45,11 +46,12 @@ class ABCRoute(abc.ABC):
         self._should_run_hooks = run_hooks
 
     @abc.abstractmethod
-    async def invoke(self, ctx: HTTPRequestContext, exception: Exception=None):
+    async def invoke(self, ctx: HTTPRequestContext, args: typing.Iterable=None, exception: Exception=None):
         """
         Invokes the route, running it.
 
         :param ctx: The current HTTP context for the route.
+        :param args: The expanded arguments from the route, placed into the
         :param exception: Called on an error handler. Is None otherwise.
 
         :return: The :class:`Response` created.
@@ -124,14 +126,18 @@ class ABCRouter(abc.ABC):
         return blueprint_to_use
 
     @abc.abstractmethod
-    def match(self, route: str, method: str):
+    def match(self, route: str, method: str) -> typing.Tuple[ABCRoute, typing.Iterable]:
         """
         Matches a route.
 
         :param route: The route path to match.
         :param method: The method of the route.
 
-        :return: The route object matched.
+        :returns: A two-item tuple:
+            The route that was matched,
+            An iterable of items to be passed to invoke. This can be any iterable - the route invoke method must
+            handle it appropriately.
+
         :raises: :class:`HTTPException` with 404 if the route was matched.
         :raises: :class:`HTTPException` with 405 if the route was matched but no methods matched.
         """

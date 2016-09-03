@@ -4,6 +4,9 @@ The ABC for a Kyoukai Blueprint.
 All Blueprint classes should be derived from this class.
 """
 import abc
+import typing
+
+from kyoukai.routing.base import ABCRoute
 
 
 class ABCBlueprint(abc.ABC):
@@ -38,7 +41,7 @@ class ABCBlueprint(abc.ABC):
         """
 
     @abc.abstractmethod
-    def match(self, route: str, method: str = None):
+    def match(self, route: str, method: str = None) -> typing.Tuple[ABCRoute, typing.Iterable]:
         """
         Matches a route inside the blueprint.
 
@@ -48,5 +51,8 @@ class ABCBlueprint(abc.ABC):
         :param method: The method of the route.
 
         :raises: A :class:`kyoukai.exc.HTTPException` with code 415 if the method is not valid.
-        :returns: The :class:`Route` if the route was matched, or None.
+        :returns: A two-item tuple:
+            The route that was matched,
+            An iterable of items to be passed to invoke. This can be any iterable - the route invoke method must
+            handle it appropriately.
         """
