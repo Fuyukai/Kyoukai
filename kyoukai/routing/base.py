@@ -109,7 +109,7 @@ class ABCRouter(abc.ABC):
         self.app = app
 
     @staticmethod
-    def calculate_405_errorhandler(routes: list):
+    def calculate_405_errorhandler(routes: typing.Iterable):
         """
         Calculates what Blueprint the 405 error handler should run on.
 
