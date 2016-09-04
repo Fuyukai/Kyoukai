@@ -6,7 +6,7 @@ import abc
 import typing
 
 import kyoukai.app
-from kyoukai import HTTPRequestContext
+from kyoukai.context import HTTPRequestContext
 
 
 class ABCRoute(abc.ABC):
