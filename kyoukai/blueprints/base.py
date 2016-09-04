@@ -161,6 +161,51 @@ class ABCBlueprint(abc.ABC):
         return _add_route_inner
 
     @abc.abstractmethod
+    def wrap_route(self, match_str, coroutine, *, methods: list = None, run_hooks=True) -> ABCRoute:
+        """
+        Wraps a route in a :class:`ABCRoute` object.
+
+        The class that this returns can be configured with the ``route_cls`` attribute of the Blueprint. it is
+        automatically called with the specified regular expression.
+
+        :param match_str: The match string to use for the route.
+
+        :param methods: The list of allowed methods, e.g ["GET", "POST"].
+                You can check the method with `request.method`.
+
+        :param coroutine: The coroutine handler to take in, which is called when the route is matched.
+
+        :param run_hooks: If pre and post request hooks are ran.
+
+        :return: The new :class:`Route` object.
+        """
+
+    @abc.abstractmethod
+    def add_route(self, route: ABCRoute):
+        """
+        Adds a route object to the routing table.
+
+        .. note::
+
+            This will set the blueprint of the specified route to ourselves, overwriting any other routes.
+
+        :param route: The route object to add.
+        """
+
+    @abc.abstractmethod
+    def add_errorhandler(self, code: int, err_handler: ABCRoute):
+        """
+        Adds an error handler to the dictionary of error handlers for this route.
+
+        :param code: The error code that this error handler should handle.
+
+        :param err_handler: A :class:`Route` object that handles the error.
+                Error handlers are just modified routes, so the use of a Route object here is correct.
+
+        :return: The original Route, but with the ``bp`` attribute set to this Blueprint.
+        """
+
+    @abc.abstractmethod
     def gather_routes(self) -> list:
         """
         Gathers a list of routes from all children.
