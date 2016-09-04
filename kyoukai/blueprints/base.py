@@ -21,8 +21,73 @@ class ABCBlueprint(abc.ABC):
     Blueprints allow routes like normal application objects - in fact, the application object's route function is
     implemented with an underlying root blueprint.
     """
+    def __init__(self, name: str, parent: 'ABCBlueprint' = None,
+                 url_prefix: str = ""):
+        """
+        :param name: The name of the Blueprint.
+        :param parent: The parent Blueprint.
+        :param url_prefix: The prefix to append to the matchers of this Blueprint, if applicable.
+        """
+        self._prefix = url_prefix
+        self._name = name
+        self._prefix = self._prefix
 
-    @abc.abstractmethod
+        self._parent = parent
+
+        self._children = {}
+
+    # Shared properties across all blueprint classes.
+
+    @property
+    def parent(self) -> 'ABCBlueprint':
+        """
+        :returns: The parent of this blueprint.
+        """
+        return self._parent
+
+    @parent.setter
+    def parent(self, bp: 'ABCBlueprint'):
+        """
+        Sets the parent blueprint.
+        """
+        self._parent = bp
+
+    @property
+    def children(self) -> typing.List['ABCBlueprint']:
+        """
+        :returns: A :class:`list` of the children of this blueprint.
+        """
+        return list(self._children.values())
+
+    @property
+    def depth(self) -> int:
+        """
+        :returns: The depth in the tree this blueprint is at.
+        """
+        if self._parent is None:
+            return 0
+        return self._parent.depth + 1
+
+    @property
+    def prefix(self) -> str:
+        """
+        Calculates the prefix using the parent blueprints.
+        :return: The full prefix, including the parent prefix.
+        """
+        if self.parent is None:
+            return self._prefix
+        return self.parent.prefix + self._prefix
+
+    @property
+    def tree_path(self) -> typing.List['ABCBlueprint']:
+        """
+        :returns: The full tree path to this blueprint.
+        """
+        if self._parent is None:
+            return [self]
+
+        return self._parent.tree_path + [self]
+
     def add_child(self, child: 'ABCBlueprint'):
         """
         Add a child Blueprint to the current blueprint.
@@ -32,6 +97,8 @@ class ABCBlueprint(abc.ABC):
 
         :param child: The child blueprint.
         """
+        if not isinstance(child, self):
+            raise TypeError("Blueprints are incompatible")
 
     @abc.abstractmethod
     def gather_routes(self) -> list:
