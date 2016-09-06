@@ -39,6 +39,9 @@ from kyoukai.views import View
 from kyoukai.renderers.base import Renderer
 from kyoukai.renderers import mako_renderer
 
+from kyoukai.routing.regexp import RegexRouter
+from kyoukai.routing.base import ABCRouter
+
 try:
     from kyoukai.renderers import jinja_renderer
 
@@ -100,6 +103,9 @@ class Kyoukai(object):
         # Extensions dict. Used to get the current extensions added.
         self.extensions = {}
 
+        # The router used to match routes.
+        self.router = None
+
         self.reconfigure(**kwargs)
 
     def reconfigure(self, **cfg: dict):
@@ -131,6 +137,13 @@ class Kyoukai(object):
             if self.udsh:
                 new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
                 self.root.add_route(new_route)
+
+        router_cls = self.config.get("router_class", RegexRouter)
+        if not issubclass(router_cls, ABCRouter):
+            raise TypeError("router_cls must be of type ABCRouter")
+
+        # Create the new router from the router app, passing ourselves into the router.
+        self.router = router_cls(self)
 
         return self.config
 
