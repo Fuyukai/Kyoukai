@@ -104,7 +104,7 @@ class Kyoukai(object):
         self.extensions = {}
 
         # The router used to match routes.
-        self.router = None
+        self.router = None  # type: 'ABCRouter'
 
         self.reconfigure(**kwargs)
 
@@ -282,7 +282,7 @@ class Kyoukai(object):
         :return: The :class:`kyoukai.Route` of the route that matches, or None if no route matches.
         :raises: :class:`kyoukai.exc.HTTPException` if the route matches, but the method is not allowed.
         """
-        return self._root_bp.match(path, meth)
+        return self.router.match(path, meth)
 
     def route(self, regex, *, methods: list = None, run_hooks=True):
         """
