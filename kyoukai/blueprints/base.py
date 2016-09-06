@@ -101,6 +101,37 @@ class ABCBlueprint(abc.ABC):
             raise TypeError("Blueprints are incompatible")
 
     @abc.abstractmethod
+    def wrap_route(self, match_string: str, coroutine: typing.Awaitable, *, methods: list = None, run_hooks=True):
+        """
+        Wraps a route in a :class:`Route` object.
+
+        The class that this returns can be configured with the ``route_cls`` attribute of the Blueprint. it is
+        automatically called with the specified regular expression.
+
+        :param match_string: The path to match this route on.
+                The format of this string depends on the Blueprint class that is being used.
+
+        :param methods: The list of allowed methods, e.g ["GET", "POST"].
+                You can check the method with `request.method`.
+
+        :param coroutine: The coroutine handler to take in, which is called when the route is matched.
+
+        :param run_hooks: If pre and post request hooks are ran.
+
+        :return: The new :class:`ABCRoute` object.
+        """
+
+    @abc.abstractmethod
+    def add_route(self, route: 'ABCRoute'):
+        """
+        Adds a route to this Blueprint's routing table.
+
+        :param route: The :class:`ABCRoute` to add to the routes.
+        """
+
+
+
+    @abc.abstractmethod
     def gather_routes(self) -> list:
         """
         Gathers a list of routes from all children.
