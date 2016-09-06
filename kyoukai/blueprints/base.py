@@ -21,6 +21,7 @@ class ABCBlueprint(abc.ABC):
     Blueprints allow routes like normal application objects - in fact, the application object's route function is
     implemented with an underlying root blueprint.
     """
+
     def __init__(self, name: str, parent: 'ABCBlueprint' = None,
                  url_prefix: str = ""):
         """
@@ -101,7 +102,8 @@ class ABCBlueprint(abc.ABC):
             raise TypeError("Blueprints are incompatible")
 
     @abc.abstractmethod
-    def wrap_route(self, match_string: str, coroutine: typing.Awaitable, *, methods: list = None, run_hooks=True):
+    def wrap_route(self, match_string: str, coroutine: typing.Awaitable, *, methods: list = None, run_hooks = True) \
+            -> ABCRoute:
         """
         Wraps a route in a :class:`Route` object.
 
@@ -129,7 +131,34 @@ class ABCBlueprint(abc.ABC):
         :param route: The :class:`ABCRoute` to add to the routes.
         """
 
+    def route(self, match_string: str, *, methods: list = None, run_hooks = True):
+        """
+        Convenience decorator to create a new route.
 
+        This is equivalent to:
+
+        .. code:: python
+
+            route = bp.wrap_route(match_string, callable, methods, run_hooks)
+            bp.add_route(route)
+
+
+       :param match_string: The path to match this route on.
+                The format of this string depends on the Blueprint class that is being used.
+
+        :param methods: The list of allowed methods, e.g ["GET", "POST"].
+                You can check the method with `request.method`.
+
+        :param run_hooks: Should the pre and post request hooks run automatically?
+                This is set to True by default.
+        """
+
+        def _add_route_inner(coro):
+            route = self.wrap_route(match_string, coro, methods=methods, run_hooks=run_hooks)
+            self.add_route(route)
+            return route
+
+        return _add_route_inner
 
     @abc.abstractmethod
     def gather_routes(self) -> list:
