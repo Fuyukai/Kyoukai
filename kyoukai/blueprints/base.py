@@ -167,19 +167,3 @@ class ABCBlueprint(abc.ABC):
         :return: A list of route objects.
         """
 
-    @abc.abstractmethod
-    def match(self, route: str, method: str = None) -> typing.Tuple[ABCRoute, typing.Iterable]:
-        """
-        Matches a route inside the blueprint.
-
-        Often, this just delegates to the Router to route.
-
-        :param route: The route to match, e.g ``/abc/def``.
-        :param method: The method of the route.
-
-        :raises: A :class:`kyoukai.exc.HTTPException` with code 415 if the method is not valid.
-        :returns: A two-item tuple:
-            The route that was matched,
-            An iterable of items to be passed to invoke. This can be any iterable - the route invoke method must
-            handle it appropriately.
-        """
