@@ -47,6 +47,9 @@ class Route(object):
 
         self._should_run_hooks = run_hooks
 
+        # Should we bother converting?
+        self.should_convert = True
+
     @property
     def matcher(self):
         """
@@ -151,7 +154,10 @@ class Route(object):
             params += list(matches)
 
         # Convert the arguments.
-        args = await convert_args(ctx, self._wrapped_coro, *params, bound=self._bound)
+        if self.should_convert:
+            args = await convert_args(ctx, self._wrapped_coro, *params, bound=self._bound)
+        else:
+            args = params
 
         result = await self._wrapped_coro(*args)
         # Wrap the result.
