@@ -176,6 +176,9 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         request.version = self.parser.get_http_version()
         request.method = self.parser.get_method().decode()
         request.should_keep_alive = self.parser.should_keep_alive()
+        # Set the IP and the port on the request.
+        request.ip = self.ip
+        request.port = self.client_port
         # Create the new HTTPRequestContext.
         ctx = HTTPRequestContext(request, self.app, self.parent_context)
         # Parse all fields in the Exception.

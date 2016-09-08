@@ -18,6 +18,8 @@ Version 1.9.2 (Unreleased)
 
  - Add ``blueprint`` and ``route`` attributes to :class:`HTTPRequestContext`.
 
+ - Add ``ip`` and ``port`` attributes to :class:`Request`.
+
 Version 1.9.1
 -------------
 

@@ -68,6 +68,10 @@ class Request(object):
         self._form = OrderedMultiDict()
         self.values = OrderedMultiDict()
 
+        # Protocol-specific data.
+        self.ip = ""
+        self.port = 0
+
         # Extra values, for hooks.
         self.extra = {}
 
