@@ -20,6 +20,8 @@ Version 1.9.2 (Unreleased)
 
  - Add ``ip`` and ``port`` attributes to :class:`Request`.
 
+ - Correctly load cookies from the ``Cookie`` header from client requests.
+
 Version 1.9.1
 -------------
 

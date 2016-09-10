@@ -184,3 +184,8 @@ class Request(object):
         self._parse_query()
         # Call _parse_body to parse the body.
         self._parse_body()
+
+        # Load cookies.
+        cookie_header = self.headers.get_all("Cookie")
+        for c in cookie_header:
+            self.cookies.load(c)
