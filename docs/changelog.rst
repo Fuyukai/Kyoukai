@@ -24,6 +24,9 @@ Version 1.9.2 (Unreleased)
 
  - Converters will now handle ``*args`` and ``**kwargs`` in functions properly.
 
+ - HTTPExceptions have been overhauled to allow early exiting with a custom response. Do not abuse as a replacement
+   for the return statement.
+
 Version 1.9.1
 -------------
 

@@ -412,15 +412,7 @@ class Kyoukai(object):
         Otherwise, it will invoke the default error handler.
         """
         code = err.code
-        blueprint = err.bp
-        # Try and extract the blueprint out of the error, if we can.
-        if blueprint is None:
-            if err.route is None:
-                bp = self._root_bp
-            else:
-                bp = err.route.bp
-        else:
-            bp = blueprint
+        bp = err.blueprint or self.root
 
         # Get the error handler.
         error_handler = bp.get_errorhandler(code)
@@ -434,7 +426,11 @@ class Kyoukai(object):
                 return should_err
             else:
                 body = str(code)
-            resp = Response(code, body)
+
+            if err.response is None:
+                resp = Response(code, body)
+            else:
+                resp = err.response
         else:
             # Invoke the error handler specified.
             try:
