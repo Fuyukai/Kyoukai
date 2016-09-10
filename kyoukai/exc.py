@@ -1,5 +1,7 @@
 """
 Kyoukai exceptions.
+
+Contains the HTTPException class, which is used for immediately terminating out of a request handler with a HTTP error.
 """
 import kyoukai
 
