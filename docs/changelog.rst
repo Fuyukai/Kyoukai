@@ -22,6 +22,8 @@ Version 1.9.2 (Unreleased)
 
  - Correctly load cookies from the ``Cookie`` header from client requests.
 
+ - Converters will now handle ``*args`` and ``**kwargs`` in functions properly.
+
 Version 1.9.1
 -------------
 

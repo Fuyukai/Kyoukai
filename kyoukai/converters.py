@@ -48,15 +48,20 @@ async def convert_args(ctx, coro, *args, bound=False):
     signature = inspect.signature(coro)
     params = signature.parameters
 
-    if len(args) != len(params):
-        raise IndexError("Arguments passed in were not the same length as {}'s function signature".format(coro))
-
     new_args = []
+
+    should_check_length = True
 
     for num, (name, value) in enumerate(params.items()):
         # If bound, just ignore the `self` param.
         if bound and num == 0:
             new_args.append(args[0])
+            continue
+
+        assert isinstance(value, inspect.Parameter)
+        if value.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
+            # Don't try and convert *args or **kwargs-type parameters.
+            should_check_length = False
             continue
 
         item = args[num]
@@ -66,7 +71,6 @@ async def convert_args(ctx, coro, *args, bound=False):
             continue
 
         # Extract the annotation from the parameter.
-        assert isinstance(value, inspect.Parameter)
         type_ = value.annotation
         if type_ not in _converters:
             # Just add the argument, without converting.
@@ -86,5 +90,9 @@ async def convert_args(ctx, coro, *args, bound=False):
                 ctx.app.logger.error("Failed to convert {} to {}\n{}".format(item, type_,
                                                                              ''.join(traceback.format_exc())))
                 raise HTTPException(400) from e
+
+    if should_check_length:
+        if len(args) != len(params):
+            raise TypeError("{} got {} arguments, expected {}".format(coro.__name__, len(args), len(params)))
 
     return new_args
