@@ -91,7 +91,7 @@ async def test_response_recalculate_headers():
 host: localhost
 """)
     response._recalculate_headers()
-    assert response.headers.get("Content-Length", type=int) == 4
+    assert response.headers.get("Content-Length", type=int) == 2
     assert response.headers["Content-Type"] == "text/plain"
 
 
