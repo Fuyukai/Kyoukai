@@ -3,6 +3,7 @@ Kyoukai exceptions.
 """
 import kyoukai
 
+
 class HTTPException(Exception):
     """
     A basic HTTP error.
@@ -35,10 +36,27 @@ class HTTPException(Exception):
 
     @classmethod
     def new(cls, code=500, body="", headers=None, *,
-            route = None, blueprint = None,
-            response_cls = None):
+            route=None, blueprint=None,
+            response_cls=None):
         """
-        Creates a new HTTPException, with the specified code, body, headers, etc.
+        Creates a new HTTPException.
+
+        This is most often used when you need to return data from a request hook.
+
+        .. code:: python
+
+            rendered = ctx.app.renderer.render("errors/401.html")
+            raise HTTPException.new(code=401, body=rendered)
+
+        :param code: The HTTP status code to return.
+        :param body: The body to use for the error.
+        :param headers: The HTTP headers to send.
+        :param route: The route this exception is from. This is usually filled in automatically - add this field to
+            override it.
+        :param blueprint: The blueprint this exception is from. This is usually filled in automatically - add this
+            field to override it.
+        :param response_cls: The response class to use to encode the embedded response.
+        :return: A new :class:`HTTPException`.
         """
         if headers is None:
             headers = {}
