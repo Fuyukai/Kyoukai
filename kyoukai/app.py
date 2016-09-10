@@ -431,6 +431,8 @@ class Kyoukai(object):
                 resp = Response(code, body)
             else:
                 resp = err.response
+
+            resp.request = ctx.request
         else:
             # Invoke the error handler specified.
             try:
@@ -440,6 +442,9 @@ class Kyoukai(object):
                     ''.join(traceback.format_exc())
                 ))
                 resp = wrap_response("500", self.response_cls)
+
+            resp.request = ctx.request
+
         protocol.handle_resp(resp)
 
         # Check if we should close the connection.
