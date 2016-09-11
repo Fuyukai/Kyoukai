@@ -6,7 +6,7 @@ This uses regular expressions to match the route objects.
 import re
 import sre_constants
 
-from kyoukai import HTTPException
+from kyoukai.exc import HTTPException
 from kyoukai.routing.base import ABCRouter, ABCRoute
 
 
