@@ -176,6 +176,17 @@ class ABCBlueprint(abc.ABC):
         :return: The original Route, but with the ``bp`` attribute set to this Blueprint.
         """
 
+    @abc.abstractmethod
+    def get_errorhandler(self, code: int):
+        """
+        Gets the error handler associated with the code specified.
+
+        This iterates down the tree to fetch the error handler - it will return the most deep error handler if possible.
+
+        :param code: The code to look up.
+        :return: A route corresponding to the error handler.
+        """
+
     def errorhandler(self, code: int, run_hooks=False):
         """
         Convenience decorator to add an error handler.
