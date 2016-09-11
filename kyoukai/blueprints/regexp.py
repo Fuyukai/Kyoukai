@@ -27,18 +27,25 @@ class RegexBlueprint(ABCBlueprint):
         # Define the routes list.
         self.routes = []
 
+        # Define the dictionary of error handlers.
+        self.errorhandlers = {}
+
     def add_route(self, route: 'ABCRoute'):
         # Adds the route to self.route
         self.routes.append(route)
         return route
 
     def wrap_route(self, match_string: str, coroutine: typing.Awaitable, *, methods: list = None,
-                   run_hooks = True) -> ABCRoute:
+                   run_hooks=True) -> ABCRoute:
         # Wrap the route in an RegexRoute instance.
         rtt = RegexRoute(self, match_string, methods, bound=False, run_hooks=run_hooks)
         rtt.create(coroutine)
 
         return rtt
+
+    def add_errorhandler(self, code: int, err_handler: ABCRoute):
+        err_handler.bp = self
+        self.errorhandlers[code] = err_handler
 
     def gather_routes(self) -> list:
         # Gathers all routes to use.
