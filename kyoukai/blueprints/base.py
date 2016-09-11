@@ -224,4 +224,6 @@ class ABCBlueprint(abc.ABC):
         if self._parent is not None:
             hooks += self.parent.gather_hooks(item)
 
+        hooks = hooks[::-1]
+
         return hooks
