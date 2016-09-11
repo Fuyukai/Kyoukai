@@ -37,6 +37,9 @@ class ABCBlueprint(abc.ABC):
 
         self._children = {}
 
+        # Request hooks.
+        self.hooks = {}
+
     # Shared properties across all blueprint classes.
 
     @property
