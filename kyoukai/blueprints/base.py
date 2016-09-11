@@ -173,6 +173,25 @@ class ABCBlueprint(abc.ABC):
         :return: The original Route, but with the ``bp`` attribute set to this Blueprint.
         """
 
+    def errorhandler(self, code: int, run_hooks=False):
+        """
+        Convenience decorator to add an error handler.
+
+        This is equivalent to:
+
+        .. code:: python
+
+            route = bp.wrap_route("", coro, methods=[], run_hooks=False)
+            bp.add_errorhandler(code, route)
+        """
+
+        def _add_route_inner(coro):
+            route = self.wrap_route("", coro, methods=[], run_hooks=run_hooks)
+            self.add_errorhandler(code, route)
+            return route
+
+        return _add_route_inner
+
     @abc.abstractmethod
     def gather_routes(self) -> list:
         """
