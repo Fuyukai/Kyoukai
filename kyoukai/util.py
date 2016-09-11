@@ -6,9 +6,15 @@ import pathlib
 
 from kyoukai.exc import HTTPException
 
-VERSION = "1.9.2"
-VERSIONT = tuple(map(int, VERSION.split('.')))
+VERSION = "1.9.2.post1"
+VERSIONT = []
+for x in VERSION.split("."):
+    try:
+        VERSIONT.append(int(x))
+    except ValueError:
+        pass
 
+VERSIONT = tuple(VERSIONT)
 
 def static_filename(filename: str) -> str:
     """
