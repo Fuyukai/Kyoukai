@@ -213,3 +213,15 @@ class ABCBlueprint(abc.ABC):
         :return: A list of route objects.
         """
 
+    def gather_hooks(self, item: str) -> list:
+        """
+        Gathers a list of hooks from this blueprint, and the parent blueprints.
+
+        This is sorted from lowest in the tree to highest in the tree.
+        :return:
+        """
+        hooks = self.hooks.get(item, [])
+        if self._parent is not None:
+            hooks += self.parent.gather_hooks(item)
+
+        return hooks
