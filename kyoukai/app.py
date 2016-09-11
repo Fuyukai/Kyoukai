@@ -26,6 +26,7 @@ from typeguard import check_argument_types
 from kyoukai.debugger import KyoukaiDebugger
 
 from kyoukai.blueprints.base import ABCBlueprint as Blueprint
+from kyoukai.blueprints.regexp import RegexBlueprint
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import static_filename, wrap_response
 from kyoukai.exc import HTTPException
@@ -82,11 +83,10 @@ class Kyoukai(object):
         # Define the config.
         self.config = kwargs
 
-        # Define the "root" blueprint, which is used for @app.request.
-        self._root_bp = Blueprint(name, None)
-
         self.debug = kwargs.get("debug", False)
         self._debugger = KyoukaiDebugger(self)
+
+        self._root_bp = None
 
         # Define the component here so it can be checked easily.
         self.component = None
@@ -140,7 +140,15 @@ class Kyoukai(object):
 
         router_cls = self.config.get("router_class", RegexRouter)
         if not issubclass(router_cls, ABCRouter):
-            raise TypeError("router_cls must be of type ABCRouter")
+            raise TypeError("router_class must be of type ABCRouter")
+
+        # Define the "root" blueprint, which is used for @app.request.
+        bp_cls = self.config.get("blueprint_class", RegexBlueprint)
+        if not issubclass(bp_cls, Blueprint):
+            raise TypeError("blueprint_class must be of type ABCBlueprint")
+
+        # Create the blueprint, using the blueprint class.
+        self._root_bp = bp_cls(self.name, None)
 
         # Create the new router from the router app, passing ourselves into the router.
         self.router = router_cls(self)
