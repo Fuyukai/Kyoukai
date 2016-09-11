@@ -14,6 +14,7 @@ from werkzeug.http import parse_options_header
 
 from kyoukai.exc import HTTPException
 
+
 class Request(object):
     """
     A Request object.
@@ -64,9 +65,11 @@ class Request(object):
         self.headers = Headers()
 
         # Args, values, and forms are OrderedMultiDicts.
+        # So are files.
         self.args = OrderedMultiDict()
         self._form = OrderedMultiDict()
         self.values = OrderedMultiDict()
+        self.files = OrderedMultiDict()
 
         # Protocol-specific data.
         self.ip = ""
@@ -74,9 +77,6 @@ class Request(object):
 
         # Extra values, for hooks.
         self.extra = {}
-
-        # Files are not, however.
-        self.files = None
 
         self.should_keep_alive = False
 
