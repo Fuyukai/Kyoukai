@@ -49,6 +49,3 @@ class RegexBlueprint(ABCBlueprint):
         routes += self.routes
 
         return routes
-
-    def match(self, route: str, method: str = None) -> typing.Tuple[ABCRoute, typing.Iterable]:
-        pass
