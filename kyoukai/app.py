@@ -132,11 +132,12 @@ class Kyoukai(object):
                     self._renderer = jinja_renderer.Jinja2Renderer(self.config.get("loader"))
 
         # Check if we should use the default static handler.
-        if self.udsh is None:
-            self.udsh = self.config.get("use_static_handler", True)
-            if self.udsh:
-                new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
-                self.root.add_route(new_route)
+        # TODO: Fix this for 1.10
+        # if self.udsh is None:
+        #    self.udsh = self.config.get("use_static_handler", True)
+        #    if self.udsh:
+        #        new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
+        #        self.root.add_route(new_route)
 
         router_cls = self.config.get("router_class", RegexRouter)
         if not issubclass(router_cls, ABCRouter):
