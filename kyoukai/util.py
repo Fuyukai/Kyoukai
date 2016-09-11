@@ -16,6 +16,7 @@ for x in VERSION.split("."):
 
 VERSIONT = tuple(VERSIONT)
 
+
 def static_filename(filename: str) -> str:
     """
     Naive static filename implementation, to allow serving static files.

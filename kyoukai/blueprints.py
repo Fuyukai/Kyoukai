@@ -115,7 +115,7 @@ class Blueprint(object):
         # Add before_request and after_request from the new_view.
         def __wrapper(func):
             async def ___internal_wrapper(*args, **kwargs):
-                await func(*args, **kwargs)
+                return await func(*args, **kwargs)
 
             return ___internal_wrapper
 
