@@ -3,8 +3,14 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
-Version 1.9.2 (Unreleased)
---------------------------
+Version 1.9.3
+-------------
+
+ - Add ``reverse_hooks`` argument to the Blueprint constructor. This allows the order that the hooks process in to be
+   reversed, i.e to go from child to parent order.
+
+Version 1.9.2
+-------------
 
  - Add ``depth`` property which signifies how deep in the tree the Blueprint is.
 

@@ -7,7 +7,6 @@ the time.
 import collections
 import logging
 
-import re
 import typing
 
 from kyoukai.exc import HTTPException
@@ -56,13 +55,20 @@ class Blueprint(object):
 
     :param url_prefix: The prefix to automatically add to the start of each route.
 
+    :param reverse_hooks: Should pre-post hook list be reversed, and go in order of child -> parent -> parent,
+        instead of parent -> parent -> child?
+
+        This is BLUEPRINT-SPECIFIC, and it not inherited from parent blueprints.
+
+        .. warning:: If this and a parent both have reverse hooks enabled, they will conflict with each other.
+
     :cvar route_cls: The Route class to use for wrapping new Routes.
     """
 
     route_cls = Route
 
     def __init__(self, name: str, parent: 'Blueprint' = None,
-                 url_prefix: str = ""):
+                 url_prefix: str = "", reverse_hooks=False):
         self._prefix = url_prefix
         self._name = name
 
@@ -82,6 +88,8 @@ class Blueprint(object):
         self._request_hooks = collections.defaultdict(lambda *args, **kwargs: collections.OrderedDict())
 
         self.logger = logging.getLogger("Kyoukai.Blueprint." + self._name if self._name else "root")
+
+        self.process_hooks = (lambda x: reversed(x)) if reverse_hooks else (lambda x: x)
 
     def __len__(self):
         """
@@ -183,7 +191,7 @@ class Blueprint(object):
             bps = []
 
         # Return the list of our hooks, merged with the other list.
-        return bps + list(self._request_hooks["pre"].values())
+        return self.process_hooks(bps + list(self._request_hooks["pre"].values()))
 
     def get_post_hooks(self, ctx):
         """
@@ -199,7 +207,7 @@ class Blueprint(object):
             bps = []
 
         # Return the list of our hooks, merged with the other list.
-        return bps + list(self._request_hooks["post"].values())
+        return self.process_hooks(bps + list(self._request_hooks["post"].values()))
 
     def gather_routes(self, route: str, method: str) -> typing.List[Route]:
         """
