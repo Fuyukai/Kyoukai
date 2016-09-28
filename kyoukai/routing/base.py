@@ -45,6 +45,8 @@ class ABCRoute(abc.ABC):
 
         self._should_run_hooks = run_hooks
 
+        self.should_convert = True
+
     @abc.abstractmethod
     async def invoke(self, ctx: HTTPRequestContext, args: typing.Iterable = None, exception: Exception = None):
         """
