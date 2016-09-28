@@ -525,6 +525,7 @@ class Kyoukai(object):
                         return
                     else:
                         self.logger.error("??????? Something went terribly wrong.")
+                        traceback.print_exc()
                         return
 
                 # If the route did not match, return a 404.
