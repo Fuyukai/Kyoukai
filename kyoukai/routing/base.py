@@ -24,13 +24,15 @@ class ABCRoute(abc.ABC):
     """
 
     def __init__(self, blueprint,
-                 matcher: str, methods: list,
+                 matcher: str, methods: list=None,
                  bound: bool = False,
                  run_hooks: bool = True):
         """
         Create a new Route.
         """
         self._match_str = matcher
+        if methods is None:
+            methods = ["GET"]
         self.allowed_methods = methods
         self._wrapped_coro = None
 
