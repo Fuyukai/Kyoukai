@@ -56,3 +56,12 @@ class RegexBlueprint(ABCBlueprint):
         routes += self.routes
 
         return routes
+
+    def get_errorhandler(self, code: int):
+        if code in self.errorhandlers:
+            return self.errorhandlers[code]
+
+        if self.parent is None:
+            return None
+
+        return self.parent.get_errorhandler(code)
