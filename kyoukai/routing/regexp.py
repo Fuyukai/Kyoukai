@@ -92,7 +92,7 @@ class RegexRoute(ABCRoute):
         result = wrap_response(result, response_cls=ctx.app.response_cls)
 
         if self._should_run_hooks:
-            hooks = self.bp.get_post_hooks(ctx)
+            hooks = self.bp.gather_hooks("post")
             if hooks:
                 for hook in hooks:
                     result = await hook(ctx, result)
