@@ -149,10 +149,12 @@ class Kyoukai(object):
             raise TypeError("blueprint_class must be of type ABCBlueprint")
 
         # Create the blueprint, using the blueprint class.
-        self._root_bp = bp_cls(self.name, None)
+        if self._root_bp is None:
+            self._root_bp = bp_cls(self.name, None)
 
         # Create the new router from the router app, passing ourselves into the router.
-        self.router = router_cls(self)
+        if self.router is None:
+            self.router = router_cls(self)
 
         return self.config
 
@@ -284,7 +286,7 @@ class Kyoukai(object):
         # Get the static file.
         return self.get_static(newpath)
 
-    def _match_route(self, path, meth) -> Route:
+    def _match_route(self, path, meth) -> typing.Tuple[Route, tuple]:
         """
         Match a route, based on the regular expression of the route.
 
@@ -536,8 +538,8 @@ class Kyoukai(object):
                     return
 
                 # Set the `route` and `bp` items on the context.
-                ctx.blueprint = route.bp
-                ctx.route = route
+                ctx.blueprint = route[0].bp
+                ctx.route = route[0]
 
                 # Try and invoke the Route.
                 try:
@@ -546,12 +548,14 @@ class Kyoukai(object):
                     # This is because routes are responsible for pre-route and post-route hooks, calling them in the
                     # blueprint as appropriate.
                     # So we just pass ourselves to the route and hope it invokes properly.
-                    response = await route.invoke(ctx)
+
+                    # Expand out the args into this, provided by the matcher.
+                    response = await route[0].invoke(ctx, route[1])
                 except HTTPException as e:
                     # Handle a HTTPException normally.
                     self.log_request(ctx, e.code)
                     # Set the route of the exception.
-                    e.route = route
+                    e.route = route[0]
                     await self.handle_http_error(e, protocol, ctx)
                     return
                 except Exception as e:
@@ -561,11 +565,11 @@ class Kyoukai(object):
                     # Set the cause of the HTTP exception. Useful for 500 error handlers.
                     exc.__cause__ = e
                     # Set the route of the exception.
-                    exc.route = route
+                    exc.route = route[0]
                     self.log_request(ctx, 500)
                     should_err = await self.handle_http_error(exc, protocol, ctx)
                     if should_err:
-                        self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
+                        self.logger.exception("Unhandled exception in route `{}`:".format(repr(route[0])))
                     return
                 else:
                     # If there is no error happening, just log it as normal.
