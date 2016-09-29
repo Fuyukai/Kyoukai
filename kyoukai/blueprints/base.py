@@ -10,7 +10,7 @@ from kyoukai.routing.base import ABCRoute
 
 try:
     typing.Awaitable
-except NameError:
+except AttributeError:
     import collections.abc as collections_abc
 
     if hasattr(collections_abc, 'Awaitable'):
