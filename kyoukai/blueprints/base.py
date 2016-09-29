@@ -8,6 +8,19 @@ import typing
 
 from kyoukai.routing.base import ABCRoute
 
+try:
+    typing.Awaitable
+except NameError:
+    import collections.abc as collections_abc
+
+    if hasattr(collections_abc, 'Awaitable'):
+        class Awaitable(typing.Generic[typing.T_co], extra=collections_abc.Awaitable):
+            __slots__ = ()
+    else:
+        Awaitable = None
+
+    typing.Awaitable = Awaitable
+
 
 class ABCBlueprint(abc.ABC):
     """
