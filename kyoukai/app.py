@@ -34,7 +34,7 @@ from kyoukai.exc import HTTPException
 from kyoukai.response import Response
 from kyoukai.request import Request
 
-from kyoukai.route import Route
+from kyoukai.routing.base import ABCRoute
 from kyoukai.views import View
 
 from kyoukai.renderers.base import Renderer
@@ -286,7 +286,7 @@ class Kyoukai(object):
         # Get the static file.
         return self.get_static(newpath)
 
-    def _match_route(self, path, meth) -> typing.Tuple[Route, tuple]:
+    def _match_route(self, path, meth) -> typing.Tuple[ABCRoute, tuple]:
         """
         Match a route, based on the regular expression of the route.
 

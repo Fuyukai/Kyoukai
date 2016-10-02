@@ -16,13 +16,16 @@ Application Object
 Blueprints
 ----------
 
-.. autoclass:: kyoukai.blueprints.Blueprint
+.. autoclass:: kyoukai.blueprints.base.ABCBlueprint
+	:members:
+
+.. autoclass:: kyoukai.blueprints.regexp.RegexBlueprint
 	:members:
 
 Routes
 ------
 
-.. autoclass:: kyoukai.route.Route
+.. autoclass:: kyoukai.routing.base.ABCRoute
 	:members:
 
 

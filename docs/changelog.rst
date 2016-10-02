@@ -3,11 +3,21 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
-Version 1.9.3
--------------
+Version 1.10
+------------
 
  - Add ``reverse_hooks`` argument to the Blueprint constructor. This allows the order that the hooks process in to be
    reversed, i.e to go from child to parent order.
+
+ - Rewrote the way routing works significantly.
+
+ - Route matching is now based on Routers, instead of having it within the Blueprint itself.
+
+ - Blueprints should now inherit from ABCBlueprint.
+
+ - Routes can be more finely customized based on behaviour.
+
+ - Added implementation of regular expression-based routes using this new routing behaviour.
 
 Version 1.9.2
 -------------

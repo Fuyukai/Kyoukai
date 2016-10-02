@@ -2,7 +2,7 @@
 Views are like grouped together routes - but not Blueprints. They allow creating classes for routes, and storing
 data, etc inside the class.
 """
-from kyoukai.route import Route
+from kyoukai.routing.base import ABCRoute as Route
 
 
 def route(regex, methods: list = None, route_cls: type=Route):

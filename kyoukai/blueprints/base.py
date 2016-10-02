@@ -159,7 +159,7 @@ class ABCBlueprint(abc.ABC):
             bp.add_route(route)
 
 
-       :param match_string: The path to match this route on.
+        :param match_string: The path to match this route on.
                 The format of this string depends on the Blueprint class that is being used.
 
         :param methods: The list of allowed methods, e.g ["GET", "POST"].
