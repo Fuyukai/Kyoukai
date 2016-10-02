@@ -25,7 +25,8 @@ from typeguard import check_argument_types
 
 from kyoukai.debugger import KyoukaiDebugger
 
-from kyoukai.blueprints import Blueprint
+from kyoukai.blueprints.base import ABCBlueprint as Blueprint
+from kyoukai.blueprints.regexp import RegexBlueprint
 from kyoukai.context import HTTPRequestContext
 from kyoukai.util import static_filename, wrap_response
 from kyoukai.exc import HTTPException
@@ -33,11 +34,14 @@ from kyoukai.exc import HTTPException
 from kyoukai.response import Response
 from kyoukai.request import Request
 
-from kyoukai.route import Route
+from kyoukai.routing.base import ABCRoute
 from kyoukai.views import View
 
 from kyoukai.renderers.base import Renderer
 from kyoukai.renderers import mako_renderer
+
+from kyoukai.routing.regexp import RegexRouter
+from kyoukai.routing.base import ABCRouter
 
 try:
     from kyoukai.renderers import jinja_renderer
@@ -79,11 +83,10 @@ class Kyoukai(object):
         # Define the config.
         self.config = kwargs
 
-        # Define the "root" blueprint, which is used for @app.request.
-        self._root_bp = Blueprint(name, None)
-
         self.debug = kwargs.get("debug", False)
         self._debugger = KyoukaiDebugger(self)
+
+        self._root_bp = None
 
         # Define the component here so it can be checked easily.
         self.component = None
@@ -99,6 +102,9 @@ class Kyoukai(object):
 
         # Extensions dict. Used to get the current extensions added.
         self.extensions = {}
+
+        # The router used to match routes.
+        self.router = None  # type: 'ABCRouter'
 
         self.reconfigure(**kwargs)
 
@@ -126,11 +132,29 @@ class Kyoukai(object):
                     self._renderer = jinja_renderer.Jinja2Renderer(self.config.get("loader"))
 
         # Check if we should use the default static handler.
-        if self.udsh is None:
-            self.udsh = self.config.get("use_static_handler", True)
-            if self.udsh:
-                new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
-                self.root.add_route(new_route)
+        # TODO: Fix this for 1.10
+        # if self.udsh is None:
+        #    self.udsh = self.config.get("use_static_handler", True)
+        #    if self.udsh:
+        #        new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
+        #        self.root.add_route(new_route)
+
+        router_cls = self.config.get("router_class", RegexRouter)
+        if not issubclass(router_cls, ABCRouter):
+            raise TypeError("router_class must be of type ABCRouter")
+
+        # Define the "root" blueprint, which is used for @app.request.
+        bp_cls = self.config.get("blueprint_class", RegexBlueprint)
+        if not issubclass(bp_cls, Blueprint):
+            raise TypeError("blueprint_class must be of type ABCBlueprint")
+
+        # Create the blueprint, using the blueprint class.
+        if self._root_bp is None:
+            self._root_bp = bp_cls(self.name, None)
+
+        # Create the new router from the router app, passing ourselves into the router.
+        if self.router is None:
+            self.router = router_cls(self)
 
         return self.config
 
@@ -142,7 +166,7 @@ class Kyoukai(object):
         return self._renderer
 
     @property
-    def root(self):
+    def root(self) -> 'Blueprint':
         """
         This property is a way to access the root blueprint.
 
@@ -262,14 +286,14 @@ class Kyoukai(object):
         # Get the static file.
         return self.get_static(newpath)
 
-    def _match_route(self, path, meth) -> Route:
+    def _match_route(self, path, meth) -> typing.Tuple[ABCRoute, tuple]:
         """
         Match a route, based on the regular expression of the route.
 
         :return: The :class:`kyoukai.Route` of the route that matches, or None if no route matches.
         :raises: :class:`kyoukai.exc.HTTPException` if the route matches, but the method is not allowed.
         """
-        return self._root_bp.match(path, meth)
+        return self.router.match(path, meth)
 
     def route(self, regex, *, methods: list = None, run_hooks=True):
         """
@@ -503,6 +527,7 @@ class Kyoukai(object):
                         return
                     else:
                         self.logger.error("??????? Something went terribly wrong.")
+                        traceback.print_exc()
                         return
 
                 # If the route did not match, return a 404.
@@ -513,8 +538,8 @@ class Kyoukai(object):
                     return
 
                 # Set the `route` and `bp` items on the context.
-                ctx.blueprint = route.bp
-                ctx.route = route
+                ctx.blueprint = route[0].bp
+                ctx.route = route[0]
 
                 # Try and invoke the Route.
                 try:
@@ -523,12 +548,14 @@ class Kyoukai(object):
                     # This is because routes are responsible for pre-route and post-route hooks, calling them in the
                     # blueprint as appropriate.
                     # So we just pass ourselves to the route and hope it invokes properly.
-                    response = await route.invoke(ctx)
+
+                    # Expand out the args into this, provided by the matcher.
+                    response = await route[0].invoke(ctx, route[1])
                 except HTTPException as e:
                     # Handle a HTTPException normally.
                     self.log_request(ctx, e.code)
                     # Set the route of the exception.
-                    e.route = route
+                    e.route = route[0]
                     await self.handle_http_error(e, protocol, ctx)
                     return
                 except Exception as e:
@@ -538,11 +565,11 @@ class Kyoukai(object):
                     # Set the cause of the HTTP exception. Useful for 500 error handlers.
                     exc.__cause__ = e
                     # Set the route of the exception.
-                    exc.route = route
+                    exc.route = route[0]
                     self.log_request(ctx, 500)
                     should_err = await self.handle_http_error(exc, protocol, ctx)
                     if should_err:
-                        self.logger.exception("Unhandled exception in route `{}`:".format(repr(route)))
+                        self.logger.exception("Unhandled exception in route `{}`:".format(repr(route[0])))
                     return
                 else:
                     # If there is no error happening, just log it as normal.

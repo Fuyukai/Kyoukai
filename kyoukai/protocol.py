@@ -139,6 +139,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         """
         self.logger.warning("Exception happened during HTTP parsing.")
         self.logger.warning("This is not necessarily a bug.")
+        traceback.print_exc()
         # Convert the exception.
         new_e = exc_from(exception)
         try:
