@@ -405,15 +405,15 @@ class Kyoukai(object):
         """
         try:
             item = self._on_startup(self)
+            # If it's a coroutine or otherwise awaitable, await it.
+            # This is so that coroutines can be passed in to handle.
+            if inspect.isawaitable(item):
+                await item
         except:
             # Only print the bottom most traceback.
             tb = traceback.format_exc()
             self.logger.error("Error calling on startup function:\n{}".format(tb))
             raise SystemExit()
-        # If it's a coroutine or otherwise awaitable, await it.
-        # This is so that coroutines can be passed in to handle.
-        if inspect.isawaitable(item):
-            await item
 
     def on_startup(self, coro_or_callable: typing.Callable[['Kyoukai'], None]):
         """
