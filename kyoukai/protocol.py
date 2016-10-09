@@ -4,6 +4,7 @@ httptools based HTTP protocol.
 import asyncio
 import logging
 import traceback
+import warnings
 
 import httptools
 
@@ -210,7 +211,14 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         """
         Called when a connection is made, and is used to store the connection data.
         """
-        self.ip, self.client_port = transport.get_extra_info("peername")
+        try:
+            self.ip, self.client_port = transport.get_extra_info("peername")
+        except ValueError:
+            # Sometimes socket.socket.getpeername() isn't available, so it tried to unpack a None.
+            # Or, it returns None (wtf?)
+            # So just provide some fake values.
+            warnings.warn("getpeername() returned None, cannot provide transport information.")
+            self.ip, self.client_port = None, None
         self._transport = transport
 
         self.logger.debug("Recieved connection from {}:{}".format(*transport.get_extra_info("peername")))
