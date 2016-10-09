@@ -17,7 +17,7 @@ kyk = Kyoukai("example_app")
 
 @kyk.route("/")
 async def index(ctx: HTTPRequestContext):
-    return json.dumps(request.headers), 200, {"Content-Type": "application/json"}
+    return json.dumps(dict(ctx.request.headers)), 200, {"Content-Type": "application/json"}
     
 kyk.run()
 ```

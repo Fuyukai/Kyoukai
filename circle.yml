@@ -1,7 +1,7 @@
 ## CircleCI build file.
 machine:
   python:
-    version: 3.5.2  # Use 3.5.1 as the base version.
+    version: 3.5.2  # Use 3.5.2 as the base version.
 
 dependencies:
   override:
