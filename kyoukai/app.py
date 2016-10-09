@@ -428,7 +428,7 @@ class Kyoukai(object):
 
         return coro_or_callable
 
-    async def handle_http_error(self, err: HTTPException, protocol, ctx: HTTPRequestContext):
+    async def handle_http_error(self, err: HTTPException, ctx: HTTPRequestContext):
         """
         Handle a :class:`kyoukai.exc.HTTPException`.
 
@@ -446,8 +446,7 @@ class Kyoukai(object):
             if err.code == 500 and self.debug:
                 # Use the Kyoukai debugger.
                 should_err, r = self._debugger.debug(ctx, err)
-                protocol.handle_resp(r)
-                return should_err
+                return r
             else:
                 body = str(code)
 
@@ -469,19 +468,9 @@ class Kyoukai(object):
 
             resp.request = ctx.request
 
-        protocol.handle_resp(resp)
+        return resp
 
-        # Check if we should close the connection.
-        if hasattr(ctx.request, "should_keep_alive"):
-            if not ctx.request.should_keep_alive:
-                protocol.close()
-        else:
-            # If it's that bad, just close it anyway.
-            protocol.close()
-
-        return True
-
-    async def delegate_request(self, protocol, ctx: HTTPRequestContext):
+    async def delegate_request(self, ctx: HTTPRequestContext):
         """
         Handles a :class:`kyoukai.context.HTTPRequestContext` and it's underlying request, processing it to the route
         handlers and such in the blueprints.
@@ -489,98 +478,86 @@ class Kyoukai(object):
         This is an **internal** method, and should not be used outside of the protocol, or for testing.
         """
         async with ctx:
-            # Acquire the lock on the protocol.
-            async with protocol.lock:
-                # Check if we should skip our own handling and go straight to the debugger.
-                if self.debug:
-                    if '__debugger__' in ctx.request.args and ctx.request.args["__debugger__"] == "yes":
-                        resp = self._debugger.debug(ctx, None)
-                        protocol.handle_resp(resp[1])
-                        return
+            # Check if we should skip our own handling and go straight to the debugger.
+            if self.debug:
+                if '__debugger__' in ctx.request.args and ctx.request.args["__debugger__"] == "yes":
+                    return self._debugger.debug(ctx, None)
 
-                # Check if there's a host header.
-                if ctx.request.version != "1.0":
-                    host = ctx.request.headers.get("host", None)
-                    if not host:
-                        exc = HTTPException(400)
-                        self.log_request(ctx, code=400)
-                        await self.handle_http_error(exc, protocol, ctx)
-                        return
+            # Check if there's a host header.
+            if ctx.request.version != "1.0":
+                host = ctx.request.headers.get("host", None)
+                if not host:
+                    exc = HTTPException(400)
+                    self.log_request(ctx, code=400)
+                    resp = await self.handle_http_error(exc, ctx)
+                    return resp
 
-                # First, try and match the route.
-                try:
-                    route = self._match_route(ctx.request.path, ctx.request.method)
-                except HTTPException as e:
-                    # We matched it; but the route doesn't work for this method.
-                    # So we catch the 405 error,
-                    if e.code == 405:
-                        self.log_request(ctx, code=e.code)
-                        await self.handle_http_error(e, protocol, ctx)
-                        return
-                    elif e.code == 500:
-                        # Failure matching, probably.
-                        self.log_request(ctx, code=e.code)
-                        await self.handle_http_error(e, protocol, ctx)
-                        self.logger.error("Unhandled exception in route matching:\n {}".format(
-                            ''.join(traceback.format_exc())
-                        ))
-                        return
-                    else:
-                        self.logger.error("??????? Something went terribly wrong.")
-                        traceback.print_exc()
-                        return
-
-                # If the route did not match, return a 404.
-                if not route:
-                    fof = HTTPException(404)
-                    self.log_request(ctx, code=404)
-                    await self.handle_http_error(fof, protocol, ctx)
-                    return
-
-                # Set the `route` and `bp` items on the context.
-                ctx.blueprint = route[0].bp
-                ctx.route = route[0]
-
-                # Try and invoke the Route.
-                try:
-                    # Note that this will already be a Response.
-                    # The route should call `app._wrap_response` when handling the response.
-                    # This is because routes are responsible for pre-route and post-route hooks, calling them in the
-                    # blueprint as appropriate.
-                    # So we just pass ourselves to the route and hope it invokes properly.
-
-                    # Expand out the args into this, provided by the matcher.
-                    response = await route[0].invoke(ctx, route[1])
-                except HTTPException as e:
-                    # Handle a HTTPException normally.
-                    self.log_request(ctx, e.code)
-                    # Set the route of the exception.
-                    e.route = route[0]
-                    await self.handle_http_error(e, protocol, ctx)
-                    return
-                except Exception as e:
-                    # An uncaught exception has propogated down to our level - oh dear.
-                    # Catch it, turn it into a 500, and return.
-                    exc = HTTPException(500)
-                    # Set the cause of the HTTP exception. Useful for 500 error handlers.
-                    exc.__cause__ = e
-                    # Set the route of the exception.
-                    exc.route = route[0]
-                    self.log_request(ctx, 500)
-                    should_err = await self.handle_http_error(exc, protocol, ctx)
-                    if should_err:
-                        self.logger.exception("Unhandled exception in route `{}`:".format(repr(route[0])))
-                    return
+            # First, try and match the route.
+            try:
+                route = self._match_route(ctx.request.path, ctx.request.method)
+            except HTTPException as e:
+                # We matched it; but the route doesn't work for this method.
+                # So we catch the 405 error,
+                if e.code == 405:
+                    self.log_request(ctx, code=e.code)
+                    return await self.handle_http_error(e, ctx)
+                elif e.code == 500:
+                    # Failure matching, probably.
+                    self.log_request(ctx, code=e.code)
+                    r = await self.handle_http_error(e, ctx)
+                    self.logger.error("Unhandled exception in route matching:\n {}".format(
+                        ''.join(traceback.format_exc())
+                    ))
+                    return r
                 else:
-                    # If there is no error happening, just log it as normal.
-                    self.log_request(ctx, response.code)
+                    self.logger.error("??????? Something went terribly wrong.")
+                    traceback.print_exc()
+                    return await self.handle_http_error(e, ctx)
 
-                # Respond with the response.
-                protocol.handle_resp(response)
+            # If the route did not match, return a 404.
+            if not route:
+                fof = HTTPException(404)
+                self.log_request(ctx, code=404)
+                return await self.handle_http_error(fof, ctx)
 
-                # Check if we should Keep-Alive it.
-                if not ctx.request.should_keep_alive:
-                    protocol.close()
+            # Set the `route` and `bp` items on the context.
+            ctx.blueprint = route[0].bp
+            ctx.route = route[0]
+
+            # Try and invoke the Route.
+            try:
+                # Note that this will already be a Response.
+                # The route should call `app._wrap_response` when handling the response.
+                # This is because routes are responsible for pre-route and post-route hooks, calling them in the
+                # blueprint as appropriate.
+                # So we just pass ourselves to the route and hope it invokes properly.
+
+                # Expand out the args into this, provided by the matcher.
+                response = await route[0].invoke(ctx, route[1])
+            except HTTPException as e:
+                # Handle a HTTPException normally.
+                self.log_request(ctx, e.code)
+                # Set the route of the exception.
+                e.route = route[0]
+                return await self.handle_http_error(e, ctx)
+            except Exception as e:
+                # An uncaught exception has propogated down to our level - oh dear.
+                # Catch it, turn it into a 500, and return.
+                exc = HTTPException(500)
+                # Set the cause of the HTTP exception. Useful for 500 error handlers.
+                exc.__cause__ = e
+                # Set the route of the exception.
+                exc.route = route[0]
+                self.log_request(ctx, 500)
+                r = await self.handle_http_error(exc, ctx)
+                self.logger.exception("Exception in route `{}`:".format(repr(route[0])))
+                return r
+            else:
+                # If there is no error happening, just log it as normal.
+                self.log_request(ctx, response.code)
+
+            # Return the response.
+            return response
 
     async def start(self, ip="0.0.0.0", port=4444, component=None):  # pragma: no cover
         """

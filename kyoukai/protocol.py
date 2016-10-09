@@ -144,7 +144,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         # Convert the exception.
         new_e = exc_from(exception)
         try:
-            await self.app.handle_http_error(new_e, self, context)
+            r = await self.app.handle_http_error(new_e, context)
         except Exception:
             # Critical error.
             self.logger.critical("Unhandled exception inside Kyoukai, when processing a HTTP error!")
@@ -152,6 +152,9 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             self.logger.critical("".join(traceback.format_exc()))
             self.write(CRITICAL_ERROR_TEXT.encode())
             self.close()
+            return None
+
+        return r
 
     def reset(self):
         """
@@ -172,40 +175,47 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         # Unset the event. We're ready to begin processing.
         self.parser_ready.clear()
 
-        # Take in the request, and call parse_all().
-        request = self.parser_obb.current_request
-        # Set a handful of properties manually.
-        request.version = self.parser.get_http_version()
-        request.method = self.parser.get_method().decode()
-        request.should_keep_alive = self.parser.should_keep_alive()
-        # Set the IP and the port on the request.
-        request.ip = self.ip
-        request.port = self.client_port
-        # Create the new HTTPRequestContext.
-        ctx = HTTPRequestContext(request, self.app, self.parent_context)
-        # Parse all fields in the Exception.
-        try:
-            request.parse_all()
-        except HTTPException as e:
-            # Handle the HTTP exception.
-            await self._safe_handle_error(ctx, e)
-            return
-        except Exception as e:
-            await self._safe_handle_error(ctx, e)
-            return
-        finally:
-            self.reset()
+        # Lock the current protocol.
+        async with self.lock:
 
-        # Reset the parser.
-        self.parser_obb.reset()
+            # Take in the request, and call parse_all().
+            request = self.parser_obb.current_request
+            # Set a handful of properties manually.
+            request.version = self.parser.get_http_version()
+            request.method = self.parser.get_method().decode()
+            request.should_keep_alive = self.parser.should_keep_alive()
+            # Set the IP and the port on the request.
+            request.ip = self.ip
+            request.port = self.client_port
+            # Create the new HTTPRequestContext.
+            ctx = HTTPRequestContext(request, self.app, self.parent_context)
+            # Parse all fields in the Exception.
+            try:
+                request.parse_all()
+            except HTTPException as e:
+                # Handle the HTTP exception.
+                await self._safe_handle_error(ctx, e)
+                return
+            except Exception as e:
+                await self._safe_handle_error(ctx, e)
+                return
+            finally:
+                self.reset()
 
-        # Create the delegate_request task.
-        try:
-            await self.app.delegate_request(self, ctx)
-        except Exception as exc:
-            await self._safe_handle_error(ctx, exc)
-        finally:
-            self.reset()
+            # Reset the parser.
+            self.parser_obb.reset()
+
+            # Create the delegate_request task.
+            try:
+                response = await self.app.delegate_request(ctx)
+                await self.do_response(response)
+            except Exception as exc:
+                response = await self._safe_handle_error(ctx, exc)
+                if not response:
+                    # UH OH
+                    # Don't do anything, in this case.
+                    return
+                await self.do_response(response)
 
     def connection_made(self, transport: asyncio.Transport):
         """
@@ -244,17 +254,31 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             exc = exc_from(e)
             exc.code = 405
             self.loop.create_task(self._safe_handle_error(ctx, exc))
+            return
         except httptools.HttpParserError as e:
             ctx = HTTPRequestContext(None, self.app, self.parent_context)
             # Transform it into a 400.
             exc = exc_from(e)
             exc.code = 400
             self.loop.create_task(self._safe_handle_error(ctx, exc))
+            return
 
         # Wait on the event.
         if self.waiter is None:
             self.waiter = self.loop.create_task(self._wait())
             return
+
+    async def do_response(self, response: Response):
+        """
+        Writes the Response to the stream.
+
+        :param response: The response object to write.
+        """
+        self.handle_resp(response)
+
+        # Close the response, if we want to Keep-Alive.
+        if not response.request.should_keep_alive:
+            self.close()
 
     def handle_resp(self, response: Response):
         """
