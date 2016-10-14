@@ -1,7 +1,7 @@
 Advanced Routing
 ================
 
-Routing in Kyōkai works based on regular expressions.
+Routing in Kyoukai works based on regular expressions.
 
 **Please note that routes are matched in the order they are defined.**
 
@@ -11,7 +11,7 @@ Regular Expressions
 *Regular Expressions* are a way to match text easily using patterns.
 They save expensive parsing and can be used easily to match web paths.
 
-Kyōkai uses the stdlib :mod:`re` library to match
+Kyoukai uses the stdlib :mod:`re` library to match
 paths, so the grammar is exactly the same.
 
 Here's an example that matches any path with ``/numeric/<number here>``:

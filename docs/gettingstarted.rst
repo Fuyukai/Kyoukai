@@ -1,9 +1,9 @@
 .. _gettingstarted:
 
-Your First Kyōkai App
-=====================
+Your First Kyoukai App
+======================
 
-In this tutorial, we'll go through how to write your first Kyōkai app.
+In this tutorial, we'll go through how to write your first Kyoukai app.
 
 Application Skeleton
 --------------------
@@ -15,7 +15,7 @@ name doesn't matter, as you probably won't be using it for long.
 Directory layout
 ~~~~~~~~~~~~~~~~
 
-Kyōkai projects have a very simple layout.
+Kyoukai projects have a very simple layout.
 
 ::
 
@@ -52,13 +52,13 @@ Open up ``app.py`` and add your starting line.
 
     from kyoukai import Kyoukai
 
-This imports the Kyōkai application class from the library, allowing you
+This imports the Kyoukai application class from the library, allowing you
 to create a new object inside your code.
 
 Routes
 ~~~~~~
 
-Routes in Kyōkai are very simple, and if you have ever used Flask, are
+Routes in Kyoukai are very simple, and if you have ever used Flask, are
 similar in style to Flask routes.
 
 Routes are made up of three parts:
@@ -93,7 +93,7 @@ We are going to write a very simple route that returns a
 Creating the route
 ------------------
 
-Routes in Kyōkai are created very similarly to Flask routes: with a
+Routes in Kyoukai are created very similarly to Flask routes: with a
 decorator.
 
 .. code:: python
@@ -107,7 +107,7 @@ decorator.
 The Route Coroutine
 ~~~~~~~~~~~~~~~~~~~
 
-Your route function **must** be a coroutine. As Kyōkai is async,
+Your route function **must** be a coroutine. As Kyoukai is async,
 your code must also be async.
 
 .. code:: python
@@ -126,7 +126,7 @@ Templates are stored in ``templates/``, obviously. They are partial HTML
 code, which can have parts in it replaced using code inside the template
 itself, or your view.
 
-The default template engine used by Kyōkai is
+The default template engine used by Kyoukai is
 `Mako <http://www.makotemplates.org/>`__, but you can change it around
 to use `Jinja2 <http://jinja.pocoo.org/docs/dev/>`__ easily.
 
@@ -145,7 +145,7 @@ Save and close the template.
 Rendering the template
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Rendering the template inside your Route is very simple; Kyōkai has a
+Rendering the template inside your Route is very simple; Kyoukai has a
 utility function to render your template.
 
 .. automethod:: kyoukai.app.Kyoukai.render_template
@@ -166,7 +166,7 @@ Responses
 
 Note, how in the previous coroutine, we simply returned a ``str`` in our
 route. This is not similar to ``aiohttp`` and the likes who force you to
-return a ``Response``. You can return a response object in Kyōkai as
+return a ``Response``. You can return a response object in Kyoukai as
 normal, but for convenience sake, you can also return simply a string or
 a tuple.
 
@@ -209,16 +209,23 @@ blocking code.
 
    example 1
 
+Deploying
+---------
+
+There's no special procedure for deploying your app. The inbuilt webserver is production ready, and you can run your
+application in a production environment in the same way as you would develop it.
+
+
 Finishing your project
 ----------------------
 
-You have completed your first Kyōkai project. For maximum effectiveness,
+You have completed your first Kyoukai project. For maximum effectiveness,
 you must now publish it to GitHub.
 
 .. code:: bash
 
     $ git init
-    $ git remote add origin git@github.com:YourName/my-first-kyokai-project.git
+    $ git remote add origin git@github.com:YourName/my-first-kyoukai-project.git
     $ git add .
     $ git commit -a -m "Initial commit, look how cool I am!"
     $ git push -u origin master
