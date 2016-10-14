@@ -197,7 +197,7 @@ blocking code.
 
 .. code:: python
 
-    app.run(host="127.0.0.1", port=4444)
+    app.run(ip="127.0.0.1", port=4444)
 
 | The args passed in here are just the default values; they are
   optional.
