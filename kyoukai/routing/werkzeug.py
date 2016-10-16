@@ -15,6 +15,7 @@ from werkzeug.routing import Rule
 
 class WerkzeugRouteRule(Rule):
     """
+    A Rule that stores a reference to the WerkzeugRoute object.
     """
 
     def __init__(self, *a, kyk_route=None, **kw):
