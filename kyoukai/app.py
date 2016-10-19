@@ -106,6 +106,11 @@ class Kyoukai(object):
         # The router used to match routes.
         self.router = None  # type: 'ABCRouter'
 
+        # The domain name this handles.
+        # Is just None for any.
+        # This is pretty much unused currently.
+        self.domain = "localhost"
+
         self.reconfigure(**kwargs)
 
     def reconfigure(self, **cfg: dict):

@@ -48,7 +48,6 @@ class WerkzeugBlueprint(ABCBlueprint):
 
     def wrap_route(self, match_string: str, coroutine: typing.Awaitable, *, methods: list = None,
                    run_hooks=True) -> ABCRoute:
-        # Wrap the route in an RegexRoute instance.
         rtt = WerkzeugRoute(self, match_string, methods, bound=False, run_hooks=run_hooks)
         rtt.create(coroutine)
 

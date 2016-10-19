@@ -4,13 +4,15 @@ A Werkzeug-based routing engine for Kyoukai.
 import typing
 
 from asphalt.core import Context
+from werkzeug.exceptions import NotFound, MethodNotAllowed
+from werkzeug.routing import Rule, RequestRedirect
+
 from kyoukai.context import HTTPRequestContext
 from kyoukai.response import Response
 from kyoukai.converters import convert_args
 from kyoukai.routing.base import ABCRouter, ABCRoute
 from kyoukai.util import wrap_response
-
-from werkzeug.routing import Rule
+from kyoukai.exc import HTTPException
 
 
 class WerkzeugRouteRule(Rule):
@@ -47,14 +49,12 @@ class WerkzeugRoute(ABCRoute):
     async def invoke(self, ctx: HTTPRequestContext, args: typing.Iterable = None,
                      exception: Exception = None):
         if self._should_run_hooks:
-            # Run pre-request hooks.
             hooks = self.bp.gather_hooks("pre")
             if hooks:
                 for hook in hooks:
                     # Await the hook.
                     ctx = await hook(ctx)
                     if not isinstance(ctx, Context):
-                        # idc about the subtype, as long as it's a context.
                         raise TypeError("Hook {} returned non-context".format(hook.__name__))
 
         # Invoke the coroutine.
@@ -108,7 +108,18 @@ class WerkzeugRouter(ABCRouter):
 
     def match(self, path: str, method: str):
         root_bp = self.app.root
-        map = root_bp.gather_routes()  # XXX: store map somewhere!
-        urls = map.bind("example.com", "/")  # domain doesn't matter for now
-        match = urls.match(path, method, return_rule=True)
-        return (match[0].kyk_route, match[1].values())
+        map_ = root_bp.gather_routes()  # XXX: store map somewhere!
+        urls = map_.bind(self.app.domain, "/")  # domain doesn't matter for now
+        # Wrap this in a try/except and catch werkzeug's silly errors
+        try:
+            match = urls.match(path, method, return_rule=True)
+        except NotFound:
+            return None
+        except MethodNotAllowed:
+            # TODO: Add calculation of 405s.
+            raise HTTPException(405)
+        except RequestRedirect as exc:
+            # Go away
+            e = HTTPException.new(code=301, headers={"Location": exc.new_url})
+            raise e
+        return match[0].kyk_route, match[1].values()
