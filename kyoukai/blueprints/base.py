@@ -36,7 +36,7 @@ class ABCBlueprint(abc.ABC):
     """
 
     def __init__(self, name: str, parent: 'ABCBlueprint' = None,
-                 url_prefix: str = ""):
+                 url_prefix: str = "", reverse_hooks=False):
         """
         :param name: The name of the Blueprint.
         :param parent: The parent Blueprint.
@@ -52,6 +52,8 @@ class ABCBlueprint(abc.ABC):
 
         # Request hooks.
         self.hooks = {}
+
+        self.reverse_hooks = reverse_hooks
 
     # Shared properties across all blueprint classes.
 
@@ -237,6 +239,8 @@ class ABCBlueprint(abc.ABC):
         if self._parent is not None:
             hooks += self.parent.gather_hooks(item)
 
-        hooks = hooks[::-1]
+        # If we should reverse the hooks, so that they're returned from the highest to the lowest.
+        if not self.reverse_hooks:
+            hooks = hooks[::-1]
 
         return hooks
