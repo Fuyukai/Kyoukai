@@ -81,6 +81,13 @@ class Request(object):
         self.should_keep_alive = False
 
     @property
+    def source(self):
+        """
+        :return: A :class:`tuple` containing the IP address and port.
+        """
+        return self.ip, self.port
+
+    @property
     def form(self) -> dict:
         """
         Returns the form data for the specified request.
