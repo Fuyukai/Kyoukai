@@ -125,7 +125,6 @@ class Kyoukai(object):
 
         async with ctx:
             # Call match on our Blueprint to find the request.
-            # TODO: ERROR HANDLING
             try:
                 matched, params = self.root.match(request.environ)
             except NotFound as e:
