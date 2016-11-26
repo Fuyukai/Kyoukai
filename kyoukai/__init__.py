@@ -1,12 +1,3 @@
-from .app import Kyoukai
-from .request import Request
-from .response import Response
-from .context import HTTPRequestContext
-from .routing.regexp import RegexRoute as Route
-from .views import View
-from .asphalt import KyoukaiComponent
-from .exc import HTTPException
-from .util import VERSION, VERSIONT, static_filename
-from .protocol import KyoukaiProtocol
-
-from .blueprints.regexp import RegexBlueprint as Blueprint
+"""
+Kyoukai is an async web framework for Python 3.5 and above.
+"""

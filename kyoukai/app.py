@@ -1,595 +1,107 @@
-"""
-A Kyoukai app is the core container of a web application based upon the framework.
-"""
+# Somewhere along the line, I had decided that I can't interact with others. That I have no choice but to be alone,
+# but I've found a new reason to stay. It's because everyone is alone. Everyone is all alone.
+
+# ~~~
 
 import asyncio
-import inspect
-import io
-import mimetypes
-import os
 import logging
-import traceback
-import typing
-from urllib.parse import urlsplit
 
-try:
-    import magic
-except (ImportError, OSError):
-    _has_magic = False
-else:
-    _has_magic = True
+import werkzeug
 from asphalt.core import Context
-
-from asphalt.core.runner import run_application
-from typeguard import check_argument_types
-
-from kyoukai.debugger import KyoukaiDebugger
-
-from kyoukai.blueprints.base import ABCBlueprint as Blueprint
-from kyoukai.blueprints.regexp import RegexBlueprint
-from kyoukai.context import HTTPRequestContext
-from kyoukai.util import static_filename, wrap_response
-from kyoukai.exc import HTTPException
-
-from kyoukai.response import Response
-from kyoukai.request import Request
-
-from kyoukai.routing.base import ABCRoute
-from kyoukai.views import View
-
-from kyoukai.renderers.base import Renderer
-from kyoukai.renderers import mako_renderer
-
-from kyoukai.routing.regexp import RegexRouter
-from kyoukai.routing.base import ABCRouter
-
-try:
-    from kyoukai.renderers import jinja_renderer
-
-    _has_jinja2 = True
-except ImportError:
-    jinja_renderer = None
-    _has_jinja2 = False
+from kyoukai.asphalt import HTTPRequestContext
+from kyoukai.blueprint import Blueprint
+from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError
+from werkzeug.routing import RequestRedirect
+from werkzeug.wrappers import Request, Response
 
 
 class Kyoukai(object):
     """
-    A Kyoukai app.
-
-    This is the core component to your web application based on Kyoukai.
-
-    :param name:
-        The name of the app. This is passed into the root blueprint as the name, which shows up in exceptions.
-    :type name: :class:`str`
-
-    :cvar request_cls: The class to use to create Requests.
-    :cvar response_cls: The class to use to create wrapped Responses.
+    The Kyoukai type is the main part of your web application.  It serves as the main container for your app.
     """
-    request_cls = Request
-    response_cls = Response
 
-    def __init__(self, name: str, **kwargs):
+    def __init__(self,
+                 application_name: str,
+                 *,
+                 server_name: str=None,
+                 **kwargs):
         """
-        Create a new app.
-        """
+        Create the new app.
 
-        self.name = name
-        self.loop = asyncio.get_event_loop()
+        :param application_name: The name of this application. This is currently unused.
+        :param server_name: The server name. This can be None.
+        """
+        self.name = application_name
+        self.server_name = server_name
+
+        # Try and get the loop from the keyword arguments - don't automatically perform `get_event_loop`.
+        self.loop = kwargs.get("loop")
+        if not self.loop:
+            self.loop = asyncio.get_event_loop()
 
         self.logger = logging.getLogger("Kyoukai")
 
-        self.error_handlers = {}
-
-        # Define the config.
-        self.config = kwargs
-
-        self.debug = kwargs.get("debug", False)
-        self._debugger = KyoukaiDebugger(self)
-
-        self._root_bp = None
-
-        # Define the component here so it can be checked easily.
-        self.component = None
-
-        # On startup function.
-        self._on_startup = lambda app: None
-
-        # Renderer class.
-        self._renderer = None
-
-        # Default static file handler.
-        self.udsh = None
-
-        # Extensions dict. Used to get the current extensions added.
-        self.extensions = {}
-
-        # The router used to match routes.
-        self.router = None  # type: 'ABCRouter'
-
-        # The domain name this handles.
-        # Is just None for any.
-        # This is pretty much unused currently.
-        self.domain = "localhost"
-
-        self.reconfigure(**kwargs)
-
-    def reconfigure(self, **cfg: dict):
-        """
-        Reconfigures the app using the parameters passed in from the config.
-
-        This is used, for example, with Asphalt's config and the KyoukaiComponent's consume rest behaviour when
-        dealing with keyword arguments.
-
-        :param cfg: A dictionary of config values to reconfigure the application with.
-        :return: The new configuration.
-        """
-        self.config = {**self.config, **cfg}
-
-        # Define the renderer.
-        if self._renderer is None:
-            render = self.config.get("renderer", "mako")
-            if render == "mako":
-                self._renderer = mako_renderer.MakoRenderer(self.config.get("template_directory"))
-            elif render == "jinja2":
-                if not _has_jinja2:
-                    raise ImportError("Jinja2 is not installed; cannot be used as a renderer")
-                else:
-                    self._renderer = jinja_renderer.Jinja2Renderer(self.config.get("loader"))
-
-        # Check if we should use the default static handler.
-        # TODO: Fix this for 1.10
-        # if self.udsh is None:
-        #    self.udsh = self.config.get("use_static_handler", True)
-        #    if self.udsh:
-        #        new_route = self.root.wrap_route(r'/static/(.*)', self.default_static_handler, methods=["ANY"])
-        #        self.root.add_route(new_route)
-
-        router_cls = self.config.get("router_class", RegexRouter)
-        if not issubclass(router_cls, ABCRouter):
-            raise TypeError("router_class must be of type ABCRouter")
-
-        # Define the "root" blueprint, which is used for @app.request.
-        bp_cls = self.config.get("blueprint_class", RegexBlueprint)
-        if not issubclass(bp_cls, Blueprint):
-            raise TypeError("blueprint_class must be of type ABCBlueprint")
-
-        # Create the blueprint, using the blueprint class.
-        if self._root_bp is None:
-            self._root_bp = bp_cls(self.name, None)
-
-        # Create the new router from the router app, passing ourselves into the router.
-        if self.router is None:
-            self.router = router_cls(self)
-
-        return self.config
+        # Create the root blueprint.
+        self._root_bp = Blueprint(application_name)
 
     @property
-    def renderer(self) -> Renderer:
+    def root(self) -> Blueprint:
         """
-        :return: The current :class:`kyoukai.renderers.Renderer` configured for this application.
+        :return: The root Blueprint for the routing tree.
         """
-        return self._renderer
-
-    @property
-    def root(self) -> 'Blueprint':
-        """
-        This property is a way to access the root blueprint.
-
-        The root blueprint is the parent of all registered blueprints in the application. It can be used to directly
-        route onto the top-level, however it is recommended to just use :meth:`Kyoukai.route` and similar to run onto
-        the root blueprint.
-        """
-
         return self._root_bp
 
-    def register_blueprint(self, bp: Blueprint):
+    def finalize(self):
         """
-        Registers a blueprint as a sub-blueprint to the root blueprint.
-
-        :return: The modified Blueprint with the correct parent.
+        Finalizes the app and blueprints.
         """
-        assert check_argument_types()
-        self._root_bp.add_child(bp)
-        if bp.parent is None:
-            bp.parent = self._root_bp
-        return bp
+        self.root.finalize()
 
-    def render(self, filename: str, **kwargs) -> str:
+    async def process_request(self, request: Request, parent_context: Context) -> Response:
         """
-        Render a template using the currently loaded rendering engine.
+        Processes a Request and returns a Response object.
 
-        :param filename: The filename of the template to load and render.
-        :type filename: str
+        This is the main processing method of Kyoukai, and is meant to be used by one of the HTTP server backends,
+        and not by client code.
 
-        :param kwargs: Additional arguments to pass to the template renderer.
-                These are directly passed to :meth:`mako.template.Template.render` to render the template.
+        :param request:
+            The :class:`werkzeug.wrappers.Request` object to process.
 
-        :return: A :class:`str` containing the rendered information.
+            A new HTTPContext will be provided to wrap this request inside of to client code.
+
+        :param parent_context:
+            The :class:`asphalt.core.Context` that is the parent context for this particular app. It will be used as
+            the parent for the HTTPRequestContext.
+
+        :return: A :class:`werkzeug.wrappers.Response` object that can be written to the client as a response.
         """
-        return self.renderer.render(filename, **kwargs)
+        # Create a new HTTPRequestContext.
+        ctx = HTTPRequestContext(parent_context, request)
 
-    def render_template(self, filename: str, code=200, **kwargs) -> Response:
-        """
-        Render a template using the currently loaded rendering engine.
-
-        Unlike :meth:`Kyoukai.render`, this returns a :class:`Response` object.
-
-        :param filename: The filename of the template to load and render.
-        :type filename: str
-
-        :param code: The response code to add into the Response.
-
-        :param kwargs: Additional arguments to pass to the template renderer.
-                These are directly passed to :meth:`mako.template.Template.render` to render the template.
-
-        :return: A :class:`Response` object with the rendered template.
-        """
-        data = self.render(filename, **kwargs)
-        # Wrap it in a response.
-        return Response(code, data, headers={"Content-Type": "text/html"})
-
-    def get_static_path(self, filename: str) -> str:
-        """
-        Gets a sanitized static path.
-
-        This will use the current working directory and the `static_dir` defined by the configuration, or `static` if
-        that is not specified, to build the full path.
-
-        :param filename: The filename to look up.
-        :return: A :class:`str` with the fully built path.
-        """
-        return os.path.join(os.getcwd(), self.config.get("static_dir", "static"), static_filename(filename))
-
-    def get_static_file(self, filename: str) -> io.BufferedIOBase:
-        """
-        Opens and returns a static file from the path.
-
-        Internally, this uses :meth:`Kyoukai.get_static_path` to sanitize the path.
-
-        :param filename: The filename to load.
-        :return: A file object opened in binary mode, attached to the file.
-        :rtype: :class:`io.BufferedIOBase`
-        """
-        fname = self.get_static_path(filename)
-        if not os.path.exists(fname):
-            return None
-        else:
-            return open(os.path.join(os.getcwd(), self.config.get("static_dir", "static"), fname), 'rb')
-
-    def get_static(self, filename: str) -> Response:
-        """
-        Gets a file, using static, but returns a Response instead of the file handle.
-        """
-        content = self.get_static_file(filename)
-        if not content:
-            raise HTTPException(404)
-
-        with content:
-            path = self.get_static_path(filename)
-            mimetype = mimetypes.guess_type(path)[0]
-            if not mimetype:
-                if _has_magic:
-                    mimetype = magic.from_file(path, mime=True)
-                    if isinstance(mimetype, bytes):
-                        mimetype = mimetype.decode()
-                else:
-                    mimetype = "application/octet-stream"
-            return Response(200, body=content.read(), headers={"Content-Type": mimetype})
-
-    async def default_static_handler(self, ctx: HTTPRequestContext, filename: str):
-        """
-        A default static file handler.
-
-        This is automatically registered as ``/static/`` on the root blueprint, unless ``use_static_handler=False``
-        is passed into the app's configuration.
-
-        .. versionadded:: 1.8.6
-        """
-        # Unparse the filename.
-        newpath = urlsplit(filename).path
-
-        # Get the static file.
-        return self.get_static(newpath)
-
-    def _match_route(self, path, meth) -> typing.Tuple[ABCRoute, tuple]:
-        """
-        Match a route, based on the regular expression of the route.
-
-        :return: The :class:`kyoukai.Route` of the route that matches, or None if no route matches.
-        :raises: :class:`kyoukai.exc.HTTPException` if the route matches, but the method is not allowed.
-        """
-        return self.router.match(path, meth)
-
-    def route(self, regex, *, methods: list = None, run_hooks=True):
-        """
-        Convenience decorator to create a new route.
-
-        This is equivalent to:
-
-        .. code:: python
-
-            route = bp.wrap_route(regex, callable, methods, run_hooks)
-            bp.add_route(route)
-
-        .. note::
-
-            This function is a shortcut to ``app.root.route(*args, **kwargs)``.
-
-        :param regex: The regular expression to match the path to. This uses standard Python :mod:`re` syntax.
-                Group matches are automatically extracted from the regex, and passed as arguments.
-
-        :param methods: The list of allowed methods, e.g ["GET", "POST"].
-                You can check the method with `request.method`.
-
-        :param run_hooks: Should the pre and post request hooks run automatically?
-                This is set to True by default.
-        """
-        return self._root_bp.route(regex, methods=methods, run_hooks=run_hooks)
-
-    def errorhandler(self, code: int):
-        """
-        Convenience decorator to add an error handler.
-
-        This is equivalent to:
-
-        .. code:: python
-
-            route = bp.wrap_route("", coro, methods=[], run_hooks=False)
-            bp.add_errorhandler(code, route)
-
-        .. note::
-
-            This function is a shortcut to ``app.root.errorhandler(code)``.
-        """
-        return self._root_bp.errorhandler(code)
-
-    def log_request(self, ctx: HTTPRequestContext, code: int = 200):
-        """
-        Logs a request to the logger.
-
-        This is an **internal** method and should not be used by user code.
-
-        :param ctx: The :class:`kyoukai.context.HTTPRequestContext` to log from.
-        :param code: The error code to log. Defaults to 200.
-        """
-        try:
-            route = ctx.request.path
-        except AttributeError:
-            # *really* bad request - ignore it.
-            return
-        self.logger.info("HTTP/{} {} {} - {}".format(ctx.request.version, ctx.request.method, route, code))
-
-    def before_request(self, func):
-        """
-        Set a coroutine to run as before the request.
-
-        This coroutine should take in the HTTPRequestContext, and return a new HTTPRequestContext.
-
-        .. note::
-
-            This function is a shortcut to ``app.root.before_request(func)``.
-        """
-        return self._root_bp.before_request(func)
-
-    def after_request(self, func):
-        """
-        Set a coroutine to run after the request.
-
-        This coroutine should take in a :class:`Response`, and return a :class:`Response`.
-
-        .. note::
-
-            This function is a shortcut to ``app.root.after_request(func)``.
-        """
-
-        return self._root_bp.after_request(func)
-
-    def bind_view(self, view: View):
-        """
-        Binds a view class to a Blueprint.
-
-        This takes the *class*, not the instance, as a param.
-
-        It also takes args and keyword args to instantiate the class with.
-
-        .. note::
-
-            This function is a shortcut to ``app.root.bind_view(view)``.
-        """
-        self._root_bp.bind_view(view)
-
-    async def call_on_startup(self):
-        """
-        Calls the on_startup handler.
-
-        This should not be called, unless you wish to call the startup function again (?).
-
-        .. versionchanged:: 1.8
-
-            This now passes the app object.
-        """
-        try:
-            item = self._on_startup(self)
-            # If it's a coroutine or otherwise awaitable, await it.
-            # This is so that coroutines can be passed in to handle.
-            if inspect.isawaitable(item):
-                await item
-        except:
-            # Only print the bottom most traceback.
-            tb = traceback.format_exc()
-            self.logger.error("Error calling on startup function:\n{}".format(tb))
-            raise SystemExit()
-
-    def on_startup(self, coro_or_callable: typing.Callable[['Kyoukai'], None]):
-        """
-        Registers a function to be called on startup.
-
-        The function should be a callable.
-        :return: The unmodified callable.
-        """
-        if not callable(coro_or_callable):
-            raise TypeError("Object {} is not callable".format(coro_or_callable))
-        self._on_startup = coro_or_callable
-
-        return coro_or_callable
-
-    async def handle_http_error(self, err: HTTPException, ctx: HTTPRequestContext):
-        """
-        Handle a :class:`kyoukai.exc.HTTPException`.
-
-        This will invoke the appropriate error handler as registered in the blueprint of the route, if we can.
-        Otherwise, it will invoke the default error handler.
-        """
-        code = err.code
-        bp = err.blueprint or self.root
-
-        # Get the error handler.
-        error_handler = bp.get_errorhandler(code)
-        if not error_handler:
-            # Since there's no special error handler derived for this code, return a basic Response.
-            # If it's a 500 and we're in debug mode, format the traceback.
-            if err.code == 500 and self.debug:
-                # Use the Kyoukai debugger.
-                should_err, r = self._debugger.debug(ctx, err)
-                return r
-            else:
-                body = str(code)
-
-            if err.response is None:
-                resp = Response(code, body)
-            else:
-                resp = err.response
-
-            resp.request = ctx.request
-        else:
-            # Invoke the error handler specified.
-            try:
-                resp = wrap_response(await error_handler.invoke(ctx, exception=err), self.response_cls)
-            except Exception:
-                self.logger.error("Unhandled exception in error handler:\n {}".format(
-                    ''.join(traceback.format_exc())
-                ))
-                resp = wrap_response("500", self.response_cls)
-
-            resp.request = ctx.request
-
-        return resp
-
-    async def delegate_request(self, ctx: HTTPRequestContext):
-        """
-        Handles a :class:`kyoukai.context.HTTPRequestContext` and it's underlying request, processing it to the route
-        handlers and such in the blueprints.
-
-        This is an **internal** method, and should not be used outside of the protocol, or for testing.
-        """
         async with ctx:
-            # Check if we should skip our own handling and go straight to the debugger.
-            if self.debug:
-                if '__debugger__' in ctx.request.args and ctx.request.args["__debugger__"] == "yes":
-                    return self._debugger.debug(ctx, None)
-
-            # Check if there's a host header.
-            if ctx.request.version != "1.0":
-                host = ctx.request.headers.get("host", None)
-                if not host:
-                    exc = HTTPException(400)
-                    self.log_request(ctx, code=400)
-                    resp = await self.handle_http_error(exc, ctx)
-                    return resp
-
-            # First, try and match the route.
+            # Call match on our Blueprint to find the request.
+            # TODO: ERROR HANDLING
             try:
-                route = self._match_route(ctx.request.path, ctx.request.method)
-            except HTTPException as e:
-                # We matched it; but the route doesn't work for this method.
-                # So we catch the 405 error,
-                if e.code == 405:
-                    self.log_request(ctx, code=e.code)
-                    return await self.handle_http_error(e, ctx)
-                elif e.code == 500:
-                    # Failure matching, probably.
-                    self.log_request(ctx, code=e.code)
-                    r = await self.handle_http_error(e, ctx)
-                    self.logger.error("Unhandled exception in route matching:\n {}".format(
-                        ''.join(traceback.format_exc())
-                    ))
-                    return r
-                else:
-                    self.logger.error("??????? Something went terribly wrong.")
-                    traceback.print_exc()
-                    return await self.handle_http_error(e, ctx)
+                matched, params = self.root.match(request.environ)
+            except NotFound as e:
+                # No route matched.
+                return e.get_response(request.environ)
+            except MethodNotAllowed as e:
+                # 405 method not allowed
+                return e.get_response(request.environ)
+            except RequestRedirect as e:
+                # slashes etc
+                return e.get_response(request.environ)
 
-            # If the route did not match, return a 404.
-            if not route:
-                fof = HTTPException(404)
-                self.log_request(ctx, code=404)
-                return await self.handle_http_error(fof, ctx)
-
-            # Set the `route` and `bp` items on the context.
-            ctx.blueprint = route[0].bp
-            ctx.route = route[0]
-
-            # Try and invoke the Route.
+            # Invoke the route.
             try:
-                # Note that this will already be a Response.
-                # The route should call `app._wrap_response` when handling the response.
-                # This is because routes are responsible for pre-route and post-route hooks, calling them in the
-                # blueprint as appropriate.
-                # So we just pass ourselves to the route and hope it invokes properly.
-
-                # Expand out the args into this, provided by the matcher.
-                response = await route[0].invoke(ctx, route[1])
+                result = await matched.invoke(ctx, params)
             except HTTPException as e:
-                # Handle a HTTPException normally.
-                self.log_request(ctx, e.code)
-                # Set the route of the exception.
-                e.route = route[0]
-                return await self.handle_http_error(e, ctx)
+                return e.get_response(request.environ)
             except Exception as e:
-                # An uncaught exception has propogated down to our level - oh dear.
-                # Catch it, turn it into a 500, and return.
-                exc = HTTPException(500)
-                # Set the cause of the HTTP exception. Useful for 500 error handlers.
-                exc.__cause__ = e
-                # Set the route of the exception.
-                exc.route = route[0]
-                self.log_request(ctx, 500)
-                r = await self.handle_http_error(exc, ctx)
-                self.logger.exception("Exception in route `{}`:".format(repr(route[0])))
-                return r
-            else:
-                # If there is no error happening, just log it as normal.
-                self.log_request(ctx, response.code)
+                self.logger.error("Unhandled exception in route function")
+                self.logger.exception(e)
+                return InternalServerError().get_response(request.environ)
 
-            # Return the response.
-            return response
-
-    async def start(self, ip="0.0.0.0", port=4444, component=None):  # pragma: no cover
-        """
-        Run the Kyoukai component asynchronously.
-
-        This bypasses Asphalt's runner completely and starts Kyoukai as it's own context.
-
-        :param ip: The IP address to bind to.
-        :param port: The port to bind to.
-        :param component: The component to set on the application.
-            If this is not passed in, it will create an empty one.
-        """
-        self.logger.warning("Kyoukai is bypassing Asphalt - contexts will not work.")
-        ctx = Context()
-        if not component:
-            from kyoukai.asphalt import KyoukaiComponent
-            self.component = KyoukaiComponent(self, ip, port)
-        await self.component.start(ctx)
-
-    def run(self, ip="0.0.0.0", port=4444, component=None):  # pragma: no cover
-        """
-        Runs the Kyoukai server from within your code.
-
-        This is not normally invoked - instead Asphalt should invoke the Kyoukai component.
-        However, this is here for convenience.
-        """
-        if not component:
-            from kyoukai.asphalt import KyoukaiComponent
-            component = KyoukaiComponent(self, ip, port)
-        run_application(component)
+            # Return the new Response.
+            return result

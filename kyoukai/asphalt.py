@@ -1,51 +1,80 @@
 """
-Asphalt framework mixin for Kyokai.
+Asphalt wrappers for Kyoukai.
 """
-import logging
-
 import asyncio
+import socket
 from functools import partial
-from typing import Union
 
-from asphalt.core import Component, resolve_reference, Context
-from typeguard import check_argument_types
+import logging
+from asphalt.core import resolve_reference, Context
+from asphalt.core.component import Component
+from werkzeug.wrappers import Request
 
-from kyoukai.app import Kyoukai
-from kyoukai.protocol import KyoukaiProtocol
-from kyoukai.context import HTTPRequestContext
-
-logger = logging.getLogger("Kyoukai")
+from kyoukai.backends.httptools_ import KyoukaiProtocol
 
 
 class KyoukaiComponent(Component):
-    def __init__(self, app: Union[str, Kyoukai], ip: str = '0.0.0.0', port: int = 4444, **cfg):
-        assert check_argument_types()
+    """
+    A component for Kyoukai.
+
+    This will load and run the application, if applicable.
+    """
+    def __init__(self, app, ip: str="127.0.0.1", port: str=4444,
+                 **cfg):
+        """
+        Creates a new component.
+
+        :param app: The application object to use.
+            This can either be the real application object, or a string that resolves to a reference for the real
+            application object.
+
+        :param ip: If using the built-in HTTP server, the IP to bind to.
+        :param port: If using the built-in HTTP server, the port to bind to.
+        :param cfg: Additional configuration.
+        """
+        # stupid circular imports
+        from kyoukai.app import Kyoukai
         if not isinstance(app, Kyoukai):
-            self.app = resolve_reference(app)
-        else:
-            self.app = app
+            app = resolve_reference(app)
+
+        self.app = app
         self.ip = ip
         self.port = port
-        self._extra_cfg = cfg
 
-        # Reconfigure the app with the extra config.
-        self.app.reconfigure(**self._extra_cfg)
+        self.cfg = cfg
 
         self.server = None
+        self.base_context = None  # type: Context
 
-    def get_protocol(self, ctx: Context):
-        return KyoukaiProtocol(self.app, ctx)
+        self.logger = logging.getLogger("Kyoukai")
+
+        # Determine our server_name
+        self._server_name = app.server_name or socket.getfqdn()
+
+    def get_protocol(self, ctx: Context, serv_info: tuple):
+        return KyoukaiProtocol(self.app, ctx, *serv_info)
 
     async def start(self, ctx: Context):
         """
-        Starts a Kyokai server.
-        """
-        # Call on_startup.
-        await self.app.call_on_startup()
-        # Put the config on the HTTPRequestContext.
-        HTTPRequestContext.cfg = self.app.config
+        Starts the webserver if required.
 
-        # Start serving on the specified ports.
-        protocol = partial(self.get_protocol, ctx)
-        self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port)
-        logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
+        :param ctx: The base context.
+        """
+        self.base_context = ctx
+
+        if self.cfg.get("use_builtin_webserver", True):
+            protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
+            self.app.finalize()
+            self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port)
+            self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
+
+
+class HTTPRequestContext(Context):
+    """
+    The context subclass passed to all requests within Kyoukai.
+    """
+    def __init__(self, parent: Context, request: Request):
+        super().__init__(parent)
+
+        self.request = request
+
