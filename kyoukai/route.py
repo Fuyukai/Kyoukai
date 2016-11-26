@@ -2,6 +2,7 @@
 Routes are wrapped function objects that are called upon a HTTP request.
 """
 import inspect
+import typing
 
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
@@ -60,7 +61,7 @@ class Route(object):
                 result = await result
         except HTTPException as e:
             # This is a valid response type
-            return e
+            raise e
         except Exception as e:
             # Unhandled exception, so it's a 500
             raise HTTPException(500) from e
@@ -70,7 +71,7 @@ class Route(object):
 
             return result
 
-    async def invoke(self, ctx, params: dict=None):
+    async def invoke(self, ctx, params: typing.Container=None):
         """
         Invokes a route.
 
@@ -85,4 +86,13 @@ class Route(object):
         ctx.route = self
 
         # Invoke the route function.
-        return await self.invoke_function(ctx, *params.values())
+
+        # TODO: Better argument handling.
+        if isinstance(params, dict):
+            p = params.values()
+        else:
+            if not params:
+                p = ()
+            else:
+                p = params
+        return await self.invoke_function(ctx, *p)

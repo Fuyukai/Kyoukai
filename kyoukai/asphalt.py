@@ -11,6 +11,8 @@ from asphalt.core.component import Component
 from werkzeug.wrappers import Request
 
 from kyoukai.backends.httptools_ import KyoukaiProtocol
+from kyoukai.blueprint import Blueprint
+from kyoukai.route import Route
 
 
 class KyoukaiComponent(Component):
@@ -77,4 +79,8 @@ class HTTPRequestContext(Context):
         super().__init__(parent)
 
         self.request = request
+
+        # Route objects and Blueprint objects.
+        self.route = None  # type: Route
+        self.bp = None  # type: Blueprint
 

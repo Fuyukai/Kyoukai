@@ -6,9 +6,11 @@ match routes easily.
 """
 import typing
 
+from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Map, Rule
 
 from kyoukai.route import Route
+
 
 class Blueprint(object):
     """
@@ -55,7 +57,8 @@ class Blueprint(object):
         # This is useless after finalize() is called.
         self._routes_to_add = []
 
-        # The request hook dictionary for this
+        # The error handler dictionary.
+        self.errorhandlers = {}
 
     @property
     def prefix(self) -> str:
@@ -102,6 +105,7 @@ class Blueprint(object):
             route = bp.wrap_route(func)
             bp.add_route(route, routing_url, methods)
         """
+
         def _inner(func: callable):
             route = self.wrap_route(func)
             self.add_route(route, routing_url, methods)
@@ -109,18 +113,69 @@ class Blueprint(object):
 
         return _inner
 
-    def wrap_route(self, callable) -> Route:
+    def errorhandler(self, code: int):
+        """
+        Helper decorator for adding an error handler.
+
+        This is equivalent to:
+
+            route = bp.add_errorhandler(cbl, code)
+
+        :param code: The error handler code to use.
+        """
+        def _inner(cbl: typing.Callable):
+            self.add_errorhandler(cbl, code)
+            return cbl
+
+        return _inner
+
+    def wrap_route(self, cbl: typing.Callable) -> Route:
         """
         Wraps a callable in a Route.
 
         This is required for routes to be added.
-        :param callable: The callable to wrap.
+        :param cbl: The callable to wrap.
         :return: A new :class:`kyoukai.route.Route` object.
         """
-        rtt = Route(callable)
+        rtt = Route(cbl)
         return rtt
 
-    def add_route(self, route, routing_url: str, methods: typing.Iterable[str] = ("GET",)):
+    def add_errorhandler(self, cbl: typing.Callable, errorcode: int):
+        """
+        Adds an error handler to the table of error handlers.
+
+        A blueprint can only have one error handler per code. If it doesn't have an error handler for that code,
+        it will try to fetch recursively the parent's error handler.
+
+        :param cbl: The callable error handler.
+        :param errorcode: The error code to handle, for example 404.
+        """
+        # for simplicity sake, wrap it in a route.
+        rtt = self.wrap_route(cbl)
+        self.errorhandlers[errorcode] = rtt
+        return rtt
+
+    def get_errorhandler(self, exc: typing.Union[HTTPException, int]) -> typing.Union[None, Route]:
+        """
+        Recursively acquires the error handler for
+        :param exc: The exception to get the error handler for.
+            This can either be a HTTPException object, or an integer.
+
+        :return: The :class:`kyoukai.route.Route` object that corresponds to the error handler, or None if no error
+        handler could be found.
+        """
+        if isinstance(exc, HTTPException):
+            exc = exc.code
+
+        try:
+            return self.errorhandlers[exc]
+        except KeyError:
+            try:
+                return self._parent.get_errorhandler(exc)
+            except (KeyError, AttributeError):
+                return None
+
+    def add_route(self, route: Route, routing_url: str, methods: typing.Iterable[str] = ("GET",)):
         """
         Adds a route to the routing table and map.
 
