@@ -140,6 +140,8 @@ class Kyoukai(object):
                 # user code is not allowed to handle this
                 self.log_route(ctx.request, 301)
                 return e.get_response(request.environ)
+            else:
+                ctx.route_matched.dispatch(ctx=ctx)
 
             ctx.route = matched
             ctx.bp = ctx.route.bp
@@ -149,6 +151,7 @@ class Kyoukai(object):
 
             # Invoke the route.
             try:
+                ctx.route_invoked.dispatch(ctx=ctx)
                 result = await matched.invoke(ctx, params)
             except HTTPException as e:
                 result = await self.handle_httpexception(ctx, e, request.environ)
@@ -157,6 +160,8 @@ class Kyoukai(object):
                 self.logger.exception(e)
                 e = InternalServerError.wrap(e)
                 result = await self.handle_httpexception(ctx, e, request.environ)
+            else:
+                ctx.route_completed.dispatch(ctx=ctx, result=result)
             finally:
                 if result:
                     # edge cases

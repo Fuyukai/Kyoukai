@@ -7,7 +7,6 @@ import traceback
 import warnings
 from io import BytesIO
 
-import chardet
 import httptools
 from asphalt.core import Context
 from werkzeug.wrappers import Request, Response
@@ -34,7 +33,7 @@ class KyoukaiProtocol(asyncio.Protocol):
     The base protocol for Kyoukai using httptools for a HTTP/1.0 or HTTP/1.1 interface.
     """
 
-    def __init__(self, app: 'Kyoukai', parent_context: Context,
+    def __init__(self, component: 'KyoukaiComponent', parent_context: Context,
                  server_ip: str, server_port: int):
         """
         :param app: The application associated with this request.
@@ -42,7 +41,8 @@ class KyoukaiProtocol(asyncio.Protocol):
             A new HTTPRequestContext will be derived from this.
         """
 
-        self.app = app
+        self.component = component
+        self.app = component.app
         self.parent_context = parent_context
 
         self.server_ip = server_ip
@@ -136,6 +136,10 @@ class KyoukaiProtocol(asyncio.Protocol):
             self.ip, self.client_port = None, None
 
         self.transport = transport
+        self.component.connection_made.dispatch(protocol=self)
+
+    def connection_lost(self, exc):
+        self.component.connection_lost.dispatch(protocol=self)
 
     def data_received(self, data: bytes):
         """
