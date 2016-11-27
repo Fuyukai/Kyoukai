@@ -66,9 +66,6 @@ class Route(object):
             # Unhandled exception, so it's a 500
             raise HTTPException(500) from e
         else:
-            if not isinstance(result, Response):
-                raise TypeError("Result should be a Response")
-
             return result
 
     async def invoke(self, ctx, params: typing.Container=None):

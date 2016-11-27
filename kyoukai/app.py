@@ -7,6 +7,8 @@ import asyncio
 import logging
 
 from asphalt.core import Context, run_application
+from kyoukai.util import wrap_response
+
 from kyoukai.asphalt import HTTPRequestContext
 from kyoukai.blueprint import Blueprint
 from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError
@@ -18,6 +20,16 @@ class Kyoukai(object):
     """
     The Kyoukai type is the main part of your web application.  It serves as the main container for your app.
     """
+
+    # The class of request to spawn every request.
+    # This should be a subclass of :class:`werkzeug.wrappers.Request`.
+    # You can override this by passing ``request_class`` as a keyword argument to the app.
+    request_class = Request
+
+    # The class of response to wrap automatically.
+    # This should be a subclass of :class:`werkzeug.wrappers.Response`.
+    # You can override this by passing ``response_class`` as a keyword argument to the app.
+    response_class = Response
 
     def __init__(self,
                  application_name: str,
@@ -34,7 +46,7 @@ class Kyoukai(object):
         self.server_name = server_name
 
         # Try and get the loop from the keyword arguments - don't automatically perform `get_event_loop`.
-        self.loop = kwargs.get("loop")
+        self.loop = kwargs.pop("loop", None)
         if not self.loop:
             self.loop = asyncio.get_event_loop()
 
@@ -45,6 +57,10 @@ class Kyoukai(object):
 
         # The current Component that is running this app.
         self.component = None
+
+        # The Request/Response classes.
+        self.request_class = kwargs.pop("request_class", self.request_class)
+        self.response_class = kwargs.pop("response_class", self.response_class)
 
     @property
     def root(self) -> Blueprint:
@@ -175,11 +191,13 @@ class Kyoukai(object):
             except Exception as e:
                 self.logger.error("Unhandled exception in route function")
                 self.logger.exception(e)
-                e = InternalServerError.wrap(e)
+                e = InternalServerError()
+                e.exc = e
                 result = await self.handle_httpexception(ctx, e, request.environ)
             else:
                 ctx.route_completed.dispatch(ctx=ctx, result=result)
             finally:
+                result = wrap_response(result, self.response_class)
                 if result:
                     # edge cases
                     self.log_route(ctx.request, result.status_code)

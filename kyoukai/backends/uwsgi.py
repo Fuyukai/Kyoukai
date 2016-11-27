@@ -9,7 +9,7 @@ import greenlet
 
 import functools
 
-import yaml
+from ruamel import yaml
 from asphalt.core import Context, ContainerComponent
 from asphalt.core.component import component_types
 from kyoukai.app import Kyoukai
@@ -151,7 +151,7 @@ class uWSGIAdapter(object):
             self.loop = asyncio.get_event_loop()
 
         # Produce an event from the environment.
-        request = Request(environment)
+        request = self.app.request_class(environment)
 
         # Create the future that is used for the result.
         # This is used so that WSGI can be implemented into asyncio.

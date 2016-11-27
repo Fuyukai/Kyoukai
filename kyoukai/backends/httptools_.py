@@ -200,7 +200,7 @@ class KyoukaiProtocol(asyncio.Protocol):
         new_environ["SERVER_PORT"] = str(self.server_port)
 
         # Construct a Request object.
-        new_r = Request(new_environ, False)
+        new_r = self.app.request_class(new_environ, False)
 
         # Invoke the app.
         try:
