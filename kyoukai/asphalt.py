@@ -17,7 +17,7 @@ from kyoukai.route import Route
 
 
 # Asphalt events.
-class ConnectionMadeEvent(Event):
+class ConnectionMadeEvent(Event):  # pragma: no cover
     """
     Dispatched when a connection is made to the server.
 
@@ -31,7 +31,7 @@ class ConnectionMadeEvent(Event):
         self.protocol = protocol
 
 
-class ConnectionLostEvent(ConnectionMadeEvent):
+class ConnectionLostEvent(ConnectionMadeEvent):  # pragma: no cover
     """
     Dispatched when a connection is lost from the server.
 
@@ -41,13 +41,13 @@ class ConnectionLostEvent(ConnectionMadeEvent):
     """
 
 
-class CtxEvent(Event):
+class CtxEvent(Event): # pragma: no cover
     def __init__(self, source, topic, *, ctx: 'HTTPRequestContext'):
         super().__init__(source, topic)
         self.ctx = ctx
 
 
-class RouteMatchedEvent(CtxEvent):
+class RouteMatchedEvent(CtxEvent):  # pragma: no cover
     """
     Dispatched when a route is matched.
 
@@ -55,7 +55,7 @@ class RouteMatchedEvent(CtxEvent):
     """
 
 
-class RouteInvokedEvent(CtxEvent):
+class RouteInvokedEvent(CtxEvent):  # pragma: no cover
     """
     Dispatched when a route is invoked.
 
@@ -63,7 +63,7 @@ class RouteInvokedEvent(CtxEvent):
     """
 
 
-class RouteReturnedEvent(CtxEvent):
+class RouteReturnedEvent(CtxEvent):  # pragma: no cover
     """
     Dispatched after a route has returned.
 
@@ -75,7 +75,7 @@ class RouteReturnedEvent(CtxEvent):
         self.result = result
 
 
-class KyoukaiComponent(Component):
+class KyoukaiComponent(Component):  # pragma: no cover
     """
     A component for Kyoukai.
 
