@@ -5,6 +5,7 @@ import inspect
 import typing
 
 from werkzeug.exceptions import HTTPException
+from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
 
 
@@ -31,7 +32,7 @@ class Route(object):
         self.bp = None
 
         # Set on us by the Blueprint.
-        self.rule = None
+        self.rule = None  # type: Rule
         self.routing_url = None
 
     def get_endpoint_name(self, bp):

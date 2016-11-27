@@ -202,6 +202,9 @@ class Blueprint(object):
         self.routing_table[endpoint] = route
         # Add it to the list of routes to add later.
         self._routes_to_add.append(rule)
+        # Add the rule to the route.
+        route.rule = rule
+
         return route
 
     def get_route(self, endpoint: str):
