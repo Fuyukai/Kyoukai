@@ -53,8 +53,22 @@ class Kyoukai(object):
     def finalize(self):
         """
         Finalizes the app and blueprints.
+
+        This will calculate the current werkzeug Map which is required for routing to work.
         """
         self.root.finalize()
+
+    # Magic methods
+    def __getattr__(self, item: str) -> object:
+        """
+        Override for __getattr__ to allow transparent mirroring onto the root Blueprint.
+
+        For example, this allows doing ``@app.route`` instead of ``@app.root.route``.
+        """
+        if item in ("route", "errorhandler", "add_route", "wrap_route"):
+            return getattr(self.root, item)
+
+        raise AttributeError("'{.__class__.__name__}' object has no attribute {}".format(self, item))
 
     def log_route(self, request: Request, code: int):
         """
