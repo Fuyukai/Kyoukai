@@ -18,7 +18,41 @@ from werkzeug.wrappers import Request, Response
 
 class Kyoukai(object):
     """
-    The Kyoukai type is the main part of your web application.  It serves as the main container for your app.
+    The Kyoukai type is the core of the Kyoukai framework, and the core of your web application based upon the
+    Kyoukai framework. It acts as a central router and request processor that takes in requests from the protocols
+    and returns responses.
+
+    The application name is currently unused, but it is good practice to set it correctly anyway in case it is used
+    in future editions of Kyoukai.
+
+    You normally create an application instance inside your component file, like so:
+
+    .. code:: python
+
+        from kyoukai.app import Kyoukai
+
+        ... # setup code
+
+        kyk = Kyoukai("my_app")
+        kyk.register_blueprint(whatever)
+
+        ... # other setup
+
+        class MyContainer(ContainerComponent):
+            async def start(self, ctx):
+                self.add_component('kyoukai', KyoukaiComponent, ip="127.0.0.1", port=4444,
+                                   app="app:app")
+
+    Of course, you can also embed Kyoukai inside another app, by awaiting :meth:`Kyoukai.start`.
+
+    :param application_name: The name of the application that is being created. This is currently unused.
+    :param server_name: The SERVER_NAME to use inside the fake WSGI environment created, if using the built-in
+        httptools server.
+
+    :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is specified, it will be
+        automatically fetched using :meth:`asyncio.get_event_loop`.
+    :param request_class: Keyword-only. The custom request class to instantiate requests with.
+    :param response_class: Keyword-only. The custom response class to instantiate responses with.
     """
 
     # The class of request to spawn every request.
@@ -39,8 +73,6 @@ class Kyoukai(object):
         """
         Create the new app.
 
-        :param application_name: The name of this application. This is currently unused.
-        :param server_name: The server name. This can be None.
         """
         self.name = application_name
         self.server_name = server_name
@@ -68,6 +100,15 @@ class Kyoukai(object):
         :return: The root Blueprint for the routing tree.
         """
         return self._root_bp
+
+    def register_blueprint(self, child: Blueprint):
+        """
+        Registers a child blueprint to this app's root Blueprint.
+
+        This will set up the Blueprint tree, as well as setting up the routing table when finalized.
+        :param child: The child Blueprint to add. This must be an instance of :class:`kyoukai.blueprint.Blueprint`.
+        """
+        self.root.add_child(child)
 
     def finalize(self):
         """
