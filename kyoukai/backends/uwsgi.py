@@ -17,7 +17,7 @@ from kyoukai.asphalt import KyoukaiComponent
 from werkzeug.wrappers import Request, Response
 
 
-def uwsgi_entry_point(func):
+def uwsgi_entry_point(func):  # pragma: no cover
     """
     Wraps a function as a uWSGI entry point.
 

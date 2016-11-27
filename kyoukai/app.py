@@ -193,6 +193,9 @@ class Kyoukai(object):
 
         :return: A :class:`werkzeug.wrappers.Response` object that can be written to the client as a response.
         """
+        if not self.root.finalized:
+            raise RuntimeError("App was not finalized")
+
         # Create a new HTTPRequestContext.
         ctx = HTTPRequestContext(parent_context, request)
         ctx.app = self

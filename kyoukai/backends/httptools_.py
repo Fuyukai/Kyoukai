@@ -28,7 +28,7 @@ tracker.</a>
 """.replace("\n", "\r\n")
 
 
-class KyoukaiProtocol(asyncio.Protocol):
+class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     """
     The base protocol for Kyoukai using httptools for a HTTP/1.0 or HTTP/1.1 interface.
     """

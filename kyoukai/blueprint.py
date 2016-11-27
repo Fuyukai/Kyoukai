@@ -44,7 +44,7 @@ class Blueprint(object):
         # If this Blueprint is finalized or not.
         # Finalization of a blueprint means gathering all of the Maps, and compiling a routing table which stores the
         # endpoints.
-        self._finalized = False
+        self.finalized = False
 
         # The routing table in terms of endpoints.
         # This is automatically copied into the root blueprint at runtime, so using this on blueprnts other than the
@@ -85,6 +85,8 @@ class Blueprint(object):
         # Make a new Map().
         rule_map = Map(self._routes_to_add)
         self._route_map = rule_map
+
+        self.finalized = True
 
     def add_child(self, blueprint: 'Blueprint'):
         """
