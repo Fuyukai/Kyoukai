@@ -84,7 +84,7 @@ class KyoukaiComponent(Component):
     connection_made = Signal(ConnectionMadeEvent)
     connection_lost = Signal(ConnectionLostEvent)
 
-    def __init__(self, app, ip: str = "127.0.0.1", port: str = 4444,
+    def __init__(self, app, ip: str = "127.0.0.1", port: int = 4444,
                  **cfg):
         """
         Creates a new component.

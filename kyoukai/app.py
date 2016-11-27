@@ -6,7 +6,7 @@
 import asyncio
 import logging
 
-from asphalt.core import Context
+from asphalt.core import Context, run_application
 from kyoukai.asphalt import HTTPRequestContext
 from kyoukai.blueprint import Blueprint
 from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError
@@ -42,6 +42,9 @@ class Kyoukai(object):
 
         # Create the root blueprint.
         self._root_bp = Blueprint(application_name)
+
+        # The current Component that is running this app.
+        self.component = None
 
     @property
     def root(self) -> Blueprint:
@@ -183,3 +186,44 @@ class Kyoukai(object):
 
             # Return the new Response.
             return result
+
+    async def start(self, ip: str="127.0.0.1", port: int=4444, *,
+                    component=None, base_context: Context=None):
+        """
+        Runs the Kyoukai component asynchronously.
+
+        This will bypass Asphalt's default runner, and allow you to run your app easily inside something else,
+        for example.
+
+        :param ip: The IP of the built-in server.
+        :param port: The port of the built-in server.
+        :param component: The component to start the app with. This should be an instance of
+            :class:`kyoukai.asphalt.KyoukaiComponent`.
+        :param base_context: The base context that the HTTPRequestContext should be started with.
+        """
+        if not base_context:
+            base_context = Context()
+
+        if not component:
+            from kyoukai.asphalt import KyoukaiComponent
+            self.component = KyoukaiComponent(self, ip, port)
+        else:
+            self.component = component
+
+        # Start the app.
+        await self.component.start(base_context)
+
+    def run(self, ip: str="127.0.0.1", port: int=4444, *,
+            component=None):
+        """
+        Runs the Kyoukai server from within your code.
+
+        This is not normally invoked - instead Asphalt should invoke the Kyoukai component.
+        However, this is here for convenience.
+        """
+        if not component:
+            from kyoukai.asphalt import KyoukaiComponent
+            component = KyoukaiComponent(self, ip, port)
+
+        run_application(component)
+
