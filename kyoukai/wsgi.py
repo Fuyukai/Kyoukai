@@ -95,6 +95,7 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
     if body:
         # wsgi.input is the body reader, if the request has a body
         environ["wsgi.input"] = body
+        environ["wsgi.input_terminated"] = True
 
     # these should exist
     environ["wsgi.version"] = (1, 0)
