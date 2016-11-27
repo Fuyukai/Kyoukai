@@ -15,6 +15,8 @@ from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, Inter
 from werkzeug.routing import RequestRedirect
 from werkzeug.wrappers import Request, Response
 
+__version__ = "2.0.0"
+
 
 class Kyoukai(object):
     """
@@ -246,11 +248,14 @@ class Kyoukai(object):
                     # edge cases
                     self.log_route(ctx.request, result.status_code)
 
+            # Update the Server header.
+            result.headers["Server"] = "Kyoukai/{}".format(__version__)
+
             # Return the new Response.
             return result
 
-    async def start(self, ip: str="127.0.0.1", port: int=4444, *,
-                    component=None, base_context: Context=None):
+    async def start(self, ip: str = "127.0.0.1", port: int = 4444, *,
+                    component=None, base_context: Context = None):
         """
         Runs the Kyoukai component asynchronously.
 
@@ -275,7 +280,7 @@ class Kyoukai(object):
         # Start the app.
         await self.component.start(base_context)
 
-    def run(self, ip: str="127.0.0.1", port: int=4444, *,
+    def run(self, ip: str = "127.0.0.1", port: int = 4444, *,
             component=None):
         """
         Runs the Kyoukai server from within your code.
@@ -288,4 +293,3 @@ class Kyoukai(object):
             component = KyoukaiComponent(self, ip, port)
 
         run_application(component)
-
