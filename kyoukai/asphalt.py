@@ -41,7 +41,7 @@ class ConnectionLostEvent(ConnectionMadeEvent):  # pragma: no cover
     """
 
 
-class CtxEvent(Event): # pragma: no cover
+class CtxEvent(Event):  # pragma: no cover
     def __init__(self, source, topic, *, ctx: 'HTTPRequestContext'):
         super().__init__(source, topic)
         self.ctx = ctx
@@ -115,6 +115,12 @@ class KyoukaiComponent(Component):  # pragma: no cover
 
         # Determine our server_name
         self._server_name = app.server_name or socket.getfqdn()
+
+    def get_server_name(self):
+        """
+        :return: The server name of this app.
+        """
+        return self.app.server_name or self._server_name
 
     def get_protocol(self, ctx: Context, serv_info: tuple):
         return KyoukaiProtocol(self, ctx, *serv_info)
