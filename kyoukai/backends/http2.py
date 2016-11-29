@@ -5,22 +5,17 @@ This uses https://python-hyper.org/projects/h2/en/stable/asyncio-example.html as
 to the authors of this page.
 """
 import asyncio
-import importlib
-import ssl
-import sys
-import threading
-
+import collections
 import logging
 import typing
+import ssl
+import sys
 import warnings
 
-import collections
 from functools import partial
-from io import BytesIO
 from urllib.parse import urlsplit
 
 from asphalt.core import Context
-from h2.errors import PROTOCOL_ERROR
 from werkzeug.wrappers import Request, Response
 
 from kyoukai import Kyoukai
@@ -31,6 +26,7 @@ try:
     from h2.events import (
         DataReceived, RequestReceived, WindowUpdated, StreamEnded, StreamReset
     )
+    from h2.errors import PROTOCOL_ERROR
 except ImportError:
     raise RuntimeError("h2 must be installed for the http2 backend")
 
