@@ -5,7 +5,10 @@ This allows you to run Kyoukai with uWSGI as the web server. It translates the W
 """
 
 import asyncio
-import greenlet
+try:
+    import greenlet
+except ImportError:
+    raise RuntimeError("uwsgi must be configured with the greenlet and asyncio workers enabled")
 
 import functools
 
