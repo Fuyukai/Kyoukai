@@ -9,7 +9,7 @@ rootpath = os.path.abspath(os.path.dirname(__file__))
 # Extract version
 def extract_version(module = 'kyoukai'):
     version = None
-    fname = os.path.join(rootpath, module, 'util.py')
+    fname = os.path.join(rootpath, module, 'app.py')
     with open(fname) as f:
         for line in f:
             if line.startswith('VERSION'):
