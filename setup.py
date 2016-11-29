@@ -25,10 +25,6 @@ deps = [
     "werkzeug>=0.11.10",
 ]
 
-if sys.platform != "win32":
-    # Add python-magic to deps.
-    deps.append("python-magic")
-
 setup(
     name='Kyoukai',
     version=extract_version(),
