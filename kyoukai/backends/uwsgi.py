@@ -8,7 +8,7 @@ import asyncio
 try:
     import greenlet
 except ImportError:
-    raise RuntimeError("uwsgi must be configured with the greenlet and asyncio workers enabled")
+    raise RuntimeError("uwsgi must be configured with the greenlet and asyncio workers enabled for the uwsgi backend")
 
 import functools
 

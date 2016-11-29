@@ -17,7 +17,7 @@ try:
     import gunicorn
     import aiohttp
 except ImportError:
-    raise RuntimeError("The gunicorn worker requires gunicorn and aiohttp to be installed")
+    raise RuntimeError("gunicorn and aiohttp must be installed for the gunicorn backend")
 
 from kyoukai.app import Kyoukai
 
