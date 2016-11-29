@@ -47,5 +47,10 @@ setup(
     test_requires=[
         "pytest",
         "pytest-asyncio"
-    ]
+    ],
+    extras_require={
+        "gunicorn": ["aiohttp>=1.1.0", "gunicorn>=19.6.0"],
+        "http2": ["h2>=2.5.0"],
+        "uwsgi": ["greenlet>=0.4.0"]
+    }
 )
