@@ -76,31 +76,34 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
     :param body: A :class:`BytesIO` representing the body wrapper for this dict, or None if there is no request body.
     :return:
     """
-    environ = {}
-
+    new_headers = {}
     # Convert all the headers into HTTP_ form.
     for header, value in headers.items():
-        environ["HTTP_{}".format(header.upper())] = value
+        new_headers["HTTP_{}".format(header.upper())] = value
 
     # urlsplit the path
     sp_path = urlsplit(path)
-    environ["PATH_INFO"] = sp_path.path
-    environ["QUERY_STRING"] = sp_path.query
 
-    environ["SERVER_PROTOCOL"] = "HTTP/{}".format(http_version)
+    environ = {
+        # Basic items
+        "PATH_INFO": sp_path.path,
+        "QUERY_STRING": sp_path.query,
+        "SERVER_PROTOCOL": "HTTP/%s" % http_version,
+        "REQUEST_METHOD": method,
+        # Expand the headers into the dict.
+        **new_headers,
+        # WSGI protocol things
+        "wsgi.version": (1, 0),
+        "wsgi.errors": sys.stderr,
+        "wsgi.url_scheme": "http",
+        "wsgi.input": body,
+        "wsgi.input_terminated": True,
+        "wsgi.async": True,
+        "wsgi.multithread": True,  # technically false sometimes, but oh well
+        "wsgi.multiprocess": False,
+        "wsgi.run_once": False
+    }
 
-    # place the method
-    environ["REQUEST_METHOD"] = method
-
-    if body:
-        # wsgi.input is the body reader, if the request has a body
-        environ["wsgi.input"] = body
-        environ["wsgi.input_terminated"] = True
-
-    # these should exist
-    environ["wsgi.version"] = (1, 0)
-    environ["wsgi.errors"] = sys.stderr
-    environ["wsgi.url_scheme"] = "http"
 
     return environ
 
