@@ -11,7 +11,7 @@ import asyncio
 import typing
 
 from asphalt.core import Context
-from werkzeug.wrappers import Request
+from werkzeug.wrappers import Request, Response
 from werkzeug.wsgi import ClosingIterator
 try:
     import gunicorn
@@ -76,6 +76,13 @@ class GunicornAdapter(object):
         :return: A new :class:`asyncio.Task` that can be awaited on to get a response from the
         application.
         """
+        is_async = environment.get("wsgi.async", False)
+        if not is_async:
+            # Damnit. Return a WSGI response that ells the user they're stupid.
+            r = Response("<h1>Error</h1><br/>You did not use the <pre>gaiohttp</pre> gunicorn worker. This is an "
+                         "error! Please switch to the gaiohttp worker instead.")
+            return r(environment, start_response)
+
         coro = self._run_application(environment, start_response)
 
         loop = asyncio.get_event_loop()
