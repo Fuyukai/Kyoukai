@@ -224,22 +224,20 @@ class H2KyoukaiComponent(KyoukaiComponent):
         """
         Creates a new HTTP/2 SSL-based context.
 
-        This will use the HTTP/2 protocol, disabling HTTP/1.1 support for this port. It is possible to run the
-
-        :param app:
-        :param ssl_keyfile:
-        :param ssl_certfile:
-        :param ip:
-        :param port:
+        This will use the HTTP/2 protocol, disabling HTTP/1.1 support for this port. It is possible to run two
+        servers side-by-side, one HTTP/2 and one HTTP/1.1, if you run them on different ports.
         """
         super().__init__(app, ip, port)
+
+        self.ssl_keyfile = ssl_keyfile
+        self.ssl_certfile = ssl_certfile
 
     def get_protocol(self, ctx: Context, serv_info: tuple):
         return H2KyoukaiProtocol(self, ctx)
 
     async def start(self, ctx: Context):
         ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        ssl_context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+        ssl_context.load_cert_chain(certfile=self.ssl_certfile, keyfile=self.ssl_keyfile)
         ssl_context.set_alpn_protocols(["h2"])
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
