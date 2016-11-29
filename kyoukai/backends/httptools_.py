@@ -9,6 +9,7 @@ from io import BytesIO
 
 import httptools
 from asphalt.core import Context
+from werkzeug.exceptions import MethodNotAllowed, BadRequest, InternalServerError
 from werkzeug.wrappers import Request, Response
 
 from kyoukai.wsgi import to_wsgi_environment, get_formatted_response
@@ -145,13 +146,45 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         # Feed it into the parser, and handle any errors that might happen.
         try:
             self.parser.feed_data(data)
-        except httptools.HttpParserInvalidMethodError:
-            # TODO: Exceptions
-            raise
-        except httptools.HttpParserError:
-            raise
+        except httptools.HttpParserInvalidMethodError as e:
+            # Exceptions here are a bit tricky.
+            # We can't simply call into the app to have it handle a 405/400 - there's no Request, or environment.
+            # Instead, what we do is call a wrapper function (handle_parser_exception) which will generate a fake
+            # WSGI environment, and then automatically return a werkzeug httpexception that corresponds.
+            self.handle_parser_exception(e)
+        except httptools.HttpParserError as e:
+            self.handle_parser_exception(e)
 
     # kyoukai handling
+    def handle_parser_exception(self, exc: Exception):
+        """
+        Handles an exception when parsing.
+
+        This will not call into the app (hence why it is a normal function, and not a coroutine).
+        It will also close the connection when it's done.
+
+        :param exc: The exception to handle.
+        """
+        if isinstance(exc, httptools.HttpParserInvalidMethodError):
+            # 405 method not allowed
+            r = MethodNotAllowed()
+        elif isinstance(exc, httptools.HttpParserError):
+            # 400 bad request
+            r = BadRequest()
+        else:
+            # internal server error
+            r = InternalServerError()
+
+        # Make a fake environment.
+        new_environ = to_wsgi_environment(headers=self.headers, method="", path="/",
+                                          http_version="1.0", body=None)
+        new_environ["SERVER_NAME"] = self.component.get_server_name()
+        new_environ["SERVER_PORT"] = str(self.server_port)
+
+        self.raw_write(get_formatted_response(r, new_environ))
+        self.parser = httptools.HttpRequestParser(self)
+        self.close()
+
     async def _wait_wrapper(self):
         try:
             await self._wait()
@@ -163,6 +196,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         finally:
             self.waiter.cancel()
             self.waiter = None
+            self.parser = httptools.HttpRequestParser(self)
 
     async def _wait(self):
         """
