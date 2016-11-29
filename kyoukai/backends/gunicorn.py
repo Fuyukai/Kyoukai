@@ -79,8 +79,10 @@ class GunicornAdapter(object):
         is_async = environment.get("wsgi.async", False)
         if not is_async:
             # Damnit. Return a WSGI response that ells the user they're stupid.
-            r = Response("<h1>Error</h1><br/>You did not use the <pre>gaiohttp</pre> gunicorn worker. This is an "
+            r = Response("<h1>Error</h1><br/>You did not use the <code>gaiohttp</code> gunicorn worker. This is an "
                          "error! Please switch to the gaiohttp worker instead.")
+            r.headers["Content-Type"] = "text/html; charset=utf-8"
+            r.status_code = 500
             return r(environment, start_response)
 
         coro = self._run_application(environment, start_response)
