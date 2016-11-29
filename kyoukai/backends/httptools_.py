@@ -36,7 +36,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     def __init__(self, component: 'KyoukaiComponent', parent_context: Context,
                  server_ip: str, server_port: int):
         """
-        :param app: The application associated with this request.
+        :param component: The :class:`kyoukai.asphalt.KyoukaiComponent` associated with this request.
         :param parent_context: The parent context for this request.
             A new HTTPRequestContext will be derived from this.
         """
@@ -196,7 +196,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
                                           http_version=version, body=body)
 
         new_environ["kyoukai.protocol"] = self
-        new_environ["SERVER_NAME"] = self.server_ip
+        new_environ["SERVER_NAME"] = self.component.get_server_name()
         new_environ["SERVER_PORT"] = str(self.server_port)
 
         # Construct a Request object.

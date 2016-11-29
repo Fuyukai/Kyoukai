@@ -48,9 +48,11 @@ class Kyoukai(object):
     Of course, you can also embed Kyoukai inside another app, by awaiting :meth:`Kyoukai.start`.
 
     :param application_name: The name of the application that is being created. This is currently unused.
-    :param server_name: The SERVER_NAME to use inside the fake WSGI environment created, if using the built-in
-        httptools server.
 
+    :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment created for
+    ``url_for``, if applicable.
+    :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI environment created for
+    ``url_for``, if applicable.
     :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is specified, it will be
         automatically fetched using :meth:`asyncio.get_event_loop`.
     :param request_class: Keyword-only. The custom request class to instantiate requests with.
@@ -127,7 +129,7 @@ class Kyoukai(object):
 
         For example, this allows doing ``@app.route`` instead of ``@app.root.route``.
         """
-        if item in ("route", "errorhandler", "add_route", "wrap_route"):
+        if item in ("route", "errorhandler", "add_route", "wrap_route", "url_for"):
             return getattr(self.root, item)
 
         raise AttributeError("'{.__class__.__name__}' object has no attribute {}".format(self, item))

@@ -213,6 +213,33 @@ class Blueprint(object):
         """
         return self.routing_table[endpoint]
 
+    def url_for(self, environment: dict, endpoint: str,
+                *,
+                method: str=None,
+                **kwargs) -> str:
+        """
+        Gets the URL for a specified endpoint using the arguments of the route.
+
+        This works very similarly to Flask's ``url_for``.
+
+        It is not recommended to invoke this method directly - instead, ``url_for`` is set on the context object that
+        is provided to your user function. This will allow you to invoke it with the correct environment already set.
+
+        :param environment: The WSGI environment to use to bind to the adapter.
+        :param endpoint: The endpoint to try and retrieve.
+
+        :param method: If set, the method to explicitly provide (for similar endpoints with different allowed routes).
+
+        :param kwargs: Keyword arguments to provide to the route.
+        :return: The built URL for this endpoint.
+        """
+        bound = self._route_map.bind_to_environ(environment)
+
+        # Build the URL from the endpoint.
+        built_url = bound.build(endpoint, values=kwargs, method=method)
+
+        return built_url
+
     def match(self, environment: dict) -> typing.Tuple[Route, typing.Container]:
         """
         Matches with the WSGI environment.

@@ -151,8 +151,21 @@ class HTTPRequestContext(Context):
     def __init__(self, parent: Context, request: Request):
         super().__init__(parent)
 
+        self.app = None  # type: Kyoukai
+
         self.request = request
 
         # Route objects and Blueprint objects.
         self.route = None  # type: Route
         self.bp = None  # type: Blueprint
+
+        # The WSGI environment for this request.
+        self.environ = self.request.environ  # type: dict
+
+    def url_for(self, endpoint: str, *, method: str, **kwargs):
+        """
+        A context-local version of ``url_for``.
+
+        For more information, see the documentation on :meth:`kyoukai.blueprint.Blueprint.url_for`.
+        """
+        return self.app.url_for(self.environ, endpoint, method=method, **kwargs)
