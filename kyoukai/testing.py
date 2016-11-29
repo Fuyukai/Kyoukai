@@ -13,6 +13,13 @@ from kyoukai.wsgi import to_wsgi_environment
 
 
 class _TestingBpCtxManager(object):
+    """
+    A context manager that is returned from :meth:`TestKyoukai.testing_bp`. When entered, this will produce a new
+    Blueprint object, that is then set onto the test application as the root blueprint.
+
+    After exiting, it will automatically restore the old root Blueprint onto the application, allowing complete
+    isolation of individual test routes away from eachother.
+    """
     def __init__(self, app: 'TestKyoukai'):
         self.app = app
 
@@ -49,6 +56,39 @@ class TestKyoukai(Kyoukai):
         """
         super().__init__(*args, **kwargs)
         self.base_context = base_context
+
+    @classmethod
+    def wrap_existing_app(cls, other_app: Kyoukai, base_context: Context = None):
+        """
+        Wraps an existing app in a test frame.
+
+        This allows easy usage of writing unit tests:
+
+        .. code:: python
+
+            # main.py
+            kyk = Kyoukai("my_app")
+
+            # test.py
+            testing = TestKyoukai.wrap_existing_app(other_app)
+            # use testing as you would normally
+
+        :param other_app: The application object to wrap.
+            Internally, this creates a new instance of ourselves, then sets the ``process_request`` of the subclass
+            to the copied object.
+
+            This means whenever ``inject_request`` is called, it will use the old app's process_request to run with,
+            which will use the environment of the previous instance.
+
+            Of course, if the old app has any side effects upon process_request, these side effects will happen when
+            the testing application runs as well, as the old app is completely copied over.
+        :param base_context: The base context to use for this.
+        """
+        new_object = cls("test_app", base_context=base_context)
+        new_object.original_app = other_app
+        new_object.process_request = other_app.process_request
+
+        return new_object
 
     def testing_bp(self) -> _TestingBpCtxManager:
         """
