@@ -57,10 +57,6 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         # released after processing a request completely.
         self.lock = asyncio.Lock()
 
-        # Parser event.
-        # Set when the http parser is ready to hand over the new request to Kyoukai.
-        self.parser_ready = asyncio.Event()
-
         # The parser itself.
         # This is created per connection, and uses our own class.
         self.parser = httptools.HttpRequestParser(self)
@@ -115,9 +111,10 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     def on_message_complete(self):
         """
         Called when a message is complete.
-        This calls the event set() to ensure the protocol continues on with parsing.
+        This creates the worker task which will begin processing the request.
         """
-        self.parser_ready.set()
+        task = self.loop.create_task(self._wait_wrapper())
+        self.waiter = task
 
     # asyncio procs
     def connection_made(self, transport: asyncio.WriteTransport):
@@ -154,10 +151,6 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         except httptools.HttpParserError:
             raise
 
-        # Create an event waiter.
-        if self.waiter is None:
-            self.waiter = self.loop.create_task(self._wait_wrapper())
-
     # kyoukai handling
     async def _wait_wrapper(self):
         try:
@@ -177,8 +170,6 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
         This constructs a new Werkzeug request from the headers.
         """
-        await self.parser_ready.wait()
-
         # Event is set, construct the new fake WSGI environment
 
         # Check if the body has data in it by asking it to tell us what position it's seeked to.
@@ -203,23 +194,23 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         new_r = self.app.request_class(new_environ, False)
 
         # Invoke the app.
-        try:
-            result = await self.app.process_request(new_r, self.parent_context)
-        except Exception:
-            # not good!
-            # write the scary exception text
-            self.logger.exception("Error in Kyoukai request handling!")
-            self._raw_write(CRITICAL_ERROR_TEXT.encode("utf-8"))
-            return
-        else:
-            # Write the response.
-            self.write_response(result, new_environ)
-        finally:
-            if not self.parser.should_keep_alive():
-                self.close()
-            # unlock the event and remove the waiter
-            self.parser_ready.clear()
-            self.parser = httptools.HttpRequestParser(self)
+        async with self.lock:
+            try:
+                result = await self.app.process_request(new_r, self.parent_context)
+            except Exception:
+                # not good!
+                # write the scary exception text
+                self.logger.exception("Error in Kyoukai request handling!")
+                self._raw_write(CRITICAL_ERROR_TEXT.encode("utf-8"))
+                return
+            else:
+                # Write the response.
+                self.write_response(result, new_environ)
+            finally:
+                if not self.parser.should_keep_alive():
+                    self.close()
+                # unlock the event and remove the waiter
+                self.parser = httptools.HttpRequestParser(self)
 
     # transport methods
     def close(self):
