@@ -200,7 +200,7 @@ class Blueprint(object):
         if self._parent:
             hooks.extend(self._parent.get_hooks(type_))
 
-        hooks.extend(self._request_hooks.get(type_))
+        hooks.extend(self._request_hooks.get(type_, []))
 
         return hooks
 
@@ -256,6 +256,7 @@ class Blueprint(object):
         self._routes_to_add.append(rule)
         # Add the rule to the route.
         route.rule = rule
+        route.bp = self
 
         return route
 
