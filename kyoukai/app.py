@@ -175,7 +175,7 @@ class Kyoukai(object):
                 # why tho?
                 result = e.get_response(environ)
             except Exception as e:
-                result = InternalServerError.wrap(e).get_response(environ)
+                result = InternalServerError(e).get_response(environ)
 
             return result
 
