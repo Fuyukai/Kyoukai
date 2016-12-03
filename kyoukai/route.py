@@ -4,6 +4,8 @@ Routes are wrapped function objects that are called upon a HTTP request.
 import inspect
 import typing
 
+from kyoukai.blueprint import Blueprint
+
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
@@ -17,11 +19,13 @@ class Route(object):
     :ivar bp: The Blueprint this route is associated with.
     :ivar rule: The routing rule this route is associated with.
     """
-    def __init__(self, function: callable):
+    def __init__(self, function: callable, reverse_hooks: bool=False):
         """
         Creates a new route object.
         :param function: The underlying callable.
             This can be a function, or any other callable.
+
+        :param reverse_hooks: If the request hooks should be reversed for this request (i.e child to parent.)
         """
         if not callable(function):
             raise TypeError("Route arg must be callable")
@@ -29,11 +33,13 @@ class Route(object):
         self._callable = function
 
         # The Blueprint this route is associated with.
-        self.bp = None
+        self.bp = None  # type: Blueprint
 
         # Set on us by the Blueprint.
         self.rule = None  # type: Rule
         self.routing_url = None
+
+        self.reverse_hooks = reverse_hooks
 
     def get_endpoint_name(self, bp):
         """
@@ -46,7 +52,7 @@ class Route(object):
 
         return prefix + ".{}".format(self._callable.__name__)
 
-    async def invoke_function(self, ctx, **kwargs):
+    async def invoke_function(self, ctx, pre_hooks: list, post_hooks: list, **kwargs):
         """
         Invokes the underlying callable.
 
@@ -57,6 +63,10 @@ class Route(object):
         """
         # Invoke the route function.
         try:
+            # Invoke pre-request hooks, setting `ctx` equal to the new value.
+            for hook in pre_hooks:
+                ctx = await hook(ctx)
+
             result = self._callable(ctx, **kwargs)
             if inspect.isawaitable(result):
                 result = await result
@@ -67,6 +77,11 @@ class Route(object):
             # Unhandled exception, so it's a 500
             raise HTTPException(500) from e
         else:
+            # Invoke post-request hooks. These happen inside this `else` block because post-request hooks are only meant
+            # to happen if the route invoked successfully.
+            for hook in post_hooks:
+                result = await hook(result)
+
             return result
 
     def check_route_args(self, params: dict=None):
@@ -125,4 +140,13 @@ class Route(object):
             params = {}
 
         self.check_route_args(params)
-        return await self.invoke_function(ctx, **params)
+
+        # Try and get the hooks.
+        pre_hooks = self.bp.get_hooks("pre")
+        if self.reverse_hooks:
+            pre_hooks = reversed(pre_hooks)
+
+        post_hooks = self.bp.get_hooks("post")
+        if self.reverse_hooks:
+            post_hooks = reversed(post_hooks)
+        return await self.invoke_function(ctx, pre_hooks, post_hooks, **params)
