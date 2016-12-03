@@ -4,8 +4,6 @@ Routes are wrapped function objects that are called upon a HTTP request.
 import inspect
 import typing
 
-from kyoukai.blueprint import Blueprint
-
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
