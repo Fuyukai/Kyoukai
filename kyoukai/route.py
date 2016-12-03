@@ -46,7 +46,7 @@ class Route(object):
 
         return prefix + ".{}".format(self._callable.__name__)
 
-    async def invoke_function(self, ctx, *args):
+    async def invoke_function(self, ctx, **kwargs):
         """
         Invokes the underlying callable.
 
@@ -57,7 +57,7 @@ class Route(object):
         """
         # Invoke the route function.
         try:
-            result = self._callable(ctx, *args)
+            result = self._callable(ctx, **kwargs)
             if inspect.isawaitable(result):
                 result = await result
         except HTTPException as e:
@@ -85,14 +85,15 @@ class Route(object):
 
         # Next, check that all the argument names in the signature are in the params, so that they can be easily double
         # star expanded into the function.
-        for n, arg in enumerate(sig.parameters):
+        for n, (name, arg) in enumerate(sig.parameters.items()):
             # Skip the first argument, because it is usually the HTTPRequestContext, and we don't want to type check
             # that.
             if n == 0:
                 continue
             assert isinstance(arg, inspect.Parameter)
             if arg.name not in params:
-                raise ValueError("Argument {} not found in args".format(arg.name))
+                raise ValueError("Argument {} not found in args for callable {}".format(arg.name,
+                                                                                        self._callable.__name__))
 
             # Also, check that the type of the arg and the annotation matches.
             value = params[arg.name]

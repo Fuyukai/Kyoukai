@@ -60,6 +60,16 @@ class Blueprint(object):
         # The error handler dictionary.
         self.errorhandlers = {}
 
+        # The request hooks for this Blueprint.
+        self._request_hooks = {}
+
+    @property
+    def parent(self) -> "Blueprint":
+        """
+        Gets the parent Blueprint of this blueprint.
+        """
+        return self._parent
+
     @property
     def prefix(self) -> str:
         """
@@ -176,6 +186,48 @@ class Blueprint(object):
                 return self._parent.get_errorhandler(exc)
             except (KeyError, AttributeError):
                 return None
+
+    def get_hooks(self, type_: str) -> typing.Iterable:
+        """
+        Gets a list of hooks that match the current type.
+
+        These are ordered from parent to child.
+
+        :param type_: The type of hooks to get (currently "pre" or "post").
+        :return: An iterable of hooks to run.
+        """
+        hooks = []
+        if self._parent:
+            hooks.extend(self._parent.get_hooks(type_))
+
+        hooks.extend(self._request_hooks.get(type_))
+
+        return hooks
+
+    def add_hook(self, type_: str, hook: typing.Callable) -> typing.Callable:
+        """
+        Adds a hook to the current Blueprint.
+
+        :param type_: The type of hook to add (currently "pre" or "post").
+        :param hook: The callable function to add as a hook.
+        """
+        if type_ not in self._request_hooks:
+            self._request_hooks[type_] = []
+
+        self._request_hooks.append(hook)
+        return hook
+
+    def after_request(self, func: typing.Callable):
+        """
+        Convenience decorator to add a post-request hook.
+        """
+        return self.add_hook(type_="post", hook=func)
+
+    def before_request(self, func: typing.Callable):
+        """
+        Convenience decorator to add a pre-request hook.
+        """
+        return self.add_hook(type_="pre", hook=func)
 
     def add_route(self, route: Route, routing_url: str, methods: typing.Iterable[str] = ("GET",)):
         """
