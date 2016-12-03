@@ -69,7 +69,43 @@ class Route(object):
         else:
             return result
 
-    async def invoke(self, ctx, params: typing.Container=None):
+    def check_route_args(self, params: dict=None):
+        """
+        Checks the arguments for a route.
+
+        :param params: The parameters passed in, as a dict.
+        :raises TypeError: If the arguments passed in were not correct.
+        """
+        # Get the signature of our callable.
+        sig = inspect.signature(self._callable, follow_wrapped=True)  # type: inspect.Signature
+        f_nargs = len(sig.parameters) - 1
+        # If the lengths of the signature and the params are different, it's obviously wrong.
+        if f_nargs != len(params):  # + 1 because `ctx` is a param
+            raise TypeError("Route takes {} args, passed in {} instead".format(f_nargs, len(params)))
+
+        # Next, check that all the argument names in the signature are in the params, so that they can be easily double
+        # star expanded into the function.
+        for n, arg in enumerate(sig.parameters):
+            # Skip the first argument, because it is usually the HTTPRequestContext, and we don't want to type check
+            # that.
+            if n == 0:
+                continue
+            assert isinstance(arg, inspect.Parameter)
+            if arg.name not in params:
+                raise ValueError("Argument {} not found in args".format(arg.name))
+
+            # Also, check that the type of the arg and the annotation matches.
+            value = params[arg.name]
+            if arg.annotation is None:
+                # No annotation, don't type check
+                continue
+
+            if not isinstance(value, arg.annotation):
+                raise TypeError("Argument {} must be type {} (got type {})".format(
+                    arg.name, arg.annotation, type(value))
+                )
+
+    async def invoke(self, ctx, params: typing.Container=None) -> Response:
         """
         Invokes a route.
 
@@ -84,13 +120,8 @@ class Route(object):
         ctx.route = self
 
         # Invoke the route function.
+        if not params:
+            params = {}
 
-        # TODO: Better argument handling.
-        if isinstance(params, dict):
-            p = params.values()
-        else:
-            if not params:
-                p = ()
-            else:
-                p = params
-        return await self.invoke_function(ctx, *p)
+        self.check_route_args(params)
+        return await self.invoke_function(ctx, **params)

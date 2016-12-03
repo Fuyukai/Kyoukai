@@ -86,7 +86,7 @@ class Kyoukai(object):
         if not self.loop:
             self.loop = asyncio.get_event_loop()
 
-        self.logger = logging.getLogger("Kyoukai")
+        self.logger = logging.getLogger("Kyoukai")  # type: logging.Logger
 
         # Create the root blueprint.
         self._root_bp = Blueprint(application_name)
@@ -170,11 +170,12 @@ class Kyoukai(object):
             # Try and invoke the error handler to get the Response.
             # Wrap it in the try/except, so we can handle a default one.
             try:
-                result = await error_handler.invoke(ctx, (exception,))
+                result = await error_handler.invoke(ctx, {"exc": exception})
             except HTTPException as e:
                 # why tho?
                 result = e.get_response(environ)
             except Exception as e:
+                self.logger.exception("Error when processing request!")
                 result = InternalServerError(e).get_response(environ)
 
             return result
