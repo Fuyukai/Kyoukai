@@ -12,11 +12,10 @@ except ImportError:
 
 import functools
 
-from ruamel import yaml
 from asphalt.core import Context, ContainerComponent
 from asphalt.core.component import component_types
 from kyoukai.app import Kyoukai
-from kyoukai.asphalt import KyoukaiComponent
+from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
 from werkzeug.wrappers import Request, Response
 
 
@@ -97,6 +96,7 @@ class uWSGIAdapter(object):
 
         :param filename: The full path to the config file.
         """
+        from ruamel import yaml
         with open(filename):
             config_data = yaml.load(filename)
 
@@ -118,10 +118,12 @@ class uWSGIAdapter(object):
 
         # Find the KyoukaiComponent.
         for c in component.child_components:
-            if isinstance(c, KyoukaiComponent):
+            if isinstance(c, KyoukaiBaseComponent):
                 break
         else:
             raise TypeError("Could not find KyoukaiComponent in component list")
+
+        del component
 
         # Create a new adapter.
         klass = cls(c.app, context)

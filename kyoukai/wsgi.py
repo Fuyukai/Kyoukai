@@ -104,7 +104,6 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
         "wsgi.run_once": False
     }
 
-
     return environ
 
 

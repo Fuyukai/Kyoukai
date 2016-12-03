@@ -19,7 +19,7 @@ from asphalt.core import Context
 from werkzeug.wrappers import Request, Response
 
 from kyoukai import Kyoukai
-from kyoukai.asphalt import KyoukaiComponent
+from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
 
 try:
     from h2.connection import H2Connection
@@ -211,7 +211,7 @@ class H2State:
         return self.get_chunk()
 
 
-class H2KyoukaiComponent(KyoukaiComponent):
+class H2KyoukaiComponent(KyoukaiBaseComponent):
     """
     A component subclass that creates H2KyoukaiProtocol instances.
     """

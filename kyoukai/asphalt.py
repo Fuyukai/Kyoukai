@@ -75,7 +75,36 @@ class RouteReturnedEvent(CtxEvent):  # pragma: no cover
         self.result = result
 
 
-class KyoukaiComponent(Component):  # pragma: no cover
+class KyoukaiBaseComponent(Component):  # pragma: no cover
+    """
+    The base class for any component used by Kyoukai.
+
+    This one does not create a Server instance; it should be used when you are using a different HTTP server backend.
+    """
+    connection_made = Signal(ConnectionMadeEvent)
+    connection_lost = Signal(ConnectionLostEvent)
+
+    def __init__(self, app, ip: str = "127.0.0.1", port: int=4444, **cfg):
+        from kyoukai.app import Kyoukai
+        if not isinstance(app, Kyoukai):
+            app = resolve_reference(app)
+
+        self.app = app
+        self.ip = ip
+        self.port = port
+
+        self.cfg = cfg
+
+        self.server = None
+        self.base_context = None  # type: Context
+
+        self.logger = logging.getLogger("Kyoukai")
+
+    async def start(self, ctx: Context):
+        pass
+
+
+class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
     """
     A component for Kyoukai.
 
@@ -97,22 +126,7 @@ class KyoukaiComponent(Component):  # pragma: no cover
         :param port: If using the built-in HTTP server, the port to bind to.
         :param cfg: Additional configuration.
         """
-        # stupid circular imports
-        from kyoukai.app import Kyoukai
-        if not isinstance(app, Kyoukai):
-            app = resolve_reference(app)
-
-        self.app = app
-        self.ip = ip
-        self.port = port
-
-        self.cfg = cfg
-
-        self.server = None
-        self.base_context = None  # type: Context
-
-        self.logger = logging.getLogger("Kyoukai")
-
+        super().__init__(app, ip, port)
         # Determine our server_name
         self._server_name = app.server_name or socket.getfqdn()
 

@@ -19,7 +19,11 @@ try:
 except ImportError:
     raise RuntimeError("gunicorn and aiohttp must be installed for the gunicorn backend")
 
+from asphalt.core import ContainerComponent
+from asphalt.core.component import component_types
+
 from kyoukai.app import Kyoukai
+from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
 
 
 class GunicornAdapter(object):
@@ -36,6 +40,44 @@ class GunicornAdapter(object):
         application = runner.run_application
 
     """
+
+    @classmethod
+    def from_asphalt_config(cls, filename: str) -> 'GunicornAdapter':
+        """
+        Creates a new :class:`GunicornAdapter` from an Asphalt component config file.
+        """
+        from ruamel import yaml
+        with open(filename):
+            config_data = yaml.load(filename)
+
+        # Instantiate the root component
+        try:
+            component_config = config_data.pop('component')
+        except KeyError:
+            raise LookupError('missing configuration key: component') from None
+        else:
+            component = component_types.create_object(**component_config)  # type: ContainerComponent
+
+        # Create a new Context.
+        context = Context()
+
+        # Run `start()` on the app.
+        loop = asyncio.get_event_loop()
+        # You best hope this doesn't block.
+        loop.run_until_complete(component.start(context))
+
+        # Find the KyoukaiComponent.
+        for c in component.child_components:
+            if isinstance(c, KyoukaiBaseComponent):
+                break
+        else:
+            raise TypeError("Could not find KyoukaiComponent in component list")
+
+        del component
+
+        # Create a new adapter.
+        klass = cls(c.app, context)
+        return klass
 
     def __init__(self, app: Kyoukai, base_context: Context = None):
         """
