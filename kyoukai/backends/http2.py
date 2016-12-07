@@ -53,7 +53,7 @@ def get_header(headers: typing.List[typing.Tuple[str, str]], name: str) -> str:
 
 
 # WSGI helpers.
-def create_wsgi_environment(r: 'H2State'):
+def create_wsgi_environment(r: 'H2State') -> MultiDict:
     """
     Creates a new WSGI environment from the RequestData provided.
     """

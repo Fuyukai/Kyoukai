@@ -57,7 +57,7 @@ class SaneWSGIWrapper(object):
 
 
 def to_wsgi_environment(headers: dict, method: str, path: str,
-                        http_version: str, body: BytesIO = None) -> dict:
+                        http_version: str, body: BytesIO = None) -> MultiDict:
     """
     Produces a new WSGI environment from a set of data that is passed in.
 
