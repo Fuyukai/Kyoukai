@@ -23,6 +23,7 @@ deps = [
     "httptools>=0.0.9",
     "asphalt>=2.1.0",
     "werkzeug>=0.11.10",
+    "h2>=2.5.0",
 ]
 
 setup(
@@ -50,7 +51,6 @@ setup(
     ],
     extras_require={
         "gunicorn": ["aiohttp>=1.1.0", "gunicorn>=19.6.0"],
-        "http2": ["h2>=2.5.0"],
         "uwsgi": ["greenlet>=0.4.0"]
     }
 )

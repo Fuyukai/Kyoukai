@@ -165,6 +165,7 @@ class Blueprint(object):
         # for simplicity sake, wrap it in a route.
         rtt = self.wrap_route(cbl)
         self.errorhandlers[errorcode] = rtt
+        rtt.bp = self
         return rtt
 
     def get_errorhandler(self, exc: typing.Union[HTTPException, int]) -> typing.Union[None, Route]:

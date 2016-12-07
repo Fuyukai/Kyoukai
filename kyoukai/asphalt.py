@@ -3,6 +3,7 @@ Asphalt wrappers for Kyoukai.
 """
 import asyncio
 import socket
+import ssl
 from functools import partial
 
 import logging
@@ -11,7 +12,6 @@ from asphalt.core.event import Signal, Event
 from asphalt.core.component import Component
 from werkzeug.wrappers import Request, Response
 
-from kyoukai.backends.httptools_ import KyoukaiProtocol
 from kyoukai.blueprint import Blueprint
 from kyoukai.route import Route
 
@@ -26,7 +26,7 @@ class ConnectionMadeEvent(Event):  # pragma: no cover
     This has the protocol as the ``protocol`` attribute.
     """
 
-    def __init__(self, source, topic, *, protocol: KyoukaiProtocol):
+    def __init__(self, source, topic, *, protocol):
         super().__init__(source, topic)
         self.protocol = protocol
 
@@ -84,7 +84,7 @@ class KyoukaiBaseComponent(Component):  # pragma: no cover
     connection_made = Signal(ConnectionMadeEvent)
     connection_lost = Signal(ConnectionLostEvent)
 
-    def __init__(self, app, ip: str = "127.0.0.1", port: int=4444, **cfg):
+    def __init__(self, app, ip: str = "127.0.0.1", port: int = 4444, **cfg):
         from kyoukai.app import Kyoukai
         if not isinstance(app, Kyoukai):
             app = resolve_reference(app)
@@ -99,6 +99,8 @@ class KyoukaiBaseComponent(Component):  # pragma: no cover
         self.base_context = None  # type: Context
 
         self.logger = logging.getLogger("Kyoukai")
+
+        self._server_name = app.server_name or socket.getfqdn()
 
     async def start(self, ctx: Context):
         pass
@@ -126,9 +128,11 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         :param port: If using the built-in HTTP server, the port to bind to.
         :param cfg: Additional configuration.
         """
-        super().__init__(app, ip, port)
+        super().__init__(app, ip, port, **cfg)
         # Determine our server_name
-        self._server_name = app.server_name or socket.getfqdn()
+
+        for key, value in cfg.items():
+            setattr(self, key, value)
 
     def get_server_name(self):
         """
@@ -137,6 +141,7 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         return self.app.server_name or self._server_name
 
     def get_protocol(self, ctx: Context, serv_info: tuple):
+        from kyoukai.backends.httptools_ import KyoukaiProtocol
         return KyoukaiProtocol(self, ctx, *serv_info)
 
     async def start(self, ctx: Context):
@@ -148,9 +153,16 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         self.base_context = ctx
 
         if self.cfg.get("use_builtin_webserver", True):
+            if self.cfg.get("ssl", False):
+                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                ssl_context.load_cert_chain(certfile=self.ssl_certfile, keyfile=self.ssl_keyfile)
+                self.logger.info("Using HTTP over TLS.")
+            else:
+                ssl_context = None
+
             protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
             self.app.finalize()
-            self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port)
+            self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port, ssl=ssl_context)
             self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
 
 

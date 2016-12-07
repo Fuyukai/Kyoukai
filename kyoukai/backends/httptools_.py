@@ -2,6 +2,7 @@
 The default HTTPTools backend for Kyoukai.
 """
 import asyncio
+import base64
 import logging
 import traceback
 import warnings
@@ -12,6 +13,7 @@ from asphalt.core import Context
 from werkzeug.exceptions import MethodNotAllowed, BadRequest, InternalServerError
 from werkzeug.wrappers import Request, Response
 
+from kyoukai.backends.http2 import H2KyoukaiProtocol
 from kyoukai.wsgi import to_wsgi_environment, get_formatted_response
 
 CRITICAL_ERROR_TEXT = """HTTP/1.0 500 INTERNAL SERVER ERROR
@@ -26,6 +28,14 @@ Content-Length: 310
 <p>An unrecoverable error has occurred within Kyoukai.
 If you are the developer, please report this at <a href="https://github.com/SunDwarf/Kyoukai">the Kyoukai issue
 tracker.</a>
+""".replace("\n", "\r\n")
+
+HTTP_SWITCHING_PROTOCOLS = """HTTP/1.1 101 SWITCHING PROTOCOLS
+Connection: Upgrade
+Upgrade: h2c
+Server: Kyoukai
+Content-Length: 0
+
 """.replace("\n", "\r\n")
 
 
@@ -77,7 +87,23 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.full_url = ""
 
         self.loop = asyncio.get_event_loop()
-        self.logger = logging.getLogger("Kyoukai")
+        self.logger = logging.getLogger("Kyoukai.HTTP11")
+
+    def replace(self, other: type, *args, **kwargs) -> type:
+        """
+        Replaces our type with the other.
+        """
+        # Copy the properties we need.
+        component = self.component
+        app = component.app
+        # Goodbye, ourselves!
+        self.__class__ = other
+
+        # Hello, not ourselves!
+        # Call the new __init__.
+        other.__init__(self, component, app, *args, **kwargs)
+
+        return self
 
     # httptools callbacks
     def on_message_begin(self):
@@ -142,6 +168,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         """
         try:
             self.ip, self.client_port = transport.get_extra_info("peername")
+            self.logger.debug("Connection received from {}:{}".format(self.ip, self.client_port))
         except ValueError:
             # Sometimes socket.socket.getpeername() isn't available, so it tried to unpack a None.
             # Or, it returns None (wtf?)
@@ -153,6 +180,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.component.connection_made.dispatch(protocol=self)
 
     def connection_lost(self, exc):
+        self.logger.debug("Connection lost from {}:{}".format(self.ip, self.client_port))
         self.component.connection_lost.dispatch(protocol=self)
 
     def data_received(self, data: bytes):
@@ -181,7 +209,6 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
             # httptools sucks, and only provides us an offset.
             # so what we do is hope the `Upgrade` header is in our header list.
-            upgrade = None
             for name, header in self.headers:
                 if name.lower() == "upgrade":
                     upgrade = header
@@ -190,8 +217,33 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
                 # thanks, we can't do shit.
                 self.handle_parser_exception(e)
                 return
-            # If it's h2c, discard it.
+            # If it's h2c, replace ourselves with the HTTP/2 client.
             if upgrade.lower() == "h2c":
+                # Copy the transport into our local scope, as it becomes None after we've switched type.
+                # Once we've replaced ourselves, call `connection_made` on the new type to initialize.
+                for name, header in self.headers:
+                    if name.lower() == "http2-settings":
+                        http2_settings = header
+                        break
+                else:
+                    # can't find the http2_settings header, rip
+                    self.handle_parser_exception(e)
+                    return
+
+                self.logger.info("Upgrading HTTP/1.1 to HTTP/2 connection.")
+
+                # base64 decode the http2 settings packet
+                decoded = base64.urlsafe_b64decode(http2_settings)
+                # send a 101 switching protocols
+                self.write(HTTP_SWITCHING_PROTOCOLS)
+
+                transport = self.transport
+                new_self = self.replace(H2KyoukaiProtocol)  # type: H2KyoukaiProtocol
+
+                # update with the new settings
+                new_self.conn.initiate_upgrade_connection(decoded)
+                # this will have updated settings; now switch protocols.
+                type(new_self).connection_made(new_self, transport)
                 return
 
             # If it's Websocket, disconnect.
@@ -235,16 +287,22 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
     async def _wait_wrapper(self):
         try:
-            await self._wait()
+            if hasattr(self, "_wait"):
+                await self._wait()
+            else:
+                return
         except:
             self.logger.critical("Error in Kyoukai's HTTP handling!")
             traceback.print_exc()
             self._raw_write(CRITICAL_ERROR_TEXT.encode())
             self.close()
         finally:
-            self.waiter.cancel()
-            self.waiter = None
-            self.parser = httptools.HttpRequestParser(self)
+            # we might have change protocol by now.
+            # if so, don't try and cancel the non-existant thing.
+            if hasattr(self, "waiter"):
+                self.waiter.cancel()
+                self.waiter = None
+                self.parser = httptools.HttpRequestParser(self)
 
     async def _wait(self):
         """

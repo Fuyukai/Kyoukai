@@ -24,20 +24,17 @@ from functools import partial
 from urllib.parse import urlsplit
 
 from asphalt.core import Context
+from h2.exceptions import ProtocolError
 from werkzeug.wrappers import Request, Response
 from werkzeug.datastructures import MultiDict
 
-from kyoukai import Kyoukai
 from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
 
-try:
-    from h2.connection import H2Connection
-    from h2.events import (
-        DataReceived, RequestReceived, WindowUpdated, StreamEnded, StreamReset
-    )
-    from h2.errors import PROTOCOL_ERROR
-except ImportError:
-    raise RuntimeError("h2 must be installed for the http2 backend")
+from h2.connection import H2Connection
+from h2.events import (
+    DataReceived, RequestReceived, WindowUpdated, StreamEnded, StreamReset
+)
+from h2.errors import PROTOCOL_ERROR
 
 # Sentinel value for the request being complete.
 REQUEST_FINISHED = object()
@@ -286,7 +283,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         self.stream_data = collections.defaultdict(lambda *args: asyncio.Queue())
 
         # The current logger.
-        self.logger = logging.getLogger("Kyoukai")
+        self.logger = logging.getLogger("Kyoukai.HTTP2")
 
         # Client data.
         self.ip, self.client_port = None, None
@@ -307,6 +304,9 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             # We can't write to the transport, so we silently discard the error.
             # This probably means the client has disconnected.
             return None
+
+    def connection_lost(self, exc):
+        self.logger.debug("Connection lost from {}:{}".format(self.ip, self.client_port))
 
     def connection_made(self, transport: asyncio.WriteTransport):
         """
@@ -351,6 +351,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
                 return
 
         # Send the HTTP2 preamble.
+        self.logger.debug("Started the HTTP/2 connection.")
         self.conn.initiate_connection()
         self.raw_write(self.conn.data_to_send())
 
@@ -359,7 +360,11 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         Called when data is received from the underlying socket.
         """
         # Get a list of events by writing to the state machine.
-        events = self.conn.receive_data(data)
+        try:
+            events = self.conn.receive_data(data)
+        except ProtocolError:
+            self.close(0x1)
+            return
         # Find any data we need to send to the client first.
         self.transport.write(self.conn.data_to_send())
 
