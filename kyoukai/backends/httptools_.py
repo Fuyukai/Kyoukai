@@ -70,7 +70,9 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.ip, self.client_port = None, None
 
         # Intermediary data storage.
-        self.headers = {}
+        # This is a list because headers are appended as (Name, Value) pairs.
+        # In HTTP/1.1, there can be multiple headers with the same name but different values.
+        self.headers = []
         self.body = BytesIO()
         self.full_url = ""
 
@@ -83,7 +85,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         Called when a message begins.
         """
         self.body = BytesIO()
-        self.headers = {}
+        self.headers = []
         self.full_url = ""
 
     def on_header(self, name: bytes, value: bytes):
@@ -93,7 +95,21 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         :param name: The name of the header.
         :param value: The value of the header.
         """
-        self.headers[name.decode()] = value.decode()
+        self.headers.append((name.decode(), value.decode()))
+
+    def on_headers_complete(self):
+        """
+        Called when the headers have been completely sent.
+
+        This will signal the protocol to start processing the request.
+        This is done here instead of `on_message_complete` so that the server does not have to wait for the entire body
+        to be received before starting the process the message.
+        """
+        # Don't delegate to Kyoukai.
+        if self.transport.is_closing():
+            return
+        task = self.loop.create_task(self._wait_wrapper())
+        self.waiter = task
 
     def on_body(self, body: bytes):
         """
@@ -114,8 +130,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         Called when a message is complete.
         This creates the worker task which will begin processing the request.
         """
-        task = self.loop.create_task(self._wait_wrapper())
-        self.waiter = task
+        # TODO: Make this unlock so that if the request is completed before the body is fully sent, it won't start
+        # sending.
 
     # asyncio procs
     def connection_made(self, transport: asyncio.WriteTransport):
@@ -153,7 +169,39 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             # WSGI environment, and then automatically return a werkzeug httpexception that corresponds.
             self.handle_parser_exception(e)
         except httptools.HttpParserError as e:
+            traceback.print_exc()
             self.handle_parser_exception(e)
+        except httptools.HttpParserUpgrade as e:
+            # It's a HTTP upgrade!
+            # The only valid values of these that we wish to support (currently) are `h2c` and `Websocket`.
+            # Currently, Kyoukai does not support websocket upgrade (soon™).
+            # It doesn't support h2c upgrade either (yet!) - we can silently ignore this one as specified by the RFC.
+            # However, we cannot silently ignore websocket upgrades - we discard those for now and disconnect.
+            # Anything else, we also discard and disconnect.
+
+            # httptools sucks, and only provides us an offset.
+            # so what we do is hope the `Upgrade` header is in our header list.
+            upgrade = None
+            for name, header in self.headers:
+                if name.lower() == "upgrade":
+                    upgrade = header
+                    break
+            else:
+                # thanks, we can't do shit.
+                self.handle_parser_exception(e)
+                return
+            # If it's h2c, discard it.
+            if upgrade.lower() == "h2c":
+                return
+
+            # If it's Websocket, disconnect.
+            if upgrade.lower() == "websocket":
+                self.handle_parser_exception(e)
+                return
+
+            # If it's anything else, disconnect.
+            self.handle_parser_exception(e)
+            return
 
     # kyoukai handling
     def handle_parser_exception(self, exc: Exception):
@@ -168,7 +216,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         if isinstance(exc, httptools.HttpParserInvalidMethodError):
             # 405 method not allowed
             r = MethodNotAllowed()
-        elif isinstance(exc, httptools.HttpParserError):
+        elif isinstance(exc, (httptools.HttpParserError, httptools.HttpParserUpgrade)):
             # 400 bad request
             r = BadRequest()
         else:

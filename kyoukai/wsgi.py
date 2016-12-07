@@ -78,7 +78,10 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
     """
     new_headers = {}
     # Convert all the headers into HTTP_ form.
-    for header, value in headers.items():
+    if isinstance(headers, dict):
+        headers = headers.items()
+
+    for header, value in headers:
         new_headers["HTTP_{}".format(header.upper())] = value
 
     # urlsplit the path
