@@ -3,6 +3,14 @@ A HTTP/2 interface to Kyoukai.
 
 This uses https://python-hyper.org/projects/h2/en/stable/asyncio-example.html as a reference and a base. Massive thanks
 to the authors of this page.
+
+This server has some notable pitfalls:
+
+    - It ignores any priority data that is sent by the client.
+    - It is not paticularly fast (unbenchmarked, but it can be assumed to be slower than the httptools backend.)
+    - It does not fully implement all events.
+
+Additionally, this server is **untested** - it can and probably will fail horribly in production. Use with caution :)
 """
 import asyncio
 import collections
@@ -198,6 +206,8 @@ class H2State:
         """
         Called by the protocol once the Response is writable to submit the request to the HTTP/2 state machine.
         """
+        # This header must be added first!
+        # All psuedo-headers come before the other headers.
         headers = [(":status", self._emit_status)]
         headers.extend(self._emit_headers)
 
@@ -235,6 +245,12 @@ class H2KyoukaiComponent(KyoukaiBaseComponent):
         ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         ssl_context.load_cert_chain(certfile=self.ssl_certfile, keyfile=self.ssl_keyfile)
         ssl_context.set_alpn_protocols(["h2"])
+
+        try:
+            ssl_context.set_npn_protocols(["h2"])
+        except NotImplementedError:
+            # NPN protocol doesn't work here, so don't bother setting it
+            pass
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
         self.app.finalize()
@@ -284,8 +300,12 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         """
         Writes to the underlying transport.
         """
-        # TODO: Handle connection reset
-        return self.transport.write(data)
+        try:
+            return self.transport.write(data)
+        except (OSError, ConnectionError):
+            # We can't write to the transport, so we silently discard the error.
+            # This probably means the client has disconnected.
+            return None
 
     def connection_made(self, transport: asyncio.WriteTransport):
         """
@@ -304,6 +324,30 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             # So just provide some fake values.
             warnings.warn("getpeername() returned None, cannot provide transport information.")
             self.ip, self.client_port = None, None
+
+        # Ensure that we are talking to a HTTP/2 client.
+        # If we're not, they're gonna get really confused when we send
+        # the HTTP/2 pre-amble, as they're expecting not that.
+
+        ssl_sock = self.transport.get_extra_info("ssl_object")
+        if ssl_sock is None:
+            # We're not connecting over TLS.
+            # For the sake of it, we're gonna assume that the client talks HTTP/2 instead of HTTP/1.1,
+            # or some other protocol.
+            warnings.warn("HTTP/2 connection established over a non-TLS stream!")
+        else:
+            # Ensure we negotiated a `h2` connection.
+            # This will check the ALPN protocol, but failing that, fall back to the NPN protocol.
+            negotiated_protocol = ssl_sock.selected_alpn_protocol()
+            if negotiated_protocol is None:
+                negotiated_protocol = ssl_sock.selected_npn_protocol()
+
+            if negotiated_protocol != "h2":
+                # Close the connection - this isn't a HTTP/2 connection.
+                # All we're gonna receive is junk data.
+                # This uses error code 0x1 (PROTOCOL_ERROR) because it's technically a protocol error.
+                self.close(0x1)
+                return
 
         # Send the HTTP2 preamble.
         self.conn.initiate_connection()
@@ -330,9 +374,10 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             elif isinstance(event, DataReceived):
                 self.receive_data(event)
             # The stream has ended.
-            # This will invoke Kyoukai to handle the stream.
             elif isinstance(event, StreamEnded):
                 self.stream_complete(event)
+            # The window for the event has updated.
+            # This will unlock the event sender and continue sending data.
             elif isinstance(event, WindowUpdated):
                 self.window_opened(event)
 
@@ -465,3 +510,15 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             return
         else:
             req.insert_data(REQUEST_FINISHED)
+
+    def close(self, error_code: int=0):
+        """
+        Called to terminate the connection for some reason.
+
+        This will close the underlying transport.
+        """
+        # Send a GOAWAY frame.
+        self.conn.close_connection(error_code)
+        self.raw_write(self.conn.data_to_send())
+
+        self.transport.close()
