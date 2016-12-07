@@ -25,6 +25,7 @@ from urllib.parse import urlsplit
 
 from asphalt.core import Context
 from werkzeug.wrappers import Request, Response
+from werkzeug.datastructures import MultiDict
 
 from kyoukai import Kyoukai
 from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
@@ -74,7 +75,7 @@ def create_wsgi_environment(r: 'H2State'):
     # HTTP/2 special header method
     method = get_header(r.headers, ":method")
 
-    environ = {
+    environ = MultiDict({
         # Basic items
         "PATH_INFO": sp_path.path,
         "QUERY_STRING": sp_path.query,
@@ -91,12 +92,12 @@ def create_wsgi_environment(r: 'H2State'):
         "wsgi.run_once": False,
         "SERVER_NAME": server_name,
         "SERVER_PORT": port
-    }
+    })
 
     # Add the headers.
     for header, value in r.headers:
         if not header.startswith(":"):
-            environ["HTTP_{}".format(header.replace("-", "_").upper())] = value
+            environ.add("HTTP_{}".format(header.replace("-", "_").upper()), value)
 
     return environ
 

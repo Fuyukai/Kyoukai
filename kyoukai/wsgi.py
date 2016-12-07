@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 import sys
 
+from werkzeug.datastructures import MultiDict
 from werkzeug.wrappers import Response
 
 
@@ -76,25 +77,18 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
     :param body: A :class:`BytesIO` representing the body wrapper for this dict, or None if there is no request body.
     :return:
     """
-    new_headers = {}
-    # Convert all the headers into HTTP_ form.
     if isinstance(headers, dict):
         headers = headers.items()
-
-    for header, value in headers:
-        new_headers["HTTP_{}".format(header.upper())] = value
 
     # urlsplit the path
     sp_path = urlsplit(path)
 
-    environ = {
+    environ = MultiDict({
         # Basic items
         "PATH_INFO": sp_path.path,
         "QUERY_STRING": sp_path.query,
         "SERVER_PROTOCOL": "HTTP/%s" % http_version,
         "REQUEST_METHOD": method,
-        # Expand the headers into the dict.
-        **new_headers,
         # WSGI protocol things
         "wsgi.version": (1, 0),
         "wsgi.errors": sys.stderr,
@@ -105,7 +99,10 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
         "wsgi.multithread": True,  # technically false sometimes, but oh well
         "wsgi.multiprocess": False,
         "wsgi.run_once": False
-    }
+    })
+
+    for header, value in headers:
+        environ.add("HTTP_{}".format(header.upper()), value)
 
     return environ
 
