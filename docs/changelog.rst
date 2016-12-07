@@ -3,21 +3,25 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
-Version 1.10
-------------
+Version 2.0
+-----------
 
- - Add ``reverse_hooks`` argument to the Blueprint constructor. This allows the order that the hooks process in to be
-   reversed, i.e to go from child to parent order.
+Version 2.0 is a major overhaul of the library, simplifying it massively and removing a lot of redundant or otherwise overly complex code.
 
- - Rewrote the way routing works significantly.
+  - Requests and responses are now based on Werkzeug data structures.
+    Werkzeug is a much more battle tested library than Kyoukai; it ensures that there are less edge cases during HTTP parsing.
 
- - Route matching is now based on Routers, instead of having it within the Blueprint itself.
+  - Routing is now handled by Werkzeug and the Rule/Map based router rather than overly complex regex routes.
 
- - Blueprints should now inherit from ABCBlueprint.
+  - The application object is now I/O blind - it will take in a Request object and produce a Response object, instead   of writing to the stream directly.
 
- - Routes can be more finely customized based on behaviour.
+  - A new ``gunicorn`` HTTP backend has been added - using the ``gaiohttp`` worker, gunicorn can now be connected to Kyoukai.
 
- - Added implementation of regular expression-based routes using this new routing behaviour.
+  - A new ``uwsgi`` HTTP backend has been added - uWSGI running in asyncio mode can now be connected to Kyoukai.
+
+  - A new HTTP/2 backend has been added which uses the pure Python ``h2`` library as a state machine for parsing HTTP frames.
+
+  - The ``httptools`` backend has been rewritten - it is now more reliable and supports chunked data streams.
 
 Version 1.9.2
 -------------
