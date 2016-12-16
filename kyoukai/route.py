@@ -17,13 +17,16 @@ class Route(object):
     :ivar bp: The Blueprint this route is associated with.
     :ivar rule: The routing rule this route is associated with.
     """
-    def __init__(self, function: callable, reverse_hooks: bool=False):
+    def __init__(self, function: callable, reverse_hooks: bool=False,
+                 should_invoke_hooks: bool=True):
         """
         Creates a new route object.
         :param function: The underlying callable.
             This can be a function, or any other callable.
 
         :param reverse_hooks: If the request hooks should be reversed for this request (i.e child to parent.)
+        :param should_invoke_hooks: If request hooks should be invoked.
+            This is automatically False for error handlers.
         """
         if not callable(function):
             raise TypeError("Route arg must be callable")
@@ -38,6 +41,8 @@ class Route(object):
         self.routing_url = None
 
         self.reverse_hooks = reverse_hooks
+
+        self.should_invoke_hooks = should_invoke_hooks
 
     def get_endpoint_name(self, bp):
         """
@@ -56,14 +61,14 @@ class Route(object):
 
         This is for use in chaining routes.
         :param ctx: The HTTPContext to use for this route.
-        :param args: The arguments to pass into the route. These are automatically converted into the appropriate types.
         :return: The result of the invoked function.
         """
         # Invoke the route function.
         try:
             # Invoke pre-request hooks, setting `ctx` equal to the new value.
-            for hook in pre_hooks:
-                ctx = await hook(ctx)
+            if self.should_invoke_hooks:
+                for hook in pre_hooks:
+                    ctx = await hook(ctx)
 
             result = self._callable(ctx, **kwargs)
             if inspect.isawaitable(result):
@@ -77,8 +82,9 @@ class Route(object):
         else:
             # Invoke post-request hooks. These happen inside this `else` block because post-request hooks are only meant
             # to happen if the route invoked successfully.
-            for hook in post_hooks:
-                result = await hook(result)
+            if self.should_invoke_hooks:
+                for hook in post_hooks:
+                    result = await hook(result)
 
             return result
 

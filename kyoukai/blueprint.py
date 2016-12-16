@@ -141,7 +141,7 @@ class Blueprint(object):
 
         return _inner
 
-    def wrap_route(self, cbl: typing.Callable) -> Route:
+    def wrap_route(self, cbl: typing.Callable, *args, **kwargs) -> Route:
         """
         Wraps a callable in a Route.
 
@@ -149,7 +149,7 @@ class Blueprint(object):
         :param cbl: The callable to wrap.
         :return: A new :class:`kyoukai.route.Route` object.
         """
-        rtt = Route(cbl)
+        rtt = Route(cbl, *args, **kwargs)
         return rtt
 
     def add_errorhandler(self, cbl: typing.Callable, errorcode: int):
@@ -163,7 +163,7 @@ class Blueprint(object):
         :param errorcode: The error code to handle, for example 404.
         """
         # for simplicity sake, wrap it in a route.
-        rtt = self.wrap_route(cbl)
+        rtt = self.wrap_route(cbl, should_invoke_hooks=False)
         self.errorhandlers[errorcode] = rtt
         rtt.bp = self
         return rtt
