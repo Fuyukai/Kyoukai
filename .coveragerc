@@ -2,3 +2,4 @@
 omit =
     # omit testing/
     kyoukai/testing/*
+    kyoukai/backends/*
