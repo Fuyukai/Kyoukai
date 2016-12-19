@@ -129,7 +129,8 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         :param cfg: Additional configuration.
         """
         super().__init__(app, ip, port, **cfg)
-        # Determine our server_name
+
+        self.app.config.update(self.cfg)
 
         for key, value in cfg.items():
             setattr(self, key, value)

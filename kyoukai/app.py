@@ -98,6 +98,9 @@ class Kyoukai(object):
         self.request_class = kwargs.pop("request_class", self.request_class)
         self.response_class = kwargs.pop("response_class", self.response_class)
 
+        # Any extra config.
+        self.config = kwargs
+
     @property
     def root(self) -> Blueprint:
         """
