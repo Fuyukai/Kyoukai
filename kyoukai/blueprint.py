@@ -95,7 +95,7 @@ class Blueprint(object):
         """
         routes = self.routes.copy()
         for child in self._children:
-            routes.extend(child.routes)
+            routes.extend(list(child.tree_routes))
 
         # Make a new Map() out of all of the routes.
         rule_map = Map([route.create_rule() for route in routes])
