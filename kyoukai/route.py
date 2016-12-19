@@ -94,7 +94,7 @@ class Route(object):
             # to happen if the route invoked successfully.
             if self.should_invoke_hooks:
                 for hook in post_hooks:
-                    result = await hook(result)
+                    result = await hook(ctx, result)
 
             return result
 
