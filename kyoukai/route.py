@@ -8,6 +8,8 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
 
+from kyoukai.util import wrap_response
+
 
 class Route(object):
     """
@@ -83,6 +85,8 @@ class Route(object):
             result = self._callable(ctx, **kwargs)
             if inspect.isawaitable(result):
                 result = await result
+
+            result = wrap_response(result, ctx.app.response_class)
         except HTTPException as e:
             # This is a valid response type
             raise e

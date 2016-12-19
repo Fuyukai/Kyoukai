@@ -180,8 +180,8 @@ class Kyoukai(object):
             except Exception as e:
                 self.logger.exception("Error when processing request!")
                 result = InternalServerError(e).get_response(environ)
-            else:
-                result = wrap_response(result, self.response_class)
+            # else:
+                # result = wrap_response(result, self.response_class)
 
             return result
 
@@ -251,7 +251,7 @@ class Kyoukai(object):
             else:
                 ctx.route_completed.dispatch(ctx=ctx, result=result)
             finally:
-                result = wrap_response(result, self.response_class)
+                # result = wrap_response(result, self.response_class)
                 if result:
                     # edge cases
                     self.log_route(ctx.request, result.status_code)
