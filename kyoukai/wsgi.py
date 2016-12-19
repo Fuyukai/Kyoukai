@@ -90,7 +90,6 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
         "SERVER_PROTOCOL": "HTTP/%s" % http_version,
         "REQUEST_METHOD": method,
         # WSGI protocol things
-        "wsgi.version": (1, 0),
         "wsgi.errors": sys.stderr,
         "wsgi.url_scheme": "http",
         "wsgi.input": body,
@@ -100,9 +99,10 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
         "wsgi.multiprocess": False,
         "wsgi.run_once": False
     })
+    environ["wsgi.version"] = (1, 0)
 
     for header, value in headers:
-        environ.add("HTTP_{}".format(header.upper()), value)
+        environ.add("HTTP_{}".format(header.upper().replace("-", "_")), value)
 
     return environ
 

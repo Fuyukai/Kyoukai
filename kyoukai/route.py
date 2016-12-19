@@ -4,7 +4,7 @@ Routes are wrapped function objects that are called upon a HTTP request.
 import inspect
 import typing
 
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, InternalServerError
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
 
@@ -92,7 +92,7 @@ class Route(object):
             raise e
         except Exception as e:
             # Unhandled exception, so it's a 500
-            raise HTTPException(500) from e
+            raise InternalServerError() from e
         else:
             # Invoke post-request hooks. These happen inside this `else` block because post-request hooks are only meant
             # to happen if the route invoked successfully.

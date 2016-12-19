@@ -280,6 +280,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
                                           http_version="1.0", body=None)
         new_environ["SERVER_NAME"] = self.component.get_server_name()
         new_environ["SERVER_PORT"] = str(self.server_port)
+        new_environ["REMOTE_ADDR"] = self.ip
 
         self.raw_write(get_formatted_response(r, new_environ))
         self.parser = httptools.HttpRequestParser(self)
