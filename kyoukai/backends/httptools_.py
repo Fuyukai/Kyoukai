@@ -203,7 +203,6 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             # It's a HTTP upgrade!
             # The only valid values of these that we wish to support (currently) are `h2c` and `Websocket`.
             # Currently, Kyoukai does not support websocket upgrade (soon™).
-            # It doesn't support h2c upgrade either (yet!) - we can silently ignore this one as specified by the RFC.
             # However, we cannot silently ignore websocket upgrades - we discard those for now and disconnect.
             # Anything else, we also discard and disconnect.
 
