@@ -111,6 +111,7 @@ class Blueprint(object):
         :param blueprint: The blueprint to add as a child.
         """
         self._children.append(blueprint)
+        blueprint._parent = self
         return blueprint
 
     def route(self, routing_url: str, methods: typing.Iterable[str] = ("GET",)):
