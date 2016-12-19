@@ -40,18 +40,28 @@ class Route(object):
         self.rule = None  # type: Rule
         self.routing_url = None
 
+        self.methods = []
+
         self.reverse_hooks = reverse_hooks
 
         self.should_invoke_hooks = should_invoke_hooks
 
-    def get_endpoint_name(self, bp):
+    def create_rule(self) -> Rule:
+        """
+        Creates the rule object used by this route.
+
+        :return: A new :class:`Rule` that is to be used for this route.
+        """
+        return Rule(self.bp.prefix + self.routing_url, methods=self.methods, endpoint=self.get_endpoint_name(self.bp))
+
+    def get_endpoint_name(self, bp=None):
         """
         Gets the endpoint name for this route.
         """
         if bp is not None:
             prefix = bp.name
         else:
-            prefix = ""
+            prefix = self.bp.name if self.bp else ""
 
         return prefix + ".{}".format(self._callable.__name__)
 

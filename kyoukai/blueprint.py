@@ -46,16 +46,12 @@ class Blueprint(object):
         # endpoints.
         self.finalized = False
 
-        # The routing table in terms of endpoints.
-        # This is automatically copied into the root blueprint at runtime, so using this on blueprnts other than the
-        # root one won't do anything.
-        self.routing_table = {}
+        # The list of routes.
+        # This is used in finalization.
+        self.routes = []
 
         # This is stored on the root blueprint when the map is ready to be used.
         self._route_map = None  # type: Map
-
-        # This is useless after finalize() is called.
-        self._routes_to_add = []
 
         # The error handler dictionary.
         self.errorhandlers = {}
@@ -80,20 +76,29 @@ class Blueprint(object):
 
         return self._prefix
 
+    @property
+    def tree_routes(self):
+        """
+        :return: A generator that yields all routes from the tree, from parent to children.
+        """
+        for route in self.routes:
+            yield route
+
+        for child in self._children:
+            yield from child.tree_routes
+
     def finalize(self):
         """
         Called on the root Blueprint when all Blueprints have been registered and the app is starting.
 
         This will automatically build a Map of Rule objects for each Blueprint.
         """
+        routes = self.routes.copy()
         for child in self._children:
-            # Update our own routing table.
-            self.routing_table.update(**child.routing_table)
-            # Update our _routes_to_add.
-            self._routes_to_add += child._routes_to_add
+            routes.extend(child.routes)
 
-        # Make a new Map().
-        rule_map = Map(self._routes_to_add)
+        # Make a new Map() out of all of the routes.
+        rule_map = Map([route.create_rule() for route in routes])
         self._route_map = rule_map
 
         self.finalized = True
@@ -135,6 +140,7 @@ class Blueprint(object):
 
         :param code: The error handler code to use.
         """
+
         def _inner(cbl: typing.Callable):
             self.add_errorhandler(cbl, code)
             return cbl
@@ -246,17 +252,11 @@ class Blueprint(object):
         :return: The unmodified route object.
         """
         # Create an endpoint name for the route.
-        endpoint = route.get_endpoint_name(self)
-        routing_url = self.prefix + routing_url
         route.routing_url = routing_url
-        # Create the Rule object for the map.
-        rule = Rule(routing_url, methods=methods, endpoint=endpoint)
-        # Add it to the routing table.
-        self.routing_table[endpoint] = route
+        route.methods = methods
         # Add it to the list of routes to add later.
-        self._routes_to_add.append(rule)
-        # Add the rule to the route.
-        route.rule = rule
+        self.routes.append(route)
+        # Add the self to the route.
         route.bp = self
 
         return route
@@ -265,11 +265,15 @@ class Blueprint(object):
         """
         Gets the route associated with an endpoint.
         """
-        return self.routing_table[endpoint]
+        for route in self.tree_routes:
+            if route.get_endpoint_name() == endpoint:
+                return route
+
+        return None
 
     def url_for(self, environment: dict, endpoint: str,
                 *,
-                method: str=None,
+                method: str = None,
                 **kwargs) -> str:
         """
         Gets the URL for a specified endpoint using the arguments of the route.
@@ -308,6 +312,7 @@ class Blueprint(object):
         # Match the route, without catching any exceptions.
         # These exceptions are propagated into the app and handled there instead.
         endpoint, params = adapter.match()
+        print(endpoint)
 
         route = self.get_route(endpoint)
 
