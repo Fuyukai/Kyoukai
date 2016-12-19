@@ -12,7 +12,7 @@ def extract_version(module = 'kyoukai'):
     fname = os.path.join(rootpath, module, 'app.py')
     with open(fname) as f:
         for line in f:
-            if line.startswith('VERSION'):
+            if line.startswith('__version__'):
                 _, version = line.split('=')
                 version = version.strip()[1:-1]  # Remove quotation characters.
                 break
