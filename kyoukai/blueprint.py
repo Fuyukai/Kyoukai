@@ -215,7 +215,7 @@ class Blueprint(object):
         if type_ not in self._request_hooks:
             self._request_hooks[type_] = []
 
-        self._request_hooks.append(hook)
+        self._request_hooks[type_].append(hook)
         return hook
 
     def after_request(self, func: typing.Callable):
