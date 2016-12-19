@@ -31,7 +31,7 @@ def test_route_adding():
         rtt = bp.add_route(rtt, "/")
         bp.finalize()
         assert bp.finalized
-        assert len(bp.routing_table) == 1
+        assert len(bp.routes) == 1
 
         # test matching of the route
         environ = to_wsgi_environment({}, "GET", "/", "1.1")
@@ -39,7 +39,7 @@ def test_route_adding():
         environ["SERVER_PORT"] = "4444"
         assert bp.match(environ)[0] == rtt
 
-    assert len(app.root.routing_table) == 0
+    assert len(app.root.routes) == 0
 
 
 @pytest.mark.asyncio
