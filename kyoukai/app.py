@@ -180,6 +180,8 @@ class Kyoukai(object):
             except Exception as e:
                 self.logger.exception("Error when processing request!")
                 result = InternalServerError(e).get_response(environ)
+            else:
+                result = wrap_response(result, self.response_class)
 
             return result
 
