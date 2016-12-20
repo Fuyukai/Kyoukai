@@ -313,7 +313,6 @@ class Blueprint(object):
         # Match the route, without catching any exceptions.
         # These exceptions are propagated into the app and handled there instead.
         endpoint, params = adapter.match()
-        print(endpoint)
 
         route = self.get_route(endpoint)
 
