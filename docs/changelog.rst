@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.0.1
+-------------
+
+  - Error handlers can now handle errors that happen in other error handlers.
+
 Version 2.0
 -----------
 
@@ -13,7 +18,7 @@ Version 2.0 is a major overhaul of the library, simplifying it massively and rem
 
   - Routing is now handled by Werkzeug and the Rule/Map based router rather than overly complex regex routes.
 
-  - The application object is now I/O blind - it will take in a Request object and produce a Response object, instead   of writing to the stream directly.
+  - The application object is now I/O blind - it will take in a Request object and produce a Response object, instead of writing to the stream directly.
 
   - A new ``gunicorn`` HTTP backend has been added - using the ``gaiohttp`` worker, gunicorn can now be connected to Kyoukai.
 
