@@ -106,7 +106,7 @@ async def test_get_formatted_response():
 
         # Pre-built response
         assert response == b'HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: ' \
-                           b'13\r\nServer: Kyoukai/2.0.0\r\n\r\nHello, world!'
+                           b'13\r\nServer: Kyoukai/2.0.1\r\n\r\nHello, world!'
 
 
 
