@@ -160,6 +160,9 @@ class Kyoukai(object):
         # Try and load the error handler recursively from the ctx.route.blueprint.
         bp = ctx.bp or self.root
 
+        if environ is None:
+            environ = ctx.environ
+
         error_handler = bp.get_errorhandler(exception)
         if not error_handler:
             # Try the root Blueprint. This may happen if the blueprint requested isn't registered properly in the
@@ -178,8 +181,14 @@ class Kyoukai(object):
                 # why tho?
                 result = e.get_response(environ)
             except Exception as e:
-                self.logger.exception("Error when processing request!")
-                result = InternalServerError(e).get_response(environ)
+                if exception.code != 500:
+                    # Re-try.
+                    new_e = InternalServerError(e)
+                    new_e.__cause__ = e
+                    result = await self.handle_httpexception(ctx, new_e, environ=environ)
+                else:
+                    self.logger.exception("Error when processing request!")
+                    result = InternalServerError(e).get_response(environ)
             # else:
                 # result = wrap_response(result, self.response_class)
 
@@ -245,9 +254,9 @@ class Kyoukai(object):
             except Exception as e:
                 self.logger.error("Unhandled exception in route function")
                 self.logger.exception(e)
-                e = InternalServerError()
-                e.exc = e
-                result = await self.handle_httpexception(ctx, e, request.environ)
+                new_e = InternalServerError()
+                new_e.__cause__ = e
+                result = await self.handle_httpexception(ctx, new_e, request.environ)
             else:
                 ctx.route_completed.dispatch(ctx=ctx, result=result)
             finally:
