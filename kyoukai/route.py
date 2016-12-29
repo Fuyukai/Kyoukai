@@ -130,7 +130,7 @@ class Route(object):
 
             # Also, check that the type of the arg and the annotation matches.
             value = params[arg.name]
-            if arg.annotation is None:
+            if arg.annotation is None or arg.annotation is inspect.Parameter.empty:
                 # No annotation, don't type check
                 continue
 
