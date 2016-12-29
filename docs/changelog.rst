@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.0.2
+-------------
+
+  - Automatic argument conversion now ignores functions with _empty params.
+
 Version 2.0.1
 -------------
 
