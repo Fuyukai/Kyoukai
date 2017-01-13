@@ -21,7 +21,7 @@ class SaneWSGIWrapper(object):
     """
     def __init__(self):
         self.headers = []
-        self.real_body = ""
+        self.real_body = b""
 
         self.status = None
 
@@ -37,17 +37,20 @@ class SaneWSGIWrapper(object):
         Unfucks the WSGI iterable into a single body.
         """
         for part in i:
-            self.real_body += part.decode()
+            self.real_body += part
 
     def format(self):
-        base = "HTTP/1.1 {status}\r\n{headers}\r\n{body}"
+        base = "HTTP/1.1 {status}\r\n{headers}\r\n"
 
         headers_fmt = ""
         # Calculate headers
         for name, val in self.headers:
             headers_fmt += "{}: {}\r\n".format(name, val)
 
-        return base.format(status=self.status, headers=headers_fmt, body=self.real_body).encode()
+        x = base.format(status=self.status, headers=headers_fmt).encode()
+        x += self.real_body
+
+        return x
 
     def __str__(self):
         """
