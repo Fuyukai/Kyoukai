@@ -5,6 +5,7 @@
 
 import asyncio
 import logging
+import traceback
 
 from asphalt.core import Context, run_application
 from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError
@@ -98,6 +99,9 @@ class Kyoukai(object):
         self.request_class = kwargs.pop("request_class", self.request_class)
         self.response_class = kwargs.pop("response_class", self.response_class)
 
+        # Is this app set to debug mode?
+        self.debug = False
+
         # Any extra config.
         self.config = kwargs
 
@@ -123,6 +127,8 @@ class Kyoukai(object):
 
         This will calculate the current werkzeug Map which is required for routing to work.
         """
+        self.debug = self.config.get("debug", False)
+
         self.root.finalize()
 
     # Magic methods
@@ -226,10 +232,13 @@ class Kyoukai(object):
             except NotFound as e:
                 # No route matched.
                 self.log_route(ctx.request, 404)
+                self.logger.debug("Could not resolve route for {request.path}.".format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except MethodNotAllowed as e:
                 # 405 method not allowed
                 self.log_route(ctx.request, 405)
+                self.logger.debug("Could not resolve valid method for "
+                                  "{request.path} ({request.method})".format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except RequestRedirect as e:
                 # slashes etc
@@ -250,6 +259,8 @@ class Kyoukai(object):
                 ctx.route_invoked.dispatch(ctx=ctx)
                 result = await matched.invoke(ctx, params)
             except HTTPException as e:
+                self.logger.debug("Hit HTTPException inside function, delegating:")
+                self.logger.debug("".join(traceback.format_exc()))
                 result = await self.handle_httpexception(ctx, e, request.environ)
             except Exception as e:
                 self.logger.error("Unhandled exception in route function")
