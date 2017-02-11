@@ -263,8 +263,7 @@ class Kyoukai(object):
                 self.logger.debug("".join(traceback.format_exc()))
                 result = await self.handle_httpexception(ctx, e, request.environ)
             except Exception as e:
-                self.logger.error("Unhandled exception in route function")
-                self.logger.exception(e)
+                self.logger.exception("Unhandled exception in route function")
                 new_e = InternalServerError()
                 new_e.__cause__ = e
                 result = await self.handle_httpexception(ctx, new_e, request.environ)

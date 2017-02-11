@@ -90,9 +90,6 @@ class Route(object):
         except HTTPException as e:
             # This is a valid response type
             raise e
-        except Exception as e:
-            # Unhandled exception, so it's a 500
-            raise InternalServerError() from e
         else:
             # Invoke post-request hooks. These happen inside this `else` block because post-request hooks are only meant
             # to happen if the route invoked successfully.
