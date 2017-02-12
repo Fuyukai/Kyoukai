@@ -86,6 +86,9 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
     # urlsplit the path
     sp_path = urlsplit(path)
 
+    if body is None:
+        body = BytesIO()
+
     environ = MultiDict({
         # Basic items
         "PATH_INFO": sp_path.path,
