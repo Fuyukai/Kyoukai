@@ -13,7 +13,9 @@ def _parse_json(parser: FormDataParser, stream, mimetype, content_length, option
         raise RequestEntityTooLarge()
 
     # json loads the stream and return it
-    return stream, json.load(stream), {}
+    # todo: handle encoding
+    data = stream.read().decode()
+    return stream, json.loads(data), {}
 
 
 FormDataParser.parse_functions["application/json"] = _parse_json
