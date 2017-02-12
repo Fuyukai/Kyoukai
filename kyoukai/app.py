@@ -259,8 +259,8 @@ class Kyoukai(object):
                 ctx.route_invoked.dispatch(ctx=ctx)
                 result = await matched.invoke(ctx, params)
             except HTTPException as e:
-                self.logger.debug("Hit HTTPException inside function, delegating:")
-                self.logger.debug("".join(traceback.format_exc()))
+                self.logger.warning("Hit HTTPException inside function, delegating:")
+                self.logger.warning("".join(traceback.format_exc()))
                 result = await self.handle_httpexception(ctx, e, request.environ)
             except Exception as e:
                 self.logger.exception("Unhandled exception in route function")
