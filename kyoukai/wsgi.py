@@ -108,7 +108,11 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
     environ["wsgi.version"] = (1, 0)
 
     for header, value in headers:
-        environ.add("HTTP_{}".format(header.upper().replace("-", "_")), value)
+        name = header.upper().replace("-", "_")
+        if header not in ("Content-Type", "Content-Length"):
+            name = "HTTP_{}".format(name)
+
+        environ.add(name, value)
 
     return environ
 
