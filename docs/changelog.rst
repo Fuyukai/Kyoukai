@@ -3,6 +3,13 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.0.3
+-------------
+
+  - Fix Content-Type and Content-Length header parsing.
+  - Add automatic JSON form parsing.
+  - Log when a HTTPException is raised inside a route function.
+
 Version 2.0.2
 -------------
 
