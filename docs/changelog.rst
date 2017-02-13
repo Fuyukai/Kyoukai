@@ -3,8 +3,8 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
-Version 2.0.4
--------------
+Version 2.0.4.1
+---------------
 
   - Automatically stringify the response body.
 
