@@ -23,17 +23,14 @@ def wrap_response(args, response_class: Response=Response) -> Response:
         # We enforce ``tuple`` here instead of any iterable.
         if len(args) == 1:
             # Only body, use 200 for the response code.
-            body = str(args[0])
             return response_class(args[0], status=200)
 
         if len(args) == 2:
             # Body and status code.
-            body = str(args[0])
             return response_class(args[0], status=args[1])
 
         if len(args) == 3:
             # Body, status code, and headers.
-            body = str(args[0])
             return response_class(args[0], status=args[1], headers=args[2])
 
         raise TypeError("Cannot return more than 3 arguments from a view")
@@ -43,5 +40,4 @@ def wrap_response(args, response_class: Response=Response) -> Response:
         return args
 
     # Otherwise, wrap it in a response.
-    args = str(args)
     return response_class(args)

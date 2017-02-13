@@ -278,6 +278,9 @@ class Kyoukai(object):
             # Update the Server header.
             result.headers["Server"] = "Kyoukai/{}".format(__version__)
 
+            if not isinstance(result.response, str):
+                result.response = str(result.response)
+
             # Return the new Response.
             return result
 
