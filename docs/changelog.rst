@@ -3,11 +3,18 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.0.4
+-------------
+
+  - Automatically stringify the response body.
+
 Version 2.0.3
 -------------
 
   - Fix Content-Type and Content-Length header parsing.
+
   - Add automatic JSON form parsing.
+
   - Log when a HTTPException is raised inside a route function.
 
 Version 2.0.2
@@ -111,7 +118,7 @@ Version 1.8.0
 -------------
 
  - Add the ability to override the Request and Response classes used in views with ``app.request_cls`` and
-   ``app._response_cls`` respectively.
+   ``app.response_cls`` respectively.
 
  - Views now have the ability to change which Route class they use in the decorator.
 
