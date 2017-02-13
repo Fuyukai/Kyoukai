@@ -277,7 +277,8 @@ class Kyoukai(object):
             # Update the Server header.
             result.headers["Server"] = "Kyoukai/{}".format(__version__)
 
-            if not isinstance(result.response, (bytes, str)):
+            # list means wsgi response probably
+            if not isinstance(result.response, (bytes, str, list)):
                 result.set_data(str(result.response))
 
             # Return the new Response.
