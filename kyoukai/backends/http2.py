@@ -88,7 +88,9 @@ def create_wsgi_environment(r: 'H2State') -> MultiDict:
         "wsgi.multiprocess": False,
         "wsgi.run_once": False,
         "SERVER_NAME": server_name,
-        "SERVER_PORT": port
+        "SERVER_PORT": port,
+        "REMOTE_ADDR": r._protocol.ip,
+        "REMOTE_PORT": r._protocol.client_port
     })
 
     # Add the headers.

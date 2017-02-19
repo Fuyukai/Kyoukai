@@ -3,6 +3,14 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.0.5
+-------------
+
+  - Add ``REMOTE_ADDR`` and ``REMOTE_PORT`` to WSGI environ in httptools backend.
+
+  - Add ``REMOTE_ADDR`` and ``REMOTE_PORT`` to WSGI environ in h2 backend.
+
+
 Version 2.0.4.1
 ---------------
 

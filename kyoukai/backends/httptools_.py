@@ -329,6 +329,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         new_environ["kyoukai.protocol"] = self
         new_environ["SERVER_NAME"] = self.component.get_server_name()
         new_environ["SERVER_PORT"] = str(self.server_port)
+        new_environ["REMOTE_ADDR"] = self.ip
+        new_environ["REMOTE_PORT"] = self.client_port
 
         # Construct a Request object.
         new_r = self.app.request_class(new_environ, False)
