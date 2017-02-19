@@ -281,6 +281,8 @@ class Kyoukai(object):
             if not isinstance(result.response, (bytes, str, list)):
                 result.set_data(str(result.response))
 
+            result.headers["X-Powered-By"] = "Kyoukai/{}".format(__version__)
+
             # Return the new Response.
             return result
 
