@@ -5,10 +5,9 @@ Kyoukai is an async web framework for Python 3.5 and above.
 
 .. autosummary::
     :toctree: kyoukai
-    
-    backends
-    
+        
     app
+    backends
     asphalt
     blueprint
     route

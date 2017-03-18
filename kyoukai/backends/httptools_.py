@@ -44,7 +44,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     The base protocol for Kyoukai using httptools for a HTTP/1.0 or HTTP/1.1 interface.
     """
 
-    def __init__(self, component: 'KyoukaiComponent', parent_context: Context,
+    def __init__(self, component, parent_context: Context,
                  server_ip: str, server_port: int):
         """
         :param component: The :class:`kyoukai.asphalt.KyoukaiComponent` associated with this request.

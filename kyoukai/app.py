@@ -1,7 +1,6 @@
-# Somewhere along the line, I had decided that I can't interact with others. That I have no choice but to be alone,
-# but I've found a new reason to stay. It's because everyone is alone. Everyone is all alone.
-
-# ~~~
+"""
+The core application.
+"""
 
 import asyncio
 import logging

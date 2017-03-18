@@ -28,7 +28,7 @@ from h2.exceptions import ProtocolError
 from werkzeug.wrappers import Request, Response
 from werkzeug.datastructures import MultiDict
 
-from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
+from kyoukai.asphalt import KyoukaiBaseComponent
 
 from h2.connection import H2Connection
 from h2.events import (
@@ -263,7 +263,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
     The base protocol for Kyoukai, using H2.
     """
 
-    def __init__(self, component: 'H2Component', parent_context: Context):
+    def __init__(self, component, parent_context: Context):
         # The current component used by this connection.
         self.component = component
 
