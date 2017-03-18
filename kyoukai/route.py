@@ -19,8 +19,9 @@ class Route(object):
     :ivar bp: The Blueprint this route is associated with.
     :ivar rule: The routing rule this route is associated with.
     """
-    def __init__(self, function: callable, reverse_hooks: bool=False,
-                 should_invoke_hooks: bool=True):
+
+    def __init__(self, function: callable, reverse_hooks: bool = False,
+                 should_invoke_hooks: bool = True):
         """
         Creates a new route object.
         :param function: The underlying callable.
@@ -35,10 +36,10 @@ class Route(object):
 
         self._callable = function
 
-        # The Blueprint this route is associated with.
+        #: The :class:`~.Blueprint` this route is associated with.
         self.bp = None  # type: Blueprint
 
-        # Set on us by the Blueprint.
+        # The :class:`Rule` associated with this route.
         self.rule = None  # type: Rule
         self.routing_url = None
 
@@ -47,6 +48,9 @@ class Route(object):
         self.reverse_hooks = reverse_hooks
 
         self.should_invoke_hooks = should_invoke_hooks
+
+        #: Our own specific hooks.
+        self.hooks = {}
 
     def create_rule(self) -> Rule:
         """
@@ -99,7 +103,7 @@ class Route(object):
 
             return result
 
-    def check_route_args(self, params: dict=None):
+    def check_route_args(self, params: dict = None):
         """
         Checks the arguments for a route.
 
@@ -136,7 +140,40 @@ class Route(object):
                     arg.name, arg.annotation, type(value))
                 )
 
-    async def invoke(self, ctx, params: typing.Container=None) -> Response:
+    def add_hook(self, type_: str, hook: typing.Callable) -> typing.Callable:
+        """
+        Adds a hook to the current Route.
+
+        :param type_: The type of hook to add (currently "pre" or "post").
+        :param hook: The callable function to add as a hook.
+        """
+        if type_ not in self.hooks:
+            self.hooks[type_] = []
+
+        self.hooks[type_].append(hook)
+
+    def get_hooks(self, type_: str):
+        """
+        Gets the hooks for the current Route for the type.
+        
+        :param type_: The type to get. 
+        :return: A list of callables.
+        """
+        return self.hooks.get(type_, [])
+
+    def before_request(self, func: typing.Callable):
+        """
+        Convenience decorator to add a post-request hook.
+        """
+        return self.add_hook(type_="pre", hook=func)
+
+    def after_request(self, func: typing.Callable):
+        """
+        Convenience decorator to add a pre-request hook.
+        """
+        return self.add_hook(type_="post", hook=func)
+
+    async def invoke(self, ctx, params: typing.Container = None) -> Response:
         """
         Invokes a route.
 
@@ -157,11 +194,16 @@ class Route(object):
         self.check_route_args(params)
 
         # Try and get the hooks.
-        pre_hooks = self.bp.get_hooks("pre")
+        pre_hooks = self.bp.get_hooks("pre").copy()
         if self.reverse_hooks:
             pre_hooks = reversed(pre_hooks)
 
-        post_hooks = self.bp.get_hooks("post")
+        post_hooks = self.bp.get_hooks("post").copy()
         if self.reverse_hooks:
             post_hooks = reversed(post_hooks)
+
+        # merge pre and post hooks with the route-specific ones
+        pre_hooks += self.get_hooks("pre").copy()
+        post_hooks += self.get_hooks("post").copy()
+
         return await self.invoke_function(ctx, pre_hooks, post_hooks, **params)
