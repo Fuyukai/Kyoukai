@@ -28,11 +28,16 @@ integer error code that you wish to handle. So for example, to create a 500 erro
 .. code:: python
 
     @app.root.errorhandler(500)
-    async def handle_500(ctx: HTTPRequestContext, exception_to_handle: HTTPException):
+    async def handle_500(ctx: HTTPRequestContext, exc: HTTPException):
         return repr(exception_to_handle)
 
 Of course, you can have anything in the body of the error handler. Whatever is returned from this error handler is
 sent back to the client.
+
+.. warning::
+
+    Due to how Kyoukai handles parameter checking, you **must** have your exception parameter named as ``exc``.
+    Failure to do this will mean the exception is not passed properly.
 
 HTTP Exceptions
 ---------------
