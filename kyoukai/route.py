@@ -89,7 +89,9 @@ class Route(object):
             # Invoke pre-request hooks, setting `ctx` equal to the new value.
             if self.should_invoke_hooks:
                 for hook in pre_hooks:
-                    ctx = await hook(ctx)
+                    _ = await hook(ctx)
+                    if _ is not None:
+                        ctx = _
 
             result = self._callable(ctx, **kwargs)
             if inspect.isawaitable(result):
@@ -104,7 +106,9 @@ class Route(object):
             # to happen if the route invoked successfully.
             if self.should_invoke_hooks:
                 for hook in post_hooks:
-                    result = await hook(ctx, result)
+                    _ = await hook(ctx, result)
+                    if _ is not None:
+                        result = _
 
             return result
 
