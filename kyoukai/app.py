@@ -140,7 +140,8 @@ class Kyoukai(object):
 
         For example, this allows doing ``@app.route`` instead of ``@app.root.route``.
         """
-        if item in ("route", "errorhandler", "add_errorhandler", "add_route", "wrap_route", "url_for"):
+        if item in ("route", "errorhandler", "add_errorhandler", "add_route", "wrap_route", "url_for",
+                    "before_request", "add_hook", "after_request"):
             return getattr(self.root, item)
 
         raise AttributeError("'{.__class__.__name__}' object has no attribute {}".format(self, item))

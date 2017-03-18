@@ -46,6 +46,7 @@ Contents:
    errorhandling.rst
    blueprints.rst
    req_response.rst
+   hooks.rst
    deploying.rst
 
    changelog.rst
