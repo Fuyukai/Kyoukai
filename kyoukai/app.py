@@ -29,7 +29,7 @@ class Kyoukai(object):
 
     You normally create an application instance inside your component file, like so:
 
-    .. code:: python
+    .. code-block:: python
 
         from kyoukai.app import Kyoukai
 
@@ -49,24 +49,28 @@ class Kyoukai(object):
 
     :param application_name: The name of the application that is being created. This is currently unused.
 
-    :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment created for
-    ``url_for``, if applicable.
-    :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI environment created for
-    ``url_for``, if applicable.
-    :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is specified, it will be
+    :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment created for \
+        ``url_for``, if applicable.
+        
+    :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI environment created for \
+        ``url_for``, if applicable.
+        
+    :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is specified, it will be \
         automatically fetched using :meth:`asyncio.get_event_loop`.
+        
     :param request_class: Keyword-only. The custom request class to instantiate requests with.
+    
     :param response_class: Keyword-only. The custom response class to instantiate responses with.
     """
 
-    # The class of request to spawn every request.
-    # This should be a subclass of :class:`werkzeug.wrappers.Request`.
-    # You can override this by passing ``request_class`` as a keyword argument to the app.
+    #: The class of request to spawn every request.
+    #: This should be a subclass of :class:`werkzeug.wrappers.Request`.
+    #: You can override this by passing ``request_class`` as a keyword argument to the app.
     request_class = Request
 
-    # The class of response to wrap automatically.
-    # This should be a subclass of :class:`werkzeug.wrappers.Response`.
-    # You can override this by passing ``response_class`` as a keyword argument to the app.
+    #: The class of response to wrap automatically.
+    #: This should be a subclass of :class:`werkzeug.wrappers.Response`.
+    #: You can override this by passing ``response_class`` as a keyword argument to the app.
     response_class = Response
 
     def __init__(self,
@@ -76,7 +80,6 @@ class Kyoukai(object):
                  **kwargs):
         """
         Create the new app.
-
         """
         self.name = application_name
         self.server_name = server_name
@@ -116,15 +119,16 @@ class Kyoukai(object):
         Registers a child blueprint to this app's root Blueprint.
 
         This will set up the Blueprint tree, as well as setting up the routing table when finalized.
-        :param child: The child Blueprint to add. This must be an instance of :class:`kyoukai.blueprint.Blueprint`.
+        
+        :param child: The child Blueprint to add. This must be an instance of :class:`~.Blueprint`.
         """
-        self.root.add_child(child)
+        return self.root.add_child(child)
 
     def finalize(self):
         """
         Finalizes the app and blueprints.
 
-        This will calculate the current werkzeug Map which is required for routing to work.
+        This will calculate the current :class:`werkzeug.routing.Map` which is required for routing to work.
         """
         self.debug = self.config.get("debug", False)
 
@@ -160,6 +164,7 @@ class Kyoukai(object):
         :param ctx: The context of the request.
         :param exception: The HTTPException
         :param environ: The fake WSGI environment.
+        
         :return: A :class:`werkzeug.wrappers.Response` that handles this response.
         """
         # Try and load the error handler recursively from the ctx.route.blueprint.
@@ -208,11 +213,10 @@ class Kyoukai(object):
 
         :param request:
             The :class:`werkzeug.wrappers.Request` object to process.
-
-            A new HTTPContext will be provided to wrap this request inside of to client code.
+            A new :class:`~.HTTPRequestContext` will be provided to wrap this request inside of to client code.
 
         :param parent_context:
-            The :class:`asphalt.core.Context` that is the parent context for this particular app. It will be used as
+            The :class:`asphalt.core.Context` that is the parent context for this particular app. It will be used as \
             the parent for the HTTPRequestContext.
 
         :return: A :class:`werkzeug.wrappers.Response` object that can be written to the client as a response.
@@ -296,8 +300,9 @@ class Kyoukai(object):
 
         :param ip: The IP of the built-in server.
         :param port: The port of the built-in server.
-        :param component: The component to start the app with. This should be an instance of
+        :param component: The component to start the app with. This should be an instance of \
             :class:`kyoukai.asphalt.KyoukaiComponent`.
+                    
         :param base_context: The base context that the HTTPRequestContext should be started with.
         """
         if not base_context:

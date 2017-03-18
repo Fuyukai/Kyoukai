@@ -43,7 +43,7 @@ to routing on an underlying Blueprint object used as the "root" blueprint.
     async def some_route(ctx: HTTPRequestContext):
         return "Some route"
 
-.. automethod:: kyoukai.blueprints.Blueprint.route
+.. automethod:: kyoukai.blueprint.Blueprint.route
     :noindex:
 
 Error handlers
@@ -58,7 +58,7 @@ between these however is that error handlers are local to the Blueprint and its 
     async def e500(ctx: HTTPRequestContext, err: Exception):
         return "Handled an error"
 
-.. automethod:: kyoukai.blueprints.Blueprint.errorhandler
+.. automethod:: kyoukai.blueprint.Blueprint.errorhandler
     :noindex:
 
 
@@ -83,7 +83,7 @@ you wish to inherit from.
 .. automethod:: kyoukai.app.Kyoukai.register_blueprint
     :noindex:
 
-.. automethod:: kyoukai.blueprints.Blueprint.add_child
+.. automethod:: kyoukai.blueprint.Blueprint.add_child
     :noindex:
 
 

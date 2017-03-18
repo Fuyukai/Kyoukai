@@ -14,7 +14,7 @@ from kyoukai.wsgi import to_wsgi_environment
 
 class _TestingBpCtxManager(object):
     """
-    A context manager that is returned from :meth:`TestKyoukai.testing_bp`. When entered, this will produce a new
+    A context manager that is returned from :meth:`~.TestKyoukai.testing_bp`. When entered, this will produce a new
     Blueprint object, that is then set onto the test application as the root blueprint.
 
     After exiting, it will automatically restore the old root Blueprint onto the application, allowing complete
@@ -82,6 +82,7 @@ class TestKyoukai(Kyoukai):
 
             Of course, if the old app has any side effects upon process_request, these side effects will happen when
             the testing application runs as well, as the old app is completely copied over.
+
         :param base_context: The base context to use for this.
         """
         new_object = cls("test_app", base_context=base_context)

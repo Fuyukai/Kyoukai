@@ -121,7 +121,7 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         Creates a new component.
 
         :param app: The application object to use.
-            This can either be the real application object, or a string that resolves to a reference for the real
+            This can either be the real application object, or a string that resolves to a reference for the real \
             application object.
 
         :param ip: If using the built-in HTTP server, the IP to bind to.

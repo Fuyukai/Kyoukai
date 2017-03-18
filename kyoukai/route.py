@@ -25,11 +25,14 @@ class Route(object):
         """
         Creates a new route object.
         :param function: The underlying callable.
+        
             This can be a function, or any other callable.
 
         :param reverse_hooks: If the request hooks should be reversed for this request (i.e child to parent.)
         :param should_invoke_hooks: If request hooks should be invoked.
+        
             This is automatically False for error handlers.
+        
         """
         if not callable(function):
             raise TypeError("Route arg must be callable")
@@ -56,7 +59,7 @@ class Route(object):
         """
         Creates the rule object used by this route.
 
-        :return: A new :class:`Rule` that is to be used for this route.
+        :return: A new :class:`werkzeug.routing.Rule` that is to be used for this route.
         """
         return Rule(self.bp.prefix + self.routing_url, methods=self.methods, endpoint=self.get_endpoint_name(self.bp))
 
@@ -76,7 +79,9 @@ class Route(object):
         Invokes the underlying callable.
 
         This is for use in chaining routes.
-        :param ctx: The HTTPContext to use for this route.
+        :param ctx: The :class:`~.HTTPRequestContext` to use for this route.
+        :param pre_hooks: A list of hooks to call before the route is invoked.
+        :param post_hooks: A list of hooks to call after the route is invoked.
         :return: The result of the invoked function.
         """
         # Invoke the route function.
@@ -180,7 +185,7 @@ class Route(object):
         Invokes a route.
 
         This will run the underlying function.
-        :param ctx: The HTTPContext which is used in this request.
+        :param ctx: The :class:`~.HTTPRequestContext` which is used in this request.
         :param params: Any params that are used in this request.
         :return: The result of the route's function.
         """

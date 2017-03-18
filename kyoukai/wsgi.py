@@ -1,7 +1,4 @@
 """
-kyoukai.wsgi
-~~~~~~~~~~~~
-
 This file name is misleading. Kyoukai does NOT implement WSGI at all, except in the uWSGI wrapper. Instead, this file
 adds some utilities which convert from Werkzeug's WSGI magic to our normalized area.
 """
@@ -66,7 +63,7 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
 
     This will return a dictionary that is directly compatible with Werkzeug's Request wrapper.
 
-    .. code:: python
+    .. code-block:: python
 
         d = to_wsgi_environment({"Host": "127.0.0.1"}, "GET", "/", None)
         request = werkzeug.wrappers.Request(d)
@@ -78,7 +75,7 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
 
     :param http_version: The HTTP version to use.
     :param body: A :class:`BytesIO` representing the body wrapper for this dict, or None if there is no request body.
-    :return:
+    :return: A new dict containing the fake WSGI environment.
     """
     if isinstance(headers, dict):
         headers = headers.items()

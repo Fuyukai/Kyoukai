@@ -8,6 +8,7 @@ import typing
 
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Map, Rule
+from werkzeug.wrappers import Response
 
 from kyoukai.route import Route
 
@@ -148,18 +149,18 @@ class Blueprint(object):
 
         return _inner
 
-    def wrap_route(self, cbl: typing.Callable, *args, **kwargs) -> Route:
+    def wrap_route(self, cbl, *args, **kwargs) -> Route:
         """
         Wraps a callable in a Route.
 
         This is required for routes to be added.
         :param cbl: The callable to wrap.
-        :return: A new :class:`kyoukai.route.Route` object.
+        :return: A new :class:`~.Route` object.
         """
         rtt = Route(cbl, *args, **kwargs)
         return rtt
 
-    def add_errorhandler(self, cbl: typing.Callable, errorcode: int):
+    def add_errorhandler(self, cbl, errorcode: int):
         """
         Adds an error handler to the table of error handlers.
 
@@ -177,12 +178,13 @@ class Blueprint(object):
 
     def get_errorhandler(self, exc: typing.Union[HTTPException, int]) -> typing.Union[None, Route]:
         """
-        Recursively acquires the error handler for
+        Recursively acquires the error handler for the specified error.
+        
         :param exc: The exception to get the error handler for.
             This can either be a HTTPException object, or an integer.
 
-        :return: The :class:`kyoukai.route.Route` object that corresponds to the error handler, or None if no error
-        handler could be found.
+        :return: The :class:`kyoukai.route.Route` object that corresponds to the error handler, or None if no error \
+            handler could be found.
         """
         if isinstance(exc, HTTPException):
             exc = exc.code
@@ -195,7 +197,7 @@ class Blueprint(object):
             except (KeyError, AttributeError):
                 return None
 
-    def get_hooks(self, type_: str) -> typing.Iterable:
+    def get_hooks(self, type_: str):
         """
         Gets a list of hooks that match the current type.
 
@@ -212,7 +214,7 @@ class Blueprint(object):
 
         return hooks
 
-    def add_hook(self, type_: str, hook: typing.Callable) -> typing.Callable:
+    def add_hook(self, type_: str, hook):
         """
         Adds a hook to the current Blueprint.
 
@@ -225,13 +227,13 @@ class Blueprint(object):
         self._request_hooks[type_].append(hook)
         return hook
 
-    def after_request(self, func: typing.Callable):
+    def after_request(self, func):
         """
         Convenience decorator to add a post-request hook.
         """
         return self.add_hook(type_="post", hook=func)
 
-    def before_request(self, func: typing.Callable):
+    def before_request(self, func):
         """
         Convenience decorator to add a pre-request hook.
         """
@@ -242,15 +244,17 @@ class Blueprint(object):
         Adds a route to the routing table and map.
 
         :param route: The route object to add.
-            This can be gotten from :class:`kyoukai.blueprints.Blueprints.wrap_route`, or by directly creating a
+        
+            This can be gotten from :class:`kyoukai.blueprints.Blueprints.wrap_route`, or by directly creating a \
             Route object.
 
         :param routing_url: The Werkzeug-compatible routing URL to add this route under.
+                    
             For more information, see http://werkzeug.pocoo.org/docs/0.11/routing/.
 
         :param methods: An iterable of valid method this route can be called with.
 
-        :return: The unmodified route object.
+        :return: The unmodified :class:`~.Route` object.
         """
         # Create an endpoint name for the route.
         route.routing_url = routing_url
@@ -304,8 +308,10 @@ class Blueprint(object):
         Matches with the WSGI environment.
 
         :param environment: The environment dict to perform matching with.
+        
             You can use the ``environ`` argument of a Request to get the environment back.
-        :return: A Route object, which can be invoked to return the right response, and the parameters to invoke it
+            
+        :return: A Route object, which can be invoked to return the right response, and the parameters to invoke it \
             with.
         """
         # Get the MapAdapter used for matching.

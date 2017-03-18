@@ -1,7 +1,4 @@
 """
-kyoukai.util
-~~~~~~~~~~~~
-
 Misc utilities for usage inside the framework.
 """
 from werkzeug.wrappers import Response
@@ -10,7 +7,7 @@ from werkzeug.wrappers import Response
 def wrap_response(args, response_class: Response=Response) -> Response:
     """
     Wrap up a response, if applicable.
-    This allows Flask-like `return ""`.
+    This allows Flask-like `return "whatever"`.
 
     :param args: The arguments that are being wrapped.
     :param response_class: The Response class that is being used.
