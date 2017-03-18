@@ -21,6 +21,7 @@ def _parse_json(parser: FormDataParser, stream, mimetype, content_length, option
 FormDataParser.parse_functions["application/json"] = _parse_json
 
 from kyoukai.app import Kyoukai, __version__
+from kyoukai.asphalt import HTTPRequestContext, KyoukaiComponent
 from kyoukai.blueprint import Blueprint
 from kyoukai.route import Route
 from kyoukai.testing import TestKyoukai

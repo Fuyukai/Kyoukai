@@ -355,4 +355,5 @@ texinfo_documents = [
 
 # Map to the documentation of Python 3's stdlib.
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
-                       'mako': ('http://docs.makotemplates.org/en/latest/', None)}
+                       'mako': ('http://docs.makotemplates.org/en/latest/', None),
+                       'werkzeug': ('http://werkzeug.pocoo.org/docs/0.11/', None)}

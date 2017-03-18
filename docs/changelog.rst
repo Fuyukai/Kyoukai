@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.0.6
+-------------
+
+  - Add :attr:`.Route.hooks` property to :class:`~.Route`, which allows route-specific hooks.
+
 Version 2.0.5
 -------------
 

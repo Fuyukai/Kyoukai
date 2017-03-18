@@ -16,29 +16,22 @@ Application Object
 Blueprints
 ----------
 
-.. autoclass:: kyoukai.blueprints.base.ABCBlueprint
-	:members:
-
-.. autoclass:: kyoukai.blueprints.regexp.RegexBlueprint
+.. autoclass:: kyoukai.blueprint.Blueprint
 	:members:
 
 Routes
 ------
 
-.. autoclass:: kyoukai.routing.base.ABCRoute
+.. autoclass:: kyoukai.routes.Route
 	:members:
 
 
 HTTP Objects
 ------------
 
-.. autoclass:: kyoukai.request.Request
-	:members:
+.. autoclass:: kyoukai.backends.httptools_.KyoukaiProtocol
 
-.. autoclass:: kyoukai.response.Response
-	:members:
-
-.. autoclass:: kyoukai.protocol.KyoukaiProtocol
+.. autoclass:: kyoukai.backends.http2.H2KyoukaiComponent
 	:members:
 
 Asphalt
@@ -47,16 +40,8 @@ Asphalt
 These classes are for Asphalt usage, such as contexts.
 You are not guaranteed to always have these specific objects.
 
-.. autoclass:: kyoukai.context.HTTPRequestContext
+.. autoclass:: kyoukai.asphalt.HTTPRequestContext
 	:members:
 
 .. autoclass:: kyoukai.asphalt.KyoukaiComponent
 	:members:
-
-Views
------
-
-.. autoclass:: kyoukai.views.View
-	:members:
-
-.. automethod:: kyoukai.views.route

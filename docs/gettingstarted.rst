@@ -65,10 +65,8 @@ Routes are made up of three parts:
 
 -  The path
 
-   -  This is a **regular expression** that matches the path you want
-      your route to handle. This uses standard :mod:`re` syntax. Match
-      groups are automatically extracted and passed to your function,
-      but that is talked about in a later example.
+   -  This is a Werkzeug-based route path that uses Werkzeug to match route paths.
+      For more information, see http://werkzeug.pocoo.org/docs/0.11/routing/ .
 
 -  The allowed methods
 
@@ -80,7 +78,7 @@ Routes are made up of three parts:
 -  The route itself
 
    -  Your route is a coroutine that accepts one argument, by default:
-      the a new :class:`HTTPRequestContext`, containing the request data
+      the a new :class:`~.HTTPRequestContext`, containing the request data
       and other context specific data.
 
    .. code:: python
@@ -126,10 +124,6 @@ Templates are stored in ``templates/``, obviously. They are partial HTML
 code, which can have parts in it replaced using code inside the template
 itself, or your view.
 
-The default template engine used by Kyoukai is
-`Mako <http://www.makotemplates.org/>`__, but you can change it around
-to use `Jinja2 <http://jinja.pocoo.org/docs/dev/>`__ easily.
-
 For now, we will put normal HTML in our file.
 
 Open up ``templates/index.html`` and add the following code to it:
@@ -145,10 +139,8 @@ Save and close the template.
 Rendering the template
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Rendering the template inside your Route is very simple; Kyoukai has a
-utility function to render your template.
-
-.. automethod:: kyoukai.app.Kyoukai.render_template
+Rendering the template requires an Asphalt extension - `Asphalt Rendering <https://asphalt-templating.readthedocs
+.io/en/latest/>`__. Once configured and installed, it can be used to render your template easily.
 
 You can add it to your brand new route like so:
 
@@ -156,10 +148,9 @@ You can add it to your brand new route like so:
 
     @app.route("/")
     async def index(ctx):
-        return app.render_template("index.html")
+        return ctx.jinja2.render("index.html")
 
-The ``app.render_template`` function automatically loads and renders the template
-file specified, and returns the rendered HTML code for you to return.
+Replace ``jinja2`` with the appropriate rendering engine you selected.
 
 Responses
 ---------
@@ -190,7 +181,7 @@ Running your App
 
 The ideal way of running a Kyoukai project is through the Asphalt
 framework. See :ref:`asphalt usage` for more
-information on how to use the advanced Asphalt components.
+information on how to use this.
 
 However, Kyoukai includes a built-in way of running the app from
 blocking code.
@@ -198,6 +189,10 @@ blocking code.
 .. code:: python
 
     app.run(ip="127.0.0.1", port=4444)
+
+.. warning::
+
+   Whilst using ``app.run``, you will not have Asphalt Rendering enabled in your configuration.
 
 | The args passed in here are just the default values; they are
   optional.

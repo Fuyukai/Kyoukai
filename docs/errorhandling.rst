@@ -28,7 +28,7 @@ integer error code that you wish to handle. So for example, to create a 500 erro
 .. code:: python
 
     @app.root.errorhandler(500)
-    async def handle_500(ctx: HTTPRequestContext, exception_to_handle: Exception):
+    async def handle_500(ctx: HTTPRequestContext, exception_to_handle: HTTPException):
         return repr(exception_to_handle)
 
 Of course, you can have anything in the body of the error handler. Whatever is returned from this error handler is
@@ -37,17 +37,14 @@ sent back to the client.
 HTTP Exceptions
 ---------------
 
-HTTP Exceptions are a special type of exception, that don't represent an error but instead a way of instantly
-dropping out of your route and into an error handler for the appropriate code.
+HTTP exceptions in Kyoukai are handled by Werkzeug, which prevents having to rewrite large amounts of the error
+handling internally.
 
-They're very easy to raise - you have two options:
+For more information on Werkzeug's HTTPException, see :class:`werkzeug.exceptions.HTTPException`.
 
-1) Use the :meth:`kyoukai.exc.HTTPException.new` classmethod to create a new HTTPException.
+To abort out of a function early, you can use :meth:`werkzeug.exceptions.abort` to raise a HTTPException:
 
-.. automethod:: kyoukai.exc.HTTPException.new
+.. code-block:: python
 
-
-2) Use :meth:`kyoukai.exc.abort` to handle raising the exception.
-
-.. automethod:: kyoukai.exc.abort
-    :noindex:
+    if something is bad:
+        abort(404)
