@@ -152,6 +152,8 @@ class Route(object):
 
         self.hooks[type_].append(hook)
 
+        return hook
+
     def get_hooks(self, type_: str):
         """
         Gets the hooks for the current Route for the type.
