@@ -12,7 +12,7 @@ dependencies:
 - zlib=1.2.8=0
 - pip:
   # Requirements for read the docs.
-  - sphinx_theme_pd
+  - guzzle_sphinx_theme
   - httptools>=0.0.9
   - PyYAML==3.11
   - typeguard>=1.2.1
