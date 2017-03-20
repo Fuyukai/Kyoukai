@@ -21,3 +21,4 @@ dependencies:
   - Mako>=1.0.4
   - sphinx-autodoc-typehints
   - sphinxcontrib-asyncio
+  - h2
