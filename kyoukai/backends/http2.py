@@ -238,6 +238,10 @@ class H2KyoukaiComponent(KyoukaiBaseComponent):
         self.ssl_keyfile = ssl_keyfile
         self.ssl_certfile = ssl_certfile
 
+        # override some needed config values
+        self.cfg["ssl"] = True
+        self.cfg["http2"] = True
+
     def get_protocol(self, ctx: Context, serv_info: tuple):
         return H2KyoukaiProtocol(self, ctx)
 

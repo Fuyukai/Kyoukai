@@ -54,7 +54,7 @@ Adding Components
 -----------------
 
 **Components** are a way of adding useful parts to your project without additional manual set up. In this example, we
- will add a sqlalchemy component to the app.
+ will add a SQLAlchemy component to the app.
 
 The Container
 ~~~~~~~~~~~~~

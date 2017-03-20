@@ -163,7 +163,7 @@ a tuple.
 
 These are transparently converted behind the scenes:
 
-.. code:: python
+.. code-block:: python
 
     r = Response(code=route_result[1] or 200, body=route_result[0], headers=route_result[2] or {})
 
@@ -186,7 +186,7 @@ information on how to use this.
 However, Kyoukai includes a built-in way of running the app from
 blocking code.
 
-.. code:: python
+.. code-block:: python
 
     app.run(ip="127.0.0.1", port=4444)
 
@@ -217,7 +217,7 @@ Finishing your project
 You have completed your first Kyoukai project. For maximum effectiveness,
 you must now publish it to GitHub.
 
-.. code:: bash
+.. code-block:: bash
 
     $ git init
     $ git remote add origin git@github.com:YourName/my-first-kyoukai-project.git

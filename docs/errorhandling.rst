@@ -11,7 +11,7 @@ inside a route.
 
 For example, if you have a piece of faulty code:
 
-.. code:: python
+.. code-block:: python
 
     return "{}".format(a)  # 'a' is not defined
 
@@ -25,7 +25,7 @@ The ``errorhandler`` decorator
 To create an error handler, you simply wrap an existing function with the ``errorhandler`` decorator, providing the
 integer error code that you wish to handle. So for example, to create a 500 error handler, you would do:
 
-.. code:: python
+.. code-block:: python
 
     @app.root.errorhandler(500)
     async def handle_500(ctx: HTTPRequestContext, exc: HTTPException):

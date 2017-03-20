@@ -11,7 +11,7 @@ of all of its parents.
 
 Blueprints are instantiated similar to app objects, with a name.
 
-.. code:: python
+.. code-block:: python
 
     my_blueprint = Blueprint("my_blueprint")
 
@@ -37,7 +37,7 @@ Routing
 Routing with Blueprints is incredibly similar to routing with a bare app object. Internally, an ``@app.route`` maps
 to routing on an underlying Blueprint object used as the "root" blueprint.
 
-.. code:: python
+.. code-block:: python
 
     @my_blueprint.route("/some/route")
     async def some_route(ctx: HTTPRequestContext):
@@ -52,7 +52,7 @@ Error handlers
 Error handlers with Blueprints are handled exactly the same as error handlers on bare app objects. The difference
 between these however is that error handlers are local to the Blueprint and its children.
 
-.. code:: python
+.. code-block:: python
 
     @my_blueprint.errorhandler(500)
     async def e500(ctx: HTTPRequestContext, err: Exception):
@@ -76,7 +76,7 @@ Internally, this adds a child to the root blueprint, and sets the parent of the 
 If you have a blueprint that you wish to inherit from, you must register your Blueprint as a child of the Blueprint
 you wish to inherit from.
 
-.. code:: python
+.. code-block:: python
 
     my_blueprint.add_child(my_other_blueprint)
 

@@ -31,10 +31,14 @@ a the hook function to add.
 Alternatively, you can use the helper functions:
 
 .. automethod:: kyoukai.blueprint.Blueprint.before_request
+    :noindex:
 .. automethod:: kyoukai.route.Route.before_request
+    :noindex:
 
 .. automethod:: kyoukai.blueprint.Blueprint.after_request
+    :noindex:
 .. automethod:: kyoukai.route.Route.after_request
+    :noindex:
 
 Pre-request hooks
 -----------------

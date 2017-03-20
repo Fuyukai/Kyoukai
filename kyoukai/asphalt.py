@@ -5,7 +5,7 @@ import abc
 import asyncio
 import importlib
 import socket
-import ssl
+import ssl as py_ssl
 from functools import partial
 
 import logging
@@ -137,7 +137,9 @@ class KyoukaiBaseComponent(Component, metaclass=abc.ABCMeta):  # pragma: no cove
             self._cached_mod = mod
 
         server = getattr(self._cached_mod, self._cached_mod.PROTOCOL_CLASS)
-        return server(self, ctx, *serv_info)
+        proto = server(self, ctx, *serv_info)
+        ctx.protocol = proto
+        return proto
 
 
 class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
@@ -183,22 +185,27 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         """
         self.base_context = ctx
 
-        if self.cfg.get("ssl", False) is True:
-            ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-            ssl_context.load_cert_chain(certfile=self.ssl_certfile, keyfile=self.ssl_keyfile)
+        ssl_context = None
 
-            if self.cfg.get("http2", False) is True:
-                ssl_context.set_alpn_protocols(["h2"])
+        if self.cfg.get("ssl", {}):
+            ssl = self.cfg["ssl"]
+            if ssl.get("enabled") is True:
+                ssl_context = py_ssl.create_default_context(py_ssl.Purpose.CLIENT_AUTH)
+                # override the ciphers
+                ssl_context.set_ciphers("EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+AES128:RSA+AES128:"
+                                        "EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!aNULL:!eNULL:!MD5:!DSS:!RC4")
+                ssl_context.load_cert_chain(certfile=ssl["ssl_certfile"], keyfile=ssl["ssl_keyfile"])
 
-                try:
-                    ssl_context.set_npn_protocols(["h2"])
-                except NotImplementedError:
-                    # NPN protocol doesn't work here, so don't bother setting it
-                    pass
+                if self.cfg.get("http2", False) is True:
+                    ssl_context.set_alpn_protocols(["h2"])
 
-            self.logger.info("Using HTTP over TLS.")
-        else:
-            ssl_context = None
+                    try:
+                        ssl_context.set_npn_protocols(["h2"])
+                    except NotImplementedError:
+                        # NPN protocol doesn't work here, so don't bother setting it
+                        pass
+
+                self.logger.info("Using HTTP over TLS.")
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
         self.app.finalize()
@@ -217,21 +224,28 @@ class HTTPRequestContext(Context):
     def __init__(self, parent: Context, request: Request):
         super().__init__(parent)
 
+        #: The :class:`~.Kyoukai` object this request is handling.
         self.app = None  # type: Kyoukai
 
+        #: The :class:`werkzeug.wrappers.Request` object this request is handling.
         self.request = request
 
-        # Route objects and Blueprint objects.
+        #: The :class:`~.Route` object this request is for.
         self.route = None  # type: Route
+
+        #: The :class:`~.Blueprint` object this request is for.
         self.bp = None  # type: Blueprint
 
-        # The WSGI environment for this request.
+        #: The WSGI environment for this request.
         self.environ = self.request.environ  # type: dict
+
+        #: The :class:`asyncio.Protocol` protocol handling this connection.
+        self.proto = None
 
     def url_for(self, endpoint: str, *, method: str, **kwargs):
         """
         A context-local version of ``url_for``.
 
-        For more information, see the documentation on :meth:`kyoukai.blueprint.Blueprint.url_for`.
+        For more information, see the documentation on :meth:`~.Blueprint.url_for`.
         """
         return self.app.url_for(self.environ, endpoint, method=method, **kwargs)

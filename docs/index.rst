@@ -51,6 +51,14 @@ Contents:
 
    changelog.rst
 
+.. toctree::
+   :caption: Advanced usage
+   :maxdepth: 2
+
+   tls.rst
+   http2.rst
+
+
 Automatically generated API documentation
 =========================================
 
