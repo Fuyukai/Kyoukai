@@ -116,7 +116,7 @@ class Blueprint(object):
         return blueprint
 
     def route(self, routing_url: str, methods: typing.Iterable[str] = ("GET",),
-              **kwargs) -> typing.Callable[[callable], Route]:
+              **kwargs):
         """
         Convenience decorator for adding a route.
 
@@ -133,7 +133,7 @@ class Blueprint(object):
 
         return _inner
 
-    def errorhandler(self, code: int) -> typing.Callable[[callable], Route]:
+    def errorhandler(self, code: int):
         """
         Helper decorator for adding an error handler.
 
