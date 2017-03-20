@@ -115,7 +115,8 @@ class Blueprint(object):
         blueprint._parent = self
         return blueprint
 
-    def route(self, routing_url: str, methods: typing.Iterable[str] = ("GET",)):
+    def route(self, routing_url: str, methods: typing.Iterable[str] = ("GET",),
+              **kwargs) -> typing.Callable[[callable], Route]:
         """
         Convenience decorator for adding a route.
 
@@ -126,13 +127,13 @@ class Blueprint(object):
         """
 
         def _inner(func: callable):
-            route = self.wrap_route(func)
+            route = self.wrap_route(func, **kwargs)
             self.add_route(route, routing_url, methods)
             return route
 
         return _inner
 
-    def errorhandler(self, code: int):
+    def errorhandler(self, code: int) -> typing.Callable[[callable], Route]:
         """
         Helper decorator for adding an error handler.
 
@@ -143,7 +144,7 @@ class Blueprint(object):
         :param code: The error handler code to use.
         """
 
-        def _inner(cbl: typing.Callable):
+        def _inner(cbl):
             self.add_errorhandler(cbl, code)
             return cbl
 

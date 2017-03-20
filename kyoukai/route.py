@@ -2,6 +2,8 @@
 Routes are wrapped function objects that are called upon a HTTP request.
 """
 import inspect
+
+import collections
 import typing
 
 from werkzeug.exceptions import HTTPException, InternalServerError
@@ -21,23 +23,26 @@ class Route(object):
     """
 
     def __init__(self, function: callable, reverse_hooks: bool = False,
-                 should_invoke_hooks: bool = True):
+                 should_invoke_hooks: bool = True, do_argument_checking: bool = True):
         """
         Creates a new route object.
         :param function: The underlying callable.
-        
             This can be a function, or any other callable.
 
         :param reverse_hooks: If the request hooks should be reversed for this request (i.e child to parent.)
-        :param should_invoke_hooks: If request hooks should be invoked.
         
+        :param should_invoke_hooks: If request hooks should be invoked.
             This is automatically False for error handlers.
         
+        :param do_argument_checking: If argument type and name checking is enabled for this route.
         """
         if not callable(function):
             raise TypeError("Route arg must be callable")
 
         self._callable = function
+
+        #: If this route should do argument checking.
+        self.do_argument_checking = do_argument_checking
 
         #: The :class:`~.Blueprint` this route is associated with.
         self.bp = None  # type: Blueprint
@@ -74,7 +79,7 @@ class Route(object):
 
         return prefix + ".{}".format(self._callable.__name__)
 
-    async def invoke_function(self, ctx, pre_hooks: list, post_hooks: list, **kwargs):
+    async def invoke_function(self, ctx, pre_hooks: list, post_hooks: list, params):
         """
         Invokes the underlying callable.
 
@@ -82,6 +87,7 @@ class Route(object):
         :param ctx: The :class:`~.HTTPRequestContext` to use for this route.
         :param pre_hooks: A list of hooks to call before the route is invoked.
         :param post_hooks: A list of hooks to call after the route is invoked.
+        :param params: The parameters to pass to the function.
         :return: The result of the invoked function.
         """
         # Invoke the route function.
@@ -93,7 +99,10 @@ class Route(object):
                     if _ is not None:
                         ctx = _
 
-            result = self._callable(ctx, **kwargs)
+            if isinstance(params, collections.Mapping):
+                result = self._callable(ctx, **params)
+            else:
+                result = self._callable(ctx, *params)
             if inspect.isawaitable(result):
                 result = await result
 
@@ -202,7 +211,10 @@ class Route(object):
         if not params:
             params = {}
 
-        self.check_route_args(params)
+        if self.do_argument_checking:
+            self.check_route_args(params)
+        else:
+            params = list(params.values())
 
         # Try and get the hooks.
         pre_hooks = self.bp.get_hooks("pre").copy()
@@ -217,4 +229,4 @@ class Route(object):
         pre_hooks += self.get_hooks("pre").copy()
         post_hooks += self.get_hooks("post").copy()
 
-        return await self.invoke_function(ctx, pre_hooks, post_hooks, **params)
+        return await self.invoke_function(ctx, pre_hooks, post_hooks, params)

@@ -211,11 +211,11 @@ class Kyoukai(object):
         This is the main processing method of Kyoukai, and is meant to be used by one of the HTTP server backends,
         and not by client code.
 
-        :param request:
+        :param request: \
             The :class:`werkzeug.wrappers.Request` object to process.
             A new :class:`~.HTTPRequestContext` will be provided to wrap this request inside of to client code.
 
-        :param parent_context:
+        :param parent_context: \
             The :class:`asphalt.core.Context` that is the parent context for this particular app. It will be used as \
             the parent for the HTTPRequestContext.
 

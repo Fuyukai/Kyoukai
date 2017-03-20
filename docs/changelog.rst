@@ -3,10 +3,14 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
-Version 2.0.6
+Version 2.1.0
 -------------
 
   - Add :attr:`.Route.hooks` property to :class:`~.Route`, which allows route-specific hooks.
+
+  - Add the ability to disable argument conversion on :class:`~.Route`s.
+
+  - Automatically disable argument conversion on error handlers.
 
 Version 2.0.5
 -------------
@@ -73,9 +77,9 @@ Version 1.9.2
    The routing engine will automatically try and match the 405 on the lowest common ancestor of all routes that
    failed to match in the blueprint tree.
 
- - Add ``blueprint`` and ``route`` attributes to :class:`HTTPRequestContext`.
+ - Add ``blueprint`` and ``route`` attributes to :class:`~.HTTPRequestContext`.
 
- - Add ``ip`` and ``port`` attributes to :class:`Request`.
+ - Add ``ip`` and ``port`` attributes to :class:`~.Request`.
 
  - Correctly load cookies from the ``Cookie`` header from client requests.
 
@@ -116,7 +120,7 @@ Version 1.8.3
 Version 1.8.2
 -------------
 
- - JSON forms are now lazy loaded when `.form` is called.
+ - JSON forms are now lazy loaded when ``.form`` is called.
 
 Version 1.8.1
 -------------
