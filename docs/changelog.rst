@@ -12,6 +12,10 @@ Version 2.1.0
 
   - Automatically disable argument conversion on error handlers.
 
+  - HTTP/2 is now automatically enabled in all requests over TLS, if available.
+
+  - HTTPS is now easier to configure (requires one config file change).
+
 Version 2.0.5
 -------------
 

@@ -14,7 +14,7 @@ from werkzeug.wrappers import Request, Response
 from kyoukai.asphalt import HTTPRequestContext
 from kyoukai.blueprint import Blueprint
 
-__version__ = "2.0.5"
+__version__ = "2.1.0"
 
 
 class Kyoukai(object):
