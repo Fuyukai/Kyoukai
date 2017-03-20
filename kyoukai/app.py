@@ -77,9 +77,6 @@ class Kyoukai(object):
                  *,
                  server_name: str = None,
                  **kwargs):
-        """
-        Create the new app.
-        """
         self.name = application_name
         self.server_name = server_name
 

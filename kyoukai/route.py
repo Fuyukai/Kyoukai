@@ -17,15 +17,11 @@ class Route(object):
     """
     A route object is a wrapped function.
     They invoke this function when invoked on routing and calling.
-
-    :ivar bp: The Blueprint this route is associated with.
-    :ivar rule: The routing rule this route is associated with.
     """
 
-    def __init__(self, function: callable, reverse_hooks: bool = False,
+    def __init__(self, function, reverse_hooks: bool = False,
                  should_invoke_hooks: bool = True, do_argument_checking: bool = True):
-        """
-        Creates a new route object.
+        """        
         :param function: The underlying callable.
             This can be a function, or any other callable.
 
@@ -158,7 +154,7 @@ class Route(object):
                     arg.name, arg.annotation, type(value))
                 )
 
-    def add_hook(self, type_: str, hook: typing.Callable) -> typing.Callable:
+    def add_hook(self, type_: str, hook):
         """
         Adds a hook to the current Route.
 
@@ -181,13 +177,13 @@ class Route(object):
         """
         return self.hooks.get(type_, [])
 
-    def before_request(self, func: typing.Callable):
+    def before_request(self, func):
         """
         Convenience decorator to add a post-request hook.
         """
         return self.add_hook(type_="pre", hook=func)
 
-    def after_request(self, func: typing.Callable):
+    def after_request(self, func):
         """
         Convenience decorator to add a pre-request hook.
         """
