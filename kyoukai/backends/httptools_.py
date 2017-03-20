@@ -1,5 +1,6 @@
 """
-The default HTTPTools backend for Kyoukai.
+A high-performance HTTP/1.1 backend for the Kyoukai webserver using `httptools 
+<https://github.com/MagicStack/httptools>`_.
 """
 import asyncio
 import base64
@@ -37,6 +38,8 @@ Server: Kyoukai
 Content-Length: 0
 
 """.replace("\n", "\r\n")
+
+PROTOCOL_CLASS = "KyoukaiProtocol"
 
 
 class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
@@ -177,6 +180,23 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             self.ip, self.client_port = None, None
 
         self.transport = transport
+
+        ssl_sock = self.transport.get_extra_info("ssl_object")
+        if ssl_sock is not None:
+            # Check if we negotiated a HTTP/2 connection.
+            # This will check the ALPN protocol, but failing that, fall back to the NPN protocol.
+            negotiated_protocol = ssl_sock.selected_alpn_protocol()
+            if negotiated_protocol is None:
+                negotiated_protocol = ssl_sock.selected_npn_protocol()
+
+            if negotiated_protocol == "h2":
+                # switch protocol to http/2 handler
+                transport = self.transport
+                new_self = self.replace(H2KyoukaiProtocol)  # type: H2KyoukaiProtocol
+                # make sure the new connection
+                type(new_self).connection_made(new_self, transport)
+                return
+
         self.component.connection_made.dispatch(protocol=self)
 
     def connection_lost(self, exc):

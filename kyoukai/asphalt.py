@@ -1,7 +1,9 @@
 """
 Asphalt wrappers for Kyoukai.
 """
+import abc
 import asyncio
+import importlib
 import socket
 import ssl
 from functools import partial
@@ -75,7 +77,7 @@ class RouteReturnedEvent(CtxEvent):  # pragma: no cover
         self.result = result
 
 
-class KyoukaiBaseComponent(Component):  # pragma: no cover
+class KyoukaiBaseComponent(Component, metaclass=abc.ABCMeta):  # pragma: no cover
     """
     The base class for any component used by Kyoukai.
 
@@ -89,28 +91,60 @@ class KyoukaiBaseComponent(Component):  # pragma: no cover
         if not isinstance(app, Kyoukai):
             app = resolve_reference(app)
 
+        #: The application object for a this component.
         self.app = app
+
+        #: The IP address to boot the server on.
         self.ip = ip
+
+        #: The port to boot the server on.
         self.port = port
 
+        #: The config file to use.
         self.cfg = cfg
 
+        #: The :class:`asyncio.Server` instance that is serving us today.
         self.server = None
+
+        #: The base context for this server.
         self.base_context = None  # type: Context
+
+        #: The backend to use for the HTTP server.
+        self.backend = self.cfg.get("backend", "kyoukai.backends.httptools_")
 
         self.logger = logging.getLogger("Kyoukai")
 
         self._server_name = app.server_name or socket.getfqdn()
 
+    @abc.abstractmethod
     async def start(self, ctx: Context):
-        pass
+        """
+        Overridden in subclasses to spawn a new server.
+        """
+
+    def get_server_name(self):
+        """
+        :return: The server name of this app.
+        """
+        return self.app.server_name or self._server_name
+
+    def get_protocol(self, ctx: Context, serv_info: tuple):
+        """
+        Gets the protocol to use for this webserver.
+        """
+        if not hasattr(self, "_cached_mod"):
+            mod = importlib.import_module(self.backend)
+            self._cached_mod = mod
+
+        server = getattr(self._cached_mod, self._cached_mod.PROTOCOL_CLASS)
+        return server(self, ctx, *serv_info)
 
 
 class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
     """
     A component for Kyoukai.
 
-    This will load and run the application, if applicable.
+    This includes the built-in HTTP server.
     """
     connection_made = Signal(ConnectionMadeEvent)
     connection_lost = Signal(ConnectionLostEvent)
@@ -141,10 +175,6 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         """
         return self.app.server_name or self._server_name
 
-    def get_protocol(self, ctx: Context, serv_info: tuple):
-        from kyoukai.backends.httptools_ import KyoukaiProtocol
-        return KyoukaiProtocol(self, ctx, *serv_info)
-
     async def start(self, ctx: Context):
         """
         Starts the webserver if required.
@@ -153,18 +183,27 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         """
         self.base_context = ctx
 
-        if self.cfg.get("use_builtin_webserver", True):
-            if self.cfg.get("ssl", False):
-                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-                ssl_context.load_cert_chain(certfile=self.ssl_certfile, keyfile=self.ssl_keyfile)
-                self.logger.info("Using HTTP over TLS.")
-            else:
-                ssl_context = None
+        if self.cfg.get("ssl", False) is True:
+            ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            ssl_context.load_cert_chain(certfile=self.ssl_certfile, keyfile=self.ssl_keyfile)
 
-            protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
-            self.app.finalize()
-            self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port, ssl=ssl_context)
-            self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
+            if self.cfg.get("http2", False) is True:
+                ssl_context.set_alpn_protocols(["h2"])
+
+                try:
+                    ssl_context.set_npn_protocols(["h2"])
+                except NotImplementedError:
+                    # NPN protocol doesn't work here, so don't bother setting it
+                    pass
+
+            self.logger.info("Using HTTP over TLS.")
+        else:
+            ssl_context = None
+
+        protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
+        self.app.finalize()
+        self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port, ssl=ssl_context)
+        self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
 
 
 class HTTPRequestContext(Context):
