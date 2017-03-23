@@ -215,11 +215,11 @@ class Route(object):
         # Try and get the hooks.
         pre_hooks = self.bp.get_hooks("pre").copy()
         if self.reverse_hooks:
-            pre_hooks = reversed(pre_hooks)
+            pre_hooks = list(reversed(pre_hooks))
 
         post_hooks = self.bp.get_hooks("post").copy()
         if self.reverse_hooks:
-            post_hooks = reversed(post_hooks)
+            post_hooks = list(reversed(post_hooks))
 
         # merge pre and post hooks with the route-specific ones
         pre_hooks += self.get_hooks("pre").copy()
