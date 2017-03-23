@@ -8,7 +8,7 @@ Version 2.1.0
 
   - Add :attr:`.Route.hooks` property to :class:`~.Route`, which allows route-specific hooks.
 
-  - Add the ability to disable argument conversion on :class:`~.Route`s.
+  - Add the ability to disable argument conversion on :class:`~.Route` objects.
 
   - Automatically disable argument conversion on error handlers.
 
