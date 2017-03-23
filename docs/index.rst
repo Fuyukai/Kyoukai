@@ -43,7 +43,6 @@ Contents:
 
    gettingstarted.rst
    asphalt.rst
-   routing.rst
    errorhandling.rst
    blueprints.rst
    req_response.rst
