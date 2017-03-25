@@ -89,7 +89,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.body = BytesIO()
         self.full_url = ""
 
-        self.loop = asyncio.get_event_loop()
+        self.loop = self.app.loop
         self.logger = logging.getLogger("Kyoukai.HTTP11")
 
     def replace(self, other: type, *args, **kwargs) -> type:
