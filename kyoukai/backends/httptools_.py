@@ -129,16 +129,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     def on_headers_complete(self):
         """
         Called when the headers have been completely sent.
-
-        This will signal the protocol to start processing the request.
-        This is done here instead of `on_message_complete` so that the server does not have to wait for the entire body
-        to be received before starting the process the message.
         """
-        # Don't delegate to Kyoukai.
-        if self.transport.is_closing():
-            return
-        task = self.loop.create_task(self._wait_wrapper())
-        self.waiter = task
 
     def on_body(self, body: bytes):
         """
@@ -159,8 +150,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         Called when a message is complete.
         This creates the worker task which will begin processing the request.
         """
-        # TODO: Make this unlock so that if the request is completed before the body is fully sent, it won't start
-        # sending.
+        task = self.loop.create_task(self._wait_wrapper())
+        self.waiter = task
 
     # asyncio procs
     def connection_made(self, transport: asyncio.WriteTransport):
