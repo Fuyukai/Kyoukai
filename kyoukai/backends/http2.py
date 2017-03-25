@@ -34,7 +34,7 @@ from h2.connection import H2Connection
 from h2.events import (
     DataReceived, RequestReceived, WindowUpdated, StreamEnded, StreamReset
 )
-from h2.errors import PROTOCOL_ERROR
+from h2.errors import ErrorCodes
 
 # Sentinel value for the request being complete.
 REQUEST_FINISHED = object()
@@ -504,7 +504,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             req = self.streams[event.stream_id]
         except KeyError:
             # Reset the stream, because the client is stupid.
-            self.conn.reset_stream(event.stream_id, PROTOCOL_ERROR)
+            self.conn.reset_stream(event.stream_id, ErrorCodes.PROTOCOL_ERROR)
         else:
             req.insert_data(event.data)
 
@@ -518,7 +518,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             req = self.streams[event.stream_id]
         except KeyError:
             # shoo
-            self.conn.reset_stream(event.stream_id, PROTOCOL_ERROR)
+            self.conn.reset_stream(event.stream_id, ErrorCodes.PROTOCOL_ERROR)
             return
         else:
             req.insert_data(REQUEST_FINISHED)

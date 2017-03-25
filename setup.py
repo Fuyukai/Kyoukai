@@ -23,7 +23,7 @@ deps = [
     "httptools>=0.0.9",
     "asphalt>=2.1.0",
     "werkzeug>=0.11.10",
-    "h2>=2.5.0",
+    "h2>=3.0.0",
 ]
 
 setup(
