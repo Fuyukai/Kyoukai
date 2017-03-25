@@ -209,7 +209,7 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
         self.app.finalize()
-        self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port, ssl=ssl_context)
+        self.server = await self.app.loop.create_server(protocol, self.ip, self.port, ssl=ssl_context)
         self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
 
 

@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.1.1
+-------------
+
+  - Fix request bodies not being read properly.
+
 Version 2.1.0
 -------------
 
