@@ -8,6 +8,10 @@ Version 2.1.1
 
   - Fix request bodies not being read properly.
 
+  - Fix loop propagation.
+
+  - Fix http2 module for H2 3.0.0.
+
 Version 2.1.0
 -------------
 
