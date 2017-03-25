@@ -258,7 +258,7 @@ class H2KyoukaiComponent(KyoukaiBaseComponent):
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
         self.app.finalize()
-        self.server = await asyncio.get_event_loop().create_server(protocol, self.ip, self.port, ssl=ssl_context)
+        self.server = await self.app.loop.create_server(protocol, self.ip, self.port, ssl=ssl_context)
         self.logger.info("Kyoukai H2 serving on {}:{}".format(self.ip, self.port))
 
 
@@ -477,7 +477,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         env = create_wsgi_environment(r)
         request = Request(environ=env)
 
-        loop = asyncio.get_event_loop()
+        loop = app.loop
         t = loop.create_task(app.process_request(request, self.parent_context))  # type: asyncio.Task
         self.stream_tasks[event.stream_id] = loop.create_task(self.sending_loop(event.stream_id))
 
