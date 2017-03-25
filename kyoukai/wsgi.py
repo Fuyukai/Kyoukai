@@ -56,7 +56,7 @@ class SaneWSGIWrapper(object):
         return self.format()
 
 
-def to_wsgi_environment(headers: dict, method: str, path: str,
+def to_wsgi_environment(headers: list, method: str, path: str,
                         http_version: str, body: BytesIO = None) -> MultiDict:
     """
     Produces a new WSGI environment from a set of data that is passed in.
@@ -65,7 +65,7 @@ def to_wsgi_environment(headers: dict, method: str, path: str,
 
     .. code-block:: python
 
-        d = to_wsgi_environment({"Host": "127.0.0.1"}, "GET", "/", None)
+        d = to_wsgi_environment([("Host", "127.0.0.1"), "GET", "/", None)
         request = werkzeug.wrappers.Request(d)
 
     :param headers: The headers of the HTTP request.

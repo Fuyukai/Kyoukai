@@ -334,7 +334,9 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
         # Check if the body has data in it by asking it to tell us what position it's seeked to.
         # If it's > 0, it has data, so we can use it. Otherwise, it doesn't, so it's useless.
-        if self.body.tell():
+        told = self.body.tell()
+        if told:
+            self.logger.debug("Read {} bytes of data from the connection".format(told))
             self.body.seek(0)
             body = self.body
         else:
