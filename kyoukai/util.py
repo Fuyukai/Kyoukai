@@ -4,7 +4,23 @@ Misc utilities for usage inside the framework.
 from werkzeug.wrappers import Response
 
 
-def wrap_response(args, response_class: Response=Response) -> Response:
+def as_html(text: str, code: int = 200, headers: dict = None) -> Response:
+    """
+    Returns a HTML response.
+    
+    :param text: The text to return. 
+    :param code: The status code of the response.
+    :param headers: Any optional headers.
+    :return: A new :class:`werkzeug.wrappers.Response` representing the HTML. 
+    """
+    if headers is None:
+        headers = {}
+
+    r = Response(text, status=code, headers={"Content-Type": "text/html", **headers})
+    return r
+
+
+def wrap_response(args, response_class: Response = Response) -> Response:
     """
     Wrap up a response, if applicable.
     This allows Flask-like `return "whatever"`.
