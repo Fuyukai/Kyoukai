@@ -46,16 +46,17 @@ class Kyoukai(object):
 
     Of course, you can also embed Kyoukai inside another app, by awaiting :meth:`Kyoukai.start`.
 
-    :param application_name: The name of the application that is being created. This is currently unused.
+    :param application_name: The name of the application that is being created. This is currently \ 
+        unused.
 
-    :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment created for \
-        ``url_for``, if applicable.
+    :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment \
+        created for ``url_for``, if applicable.
         
-    :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI environment created for \
-        ``url_for``, if applicable.
+    :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI \ 
+        environment created for ``url_for``, if applicable.
         
-    :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is specified, it will be \
-        automatically fetched using :meth:`asyncio.get_event_loop`.
+    :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is \ 
+        specified it, will be automatically fetched using :meth:`asyncio.get_event_loop`.
         
     :param request_class: Keyword-only. The custom request class to instantiate requests with.
     
@@ -80,7 +81,8 @@ class Kyoukai(object):
         self.name = application_name
         self.server_name = server_name
 
-        # Try and get the loop from the keyword arguments - don't automatically perform `get_event_loop`.
+        # Try and get the loop from the keyword arguments - don't automatically perform
+        # `get_event_loop`.
         self.loop = kwargs.pop("loop", None)
         if not self.loop:
             self.loop = asyncio.get_event_loop()
@@ -124,7 +126,8 @@ class Kyoukai(object):
         """
         Finalizes the app and blueprints.
 
-        This will calculate the current :class:`werkzeug.routing.Map` which is required for routing to work.
+        This will calculate the current :class:`werkzeug.routing.Map` which is required for 
+        routing to work.
         """
         self.debug = self.config.get("debug", False)
 
@@ -137,11 +140,13 @@ class Kyoukai(object):
 
         For example, this allows doing ``@app.route`` instead of ``@app.root.route``.
         """
-        if item in ("route", "errorhandler", "add_errorhandler", "add_route", "wrap_route", "url_for",
-                    "before_request", "add_hook", "after_request"):
+        if item in ("route", "errorhandler", "add_errorhandler", "add_route", "wrap_route",
+                    "url_for", "before_request", "add_hook", "after_request",
+                    "add_route_group"):
             return getattr(self.root, item)
 
-        raise AttributeError("'{.__class__.__name__}' object has no attribute {}".format(self, item))
+        raise AttributeError("'{.__class__.__name__}' object has no attribute {}".format(self,
+                                                                                         item))
 
     def log_route(self, request: Request, code: int):
         """
@@ -172,8 +177,8 @@ class Kyoukai(object):
 
         error_handler = bp.get_errorhandler(exception)
         if not error_handler:
-            # Try the root Blueprint. This may happen if the blueprint requested isn't registered properly in the
-            # root, for some reason.
+            # Try the root Blueprint. This may happen if the blueprint requested isn't registered
+            # properly in the root, for some reason.
             error_handler = self.root.get_errorhandler(exception)
             if not error_handler:
                 # Just return the Exception's get_response.
@@ -205,18 +210,20 @@ class Kyoukai(object):
         """
         Processes a Request and returns a Response object.
 
-        This is the main processing method of Kyoukai, and is meant to be used by one of the HTTP server backends,
-        and not by client code.
+        This is the main processing method of Kyoukai, and is meant to be used by one of the HTTP 
+        server backends, and not by client code.
 
         :param request: \
             The :class:`werkzeug.wrappers.Request` object to process.
-            A new :class:`~.HTTPRequestContext` will be provided to wrap this request inside of to client code.
+            A new :class:`~.HTTPRequestContext` will be provided to wrap this request inside of \ 
+            to client code.
 
         :param parent_context: \
-            The :class:`asphalt.core.Context` that is the parent context for this particular app. It will be used as \
-            the parent for the HTTPRequestContext.
+            The :class:`asphalt.core.Context` that is the parent context for this particular app. 
+            It will be used as the parent for the HTTPRequestContext.
 
-        :return: A :class:`werkzeug.wrappers.Response` object that can be written to the client as a response.
+        :return: A :class:`werkzeug.wrappers.Response` object that can be written to the client \ 
+            as a response.
         """
         if not self.root.finalized:
             raise RuntimeError("App was not finalized")
@@ -232,7 +239,8 @@ class Kyoukai(object):
             except NotFound as e:
                 # No route matched.
                 self.log_route(ctx.request, 404)
-                self.logger.debug("Could not resolve route for {request.path}.".format(request=request))
+                self.logger.debug("Could not resolve route for {request.path}."
+                                  .format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except MethodNotAllowed as e:
                 # 405 method not allowed
@@ -292,8 +300,8 @@ class Kyoukai(object):
         """
         Runs the Kyoukai component asynchronously.
 
-        This will bypass Asphalt's default runner, and allow you to run your app easily inside something else,
-        for example.
+        This will bypass Asphalt's default runner, and allow you to run your app easily inside 
+        something else, for example.
 
         :param ip: The IP of the built-in server.
         :param port: The port of the built-in server.
