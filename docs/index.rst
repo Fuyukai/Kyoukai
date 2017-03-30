@@ -47,6 +47,7 @@ Contents:
    blueprints.rst
    req_response.rst
    hooks.rst
+   routegroups.rst
    deploying.rst
 
    changelog.rst
