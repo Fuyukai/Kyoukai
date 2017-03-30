@@ -5,6 +5,7 @@ Kyoukai uses Blueprints to create a routing tree - a tree of blueprints that are
 match routes easily.
 """
 import typing
+from kyoukai.routegroup import RouteGroup, get_rg_bp
 
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Map, Rule
@@ -31,39 +32,40 @@ class Blueprint(object):
         :param prefix: The prefix to be added to the start of every route name.
             This is inherited from parents - the parent prefix will also be added to the start of every route.
         """
+        #: The name of this Blueprint.
         self.name = name
 
-        # The parent Blueprint.
+        #: The parent :class:`~.Blueprint`.
         self._parent = parent
 
-        # Any children Blueprints.
+        #: Any children :class:`~.Blueprint` objects.
         self._children = []
 
         # The current prefix.
         self._prefix = prefix
 
-        # If this Blueprint is finalized or not.
-        # Finalization of a blueprint means gathering all of the Maps, and compiling a routing table which stores the
-        # endpoints.
+        #: If this Blueprint is finalized or not.
+        #: Finalization of a blueprint means gathering all of the Maps, and compiling a routing
+        #: table which stores the endpoints.
         self.finalized = False
 
-        # The list of routes.
-        # This is used in finalization.
+        #: The list of routes.
+        #: This is used in finalization.
         self.routes = []
 
-        # This is stored on the root blueprint when the map is ready to be used.
+        #: The :class:`~werkzeug.routing.Map` used for this blueprint.
         self._route_map = None  # type: Map
 
-        # The error handler dictionary.
+        #: The error handler dictionary.
         self.errorhandlers = {}
 
-        # The request hooks for this Blueprint.
+        #: The request hooks for this Blueprint.
         self._request_hooks = {}
 
     @property
     def parent(self) -> "Blueprint":
         """
-        Gets the parent Blueprint of this blueprint.
+        :return: The parent Blueprint of this blueprint.
         """
         return self._parent
 
@@ -78,7 +80,7 @@ class Blueprint(object):
         return self._prefix
 
     @property
-    def tree_routes(self):
+    def tree_routes(self) -> 'typing.Generator[Route, None, None]':
         """
         :return: A generator that yields all routes from the tree, from parent to children.
         """
@@ -104,7 +106,7 @@ class Blueprint(object):
 
         self.finalized = True
 
-    def add_child(self, blueprint: 'Blueprint'):
+    def add_child(self, blueprint: 'Blueprint') -> 'Blueprint':
         """
         Adds a Blueprint as a child of this one.
 
@@ -126,7 +128,7 @@ class Blueprint(object):
             bp.add_route(route, routing_url, methods)
         """
 
-        def _inner(func: callable):
+        def _inner(func):
             route = self.wrap_route(func, **kwargs)
             self.add_route(route, routing_url, methods)
             return route
@@ -184,8 +186,8 @@ class Blueprint(object):
         :param exc: The exception to get the error handler for.
             This can either be a HTTPException object, or an integer.
 
-        :return: The :class:`kyoukai.route.Route` object that corresponds to the error handler, or None if no error \
-            handler could be found.
+        :return: The :class:`~.Route` object that corresponds to the error handler, \ 
+            or None if no error handler could be found.
         """
         if isinstance(exc, HTTPException):
             exc = exc.code
@@ -246,8 +248,8 @@ class Blueprint(object):
 
         :param route: The route object to add.
         
-            This can be gotten from :class:`kyoukai.blueprints.Blueprints.wrap_route`, or by directly creating a \
-            Route object.
+            This can be gotten from :class:`kyoukai.blueprints.Blueprints.wrap_route`, or by 
+            directly creating a Route object.
 
         :param routing_url: The Werkzeug-compatible routing URL to add this route under.
                     
@@ -276,6 +278,17 @@ class Blueprint(object):
                 return route
 
         return None
+
+    def add_route_group(self, group: 'RouteGroup', *args, **kwargs):
+        """
+        Adds a route group to the current Blueprint.
+        
+        :param group: The :class:`~.RouteGroup` to add. 
+        """
+        bp = get_rg_bp(group)
+        self.add_child(bp)
+
+        return self
 
     def url_for(self, environment: dict, endpoint: str,
                 *,

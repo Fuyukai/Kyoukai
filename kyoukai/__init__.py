@@ -11,6 +11,7 @@ Kyoukai is an async web framework for Python 3.5 and above.
     asphalt
     blueprint
     route
+    routegroup
     testing
     util
 """
@@ -37,4 +38,9 @@ from kyoukai.app import Kyoukai, __version__
 from kyoukai.asphalt import HTTPRequestContext, KyoukaiComponent
 from kyoukai.blueprint import Blueprint
 from kyoukai.route import Route
+from kyoukai.routegroup import RouteGroup
 from kyoukai.testing import TestKyoukai
+
+
+__all__ = ("Kyoukai", "HTTPRequestContext", "KyoukaiComponent", "Blueprint", "Route", "RouteGroup",
+           "TestKyoukai")

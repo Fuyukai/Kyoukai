@@ -4,6 +4,8 @@ Routes are wrapped function objects that are called upon a HTTP request.
 import inspect
 
 import collections
+import types
+
 import typing
 
 from werkzeug.exceptions import HTTPException, InternalServerError
@@ -35,6 +37,7 @@ class Route(object):
         if not callable(function):
             raise TypeError("Route arg must be callable")
 
+        #: The underlying callable for this route.
         self._callable = function
 
         #: If this route should do argument checking.
@@ -62,7 +65,8 @@ class Route(object):
 
         :return: A new :class:`werkzeug.routing.Rule` that is to be used for this route.
         """
-        return Rule(self.bp.prefix + self.routing_url, methods=self.methods, endpoint=self.get_endpoint_name(self.bp))
+        return Rule(self.bp.prefix + self.routing_url, methods=self.methods,
+                    endpoint=self.get_endpoint_name(self.bp))
 
     def get_endpoint_name(self, bp=None):
         """
@@ -107,8 +111,8 @@ class Route(object):
             # This is a valid response type
             raise e
         else:
-            # Invoke post-request hooks. These happen inside this `else` block because post-request hooks are only meant
-            # to happen if the route invoked successfully.
+            # Invoke post-request hooks. These happen inside this `else` block because
+            # post-request hooks are only meant to happen if the route invoked successfully.
             if self.should_invoke_hooks:
                 for hook in post_hooks:
                     _ = await hook(ctx, result)
@@ -126,18 +130,27 @@ class Route(object):
         """
         # Get the signature of our callable.
         sig = inspect.signature(self._callable, follow_wrapped=True)  # type: inspect.Signature
+        # signature ignores the `self` param on methods, for some reason
+        # not that i'm complaining
         f_nargs = len(sig.parameters) - 1
-        # If the lengths of the signature and the params are different, it's obviously wrong.
-        if f_nargs != len(params):  # + 1 because `ctx` is a param
-            raise TypeError("Route takes {} args, passed in {} instead".format(f_nargs, len(params)))
 
-        # Next, check that all the argument names in the signature are in the params, so that they can be easily double
-        # star expanded into the function.
+        # If the lengths of the signature and the params are different, it's obviously wrong.
+        if f_nargs != len(params):
+            raise TypeError("Route takes {} args, passed in {} instead".format(f_nargs,
+                                                                               len(params)))
+
+        # Next, check that all the argument names in the signature are in the params,
+        # so that they can be easily double star expanded into the function.
         for n, (name, arg) in enumerate(sig.parameters.items()):
-            # Skip the first argument, because it is usually the HTTPRequestContext, and we don't want to type check
-            # that.
+            # Skip the first argument, because it is usually the HTTPRequestContext, and we don't
+            # want to type check that.
             if n == 0:
                 continue
+
+            # prevent type checking `self` on methods
+            if isinstance(self._callable, types.MethodType) and n == 1:
+                continue
+
             assert isinstance(arg, inspect.Parameter)
             if arg.name not in params:
                 raise ValueError("Argument {} not found in args for callable {}".format(arg.name,
