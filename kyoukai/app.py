@@ -191,16 +191,12 @@ class Kyoukai(object):
                 result = await error_handler.invoke(ctx, {"exc": exception})
             except HTTPException as e:
                 # why tho?
+                self.logger.warning("Error handler function raised another error, using the "
+                                    "response from that...")
                 result = e.get_response(environ)
             except Exception as e:
-                if exception.code != 500:
-                    # Re-try.
-                    new_e = InternalServerError(e)
-                    new_e.__cause__ = e
-                    result = await self.handle_httpexception(ctx, new_e, environ=environ)
-                else:
-                    self.logger.exception("Error when processing request!")
-                    result = InternalServerError(e).get_response(environ)
+                self.logger.exception("Error in error handler!")
+                result = InternalServerError(e).get_response(environ)
             # else:
                 # result = wrap_response(result, self.response_class)
 
@@ -267,8 +263,9 @@ class Kyoukai(object):
                 ctx.route_invoked.dispatch(ctx=ctx)
                 result = await matched.invoke(ctx, params)
             except HTTPException as e:
-                self.logger.warning("Hit HTTPException inside function, delegating:")
-                self.logger.warning("".join(traceback.format_exc()))
+                self.logger.info(
+                    "Hit HTTPException ({}) inside function, delegating.".format(str(e))
+                )
                 result = await self.handle_httpexception(ctx, e, request.environ)
             except Exception as e:
                 self.logger.exception("Unhandled exception in route function")
