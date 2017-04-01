@@ -51,10 +51,15 @@ class RouteGroupType(type):
 
             func = value.__func__
             if getattr(func, "in_group", False) is True:
-                # wrap value, but use func attrs
-                # this preserves the method and `self`
-                route = bp.wrap_route(value, **func.route_kwargs)
-                bp.add_route(route, value.route_url, func.route_methods)
+                # check the delegate type
+                if func.rg_delegate == "route":
+                    # wrap value, but use func attrs
+                    # this preserves the method and `self`
+                    rtt = bp.wrap_route(value, **func.route_kwargs)
+                    bp.add_route(rtt, value.route_url, func.route_methods)
+                elif func.rg_delegate == "errorhandler":
+                    # add the error handler using `errorhandler_code`
+                    bp.add_errorhandler(value, func.errorhandler_code)
 
         setattr(obb, "_{.__name__}__blueprint".format(self), bp)
 
@@ -67,16 +72,37 @@ class RouteGroupType(type):
 
 def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
     """
-    The companion function to the RouteGroup class. This follows :meth:`.Blueprint.route` in 
-    terms of arguments.
+    A companion function to the RouteGroup class. This follows :meth:`.Blueprint.route` in 
+    terms of arguments, and marks a function as a route inside the class.
+    
+    :param url: The routing URL of the route.
+    :param methods: An iterable of methods for the route.
     """
 
     def inner(func):
         # add the required attrs which are used on a scan later
+        func.in_group = True
+        func.rg_delegate = "route"
         func.route_kwargs = kwargs
         func.route_url = url
         func.route_methods = methods
+
+        return func
+
+    return inner
+
+
+def errorhandler(code: int):
+    """
+    A companion function to the RouteGroup class. This follows :meth:`.Blueprint.errorhandler` in 
+    terms of arguments. 
+    
+    :param code: The code for the error handler.
+    """
+    def inner(func):
         func.in_group = True
+        func.rg_delegate = "errorhandler"
+        func.errorhandler_code = code
 
         return func
 

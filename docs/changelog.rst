@@ -3,10 +3,16 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.1.3
+-------------
+
+  - Add :meth:`~.routegroup.errorhandler` to mark a function inside a route group as an error
+    handler.
+
 Version 2.1.2
 -------------
 
-  - Add :class:`.RouteGroup`
+  - Add :class:`.RouteGroup`.
 
 Version 2.1.1
 -------------

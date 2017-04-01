@@ -25,6 +25,6 @@ creating a new block in the config file:
 HTTPS will then automatically be enabled for this connection.
 
 HTTP and HTTPS multiplexing
-===========================
+---------------------------
 
 This is **not** currently supported.

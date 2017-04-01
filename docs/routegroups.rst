@@ -1,4 +1,4 @@
-.. _routegroups::
+.. _routegroups:
 
 Route Groups
 ============
@@ -15,9 +15,14 @@ metaclass. The former uses the latter as its metaclass, which is a shorter versi
 
 .. code-block:: python
 
-    from kyoukai.routegroup import RouteGroup
+    from kyoukai.routegroup import RouteGroup, RouteGroupType
 
+    # form 1, easiest form
     class MyRouteGroup(RouteGroup):
+        ...
+
+    # form 2, explicit metaclass
+    class MyRouteGroup(metaclass=RouteGroupType):
         ...
 
 .. note::
@@ -35,8 +40,8 @@ includes a special decorator that marks a route function as a new :class:`.Route
 
 This method takes the same arguments as the regular ``route`` decorator; the only difference is
 that it returns the original function in the class body rather than returning a new Route object.
- Instead, certain attributes are set on the new function that are picked up during scanning,
- such as ``in_group``.
+Instead, certain attributes are set on the new function that are picked up during scanning,
+such as ``in_group``.
 
 .. code-block:: python
 
@@ -48,6 +53,23 @@ that it returns the original function in the class body rather than returning a 
             return "get hecked"
 
 This will register ``heck_em_up`` as a route on the new route group.
+
+.. autofunction:: kyoukai.routegroup.route
+    :noindex:
+
+Error Handlers
+--------------
+
+Route groups can also have group-specific error handlers, using :meth:`~.routegroup.errorhandler`.
+
+.. code-block:: python
+
+    @errorhandler(500)
+    async def handle_errors(self, ctx, exc):
+        ...
+
+.. autofunction:: kyoukai.routegroup.errorhandler
+    :noindex:
 
 Registering the Group
 ---------------------
@@ -62,6 +84,9 @@ Adding the group to your app is as simple as instantiating the group and calling
 
 Of course, an alias for this exists on :class:`~.app.Kyoukai` which redirects to the root blueprint.
 
+.. autofunction:: kyoukai.blueprint.Blueprint.add_route_group
+    :noindex:
+
 Customizing the Blueprint
 -------------------------
 
@@ -75,3 +100,7 @@ Route groups work by using an underlying Blueprint that is populated with all th
     class MyRouteGroup(RouteGroup, prefix="/api/v1")
         ...
 
+To get the blueprint object from a RouteGroup instance, you can use :meth:`~.get_rg_bp`.
+
+.. autofunction:: kyoukai.routegroup.get_rg_bp
+    :noindex:
