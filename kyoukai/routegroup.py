@@ -186,7 +186,7 @@ def after_request(func):
     """
     Helper decorator to mark a function as a post-request hook. 
     """
-    return hook("post")("func")
+    return hook("post")(func)
 
 
 class RouteGroup(object, metaclass=RouteGroupType):

@@ -4,6 +4,7 @@ A blueprint is a container - a collection of routes.
 Kyoukai uses Blueprints to create a routing tree - a tree of blueprints that are used to collect routes together and
 match routes easily.
 """
+import logging
 import typing
 from kyoukai.routegroup import RouteGroup, get_rg_bp
 
@@ -12,6 +13,9 @@ from werkzeug.routing import Map, Rule
 from werkzeug.wrappers import Response
 
 from kyoukai.route import Route
+
+
+logger = logging.getLogger("Kyoukai")
 
 
 class Blueprint(object):
@@ -112,6 +116,14 @@ class Blueprint(object):
 
         return self._host
 
+    def traverse_tree(self) -> 'typing.Generator[Blueprint, None, None]':
+        """
+        Traverses the tree for children Blueprints.
+        """
+        for child in self._children:
+            yield from child.traverse_tree()
+            yield child
+
     def finalize(self, **map_options) -> Map:
         """
         Called on the root Blueprint when all Blueprints have been registered and the app is 
@@ -132,9 +144,15 @@ class Blueprint(object):
         for child in self._children:
             routes.extend(list(child.tree_routes))
 
+        logger.info("Scanned {} routes over {} child blueprint(s), building URL mapping now."
+                    .format(len(routes), sum(1 for x in self.traverse_tree())))
+
         # Make a new Map() out of all of the routes.
         rule_map = Map([route.create_rule() for route in routes],
                        host_matching=self._host_matching)
+
+        logger.info("Built route mapping with {} rules.".format(len(rule_map._rules)))
+
         self._route_map = rule_map
 
         self.finalized = True
@@ -207,8 +225,8 @@ class Blueprint(object):
         """
         Adds an error handler to the table of error handlers.
 
-        A blueprint can only have one error handler per code. If it doesn't have an error handler for that code,
-        it will try to fetch recursively the parent's error handler.
+        A blueprint can only have one error handler per code. If it doesn't have an error handler 
+        for that code, it will try to fetch recursively the parent's error handler.
 
         :param cbl: The callable error handler.
         :param errorcode: The error code to handle, for example 404.
