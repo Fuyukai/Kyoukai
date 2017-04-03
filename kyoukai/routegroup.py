@@ -4,6 +4,8 @@ Route groups are classes that allow you to group a set of routes together.
 .. currentmodule:: kyoukai.routegroup
 """
 import inspect
+
+import collections
 import typing
 
 
@@ -56,10 +58,19 @@ class RouteGroupType(type):
                     # wrap value, but use func attrs
                     # this preserves the method and `self`
                     rtt = bp.wrap_route(value, **func.route_kwargs)
+
+                    # copy hooks
+                    for type_, hooks in func.hooks.items():
+                        for hook in hooks:
+                            rtt.add_hook(type_, hook)
+
                     bp.add_route(rtt, value.route_url, func.route_methods)
                 elif func.rg_delegate == "errorhandler":
                     # add the error handler using `errorhandler_code`
                     bp.add_errorhandler(value, func.errorhandler_code)
+                elif func.rg_delegate == "hook":
+                    # add the hook
+                    bp.add_hook(func.hook_type, value)
 
         setattr(obb, "_{.__name__}__blueprint".format(self), bp)
 
@@ -75,6 +86,27 @@ def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
     A companion function to the RouteGroup class. This follows :meth:`.Blueprint.route` in 
     terms of arguments, and marks a function as a route inside the class.
     
+    This will return the original function, with some attributes attached:
+    
+        - ``in_group``: Marks the function as in the route group.
+        - ``rg_delegate``: Internal. The type of function inside the group this is.
+        - ``route_kwargs``: Keyword arguments to provide to ``wrap_route``.
+        - ``route_url``: The routing URL to provide to ``add_route``.
+        - ``route_methods``: The methods for the route.
+        - ``route_hooks``: A defaultdict of route-specific hooks.
+        
+    Additionally, the following methods are added.
+    
+        - ``hook``: A decorator that adds a hook of type ``type_``.
+        - ``before_request``: A decorator that adds a ``pre`` hook.
+        - ``after_request``: A decorator that adds a ``post`` hook.
+    
+    .. versionadded:: 2.1.1
+    
+    .. versionchanged:: 2.1.3
+    
+        Added the ability to add route-specific hooks.
+    
     :param url: The routing URL of the route.
     :param methods: An iterable of methods for the route.
     """
@@ -86,6 +118,20 @@ def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
         func.route_kwargs = kwargs
         func.route_url = url
         func.route_methods = methods
+
+        func.route_hooks = collections.defaultdict(lambda: [])
+
+        # helper for route-specific hooks.
+        def hook(type_: str):
+            def _inner2(hookfunc):
+                func.route_hooks[type_].append(hookfunc)
+                return hookfunc
+
+            return _inner2
+
+        func.hook = hook
+        func.before_request = hook("pre")
+        func.after_request = hook("post")
 
         return func
 
@@ -99,6 +145,7 @@ def errorhandler(code: int):
     
     :param code: The code for the error handler.
     """
+
     def inner(func):
         func.in_group = True
         func.rg_delegate = "errorhandler"
@@ -107,6 +154,39 @@ def errorhandler(code: int):
         return func
 
     return inner
+
+# hooks
+
+
+def hook(type_: str):
+    """
+    Marks a function as a hook.
+    
+    :param type_: The type of hook to mark. 
+    """
+
+    def inner(func):
+        func.in_group = True
+        func.rg_delegate = "hook"
+        func.hook_type = type_
+
+        return func
+
+    return inner
+
+
+def before_request(func):
+    """
+    Helper decorator to mark a function as a pre-request hook. 
+    """
+    return hook("pre")(func)
+
+
+def after_request(func):
+    """
+    Helper decorator to mark a function as a post-request hook. 
+    """
+    return hook("post")("func")
 
 
 class RouteGroup(object, metaclass=RouteGroupType):

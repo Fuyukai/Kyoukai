@@ -9,6 +9,8 @@ Version 2.1.3
   - Add :meth:`~.routegroup.errorhandler` to mark a function inside a route group as an error
     handler.
 
+  - Add request hook support to route groups.
+
   - Add :meth:`~.util.as_html`, :meth:`~.util.as_plaintext`, :meth:`~.util.as_json` helper methods.
 
   - Add **Host Matching** support. See :ref:`hostmatching`.

@@ -64,7 +64,7 @@ Error Handlers
 
 .. versionadded:: 2.1.3
 
-Route groups can also have group-specific error handlers, using :meth:`~.routegroup.errorhandler`.
+Route groups can also have group-specific error handlers, using :func:`~.routegroup.errorhandler`.
 
 .. code-block:: python
 
@@ -74,6 +74,57 @@ Route groups can also have group-specific error handlers, using :meth:`~.routegr
 
 .. autofunction:: kyoukai.routegroup.errorhandler
     :noindex:
+
+Request Hooks
+-------------
+
+.. versionadded:: 2.1.3
+
+Route groups can have both Blueprint-specific error handlers, and route-specific error handlers,
+using the helper functions.
+
+For Blueprint-specific, you can use :func:`~.routegroup.hook` (or, better, aliases
+:func:`~.routegroup.before_request` and :func:`~.routegroup.after_request`).
+
+.. code-block:: python
+
+    @before_request
+    async def before_req(self, ctx):
+        ...
+
+Adding route-specific hooks is possible by calling ``@route.hook`` on the newly wrapped function.
+This is achieved by setting a special decorator function on the function object modified by the
+route decorator.
+
+.. code-block:: python
+
+    @heck_em_up.before_req
+    async def whatever(self, ctx):
+        ...
+
+.. autofunction:: kyoukai.routegroup.hook
+    :noindex:
+
+.. autofunction:: kyoukai.routegroup.before_request
+    :noindex:
+
+.. autofunction:: kyoukai.routegroup.after_request
+    :noindex:
+
+.. py:decorator:: func.hook(type_: str)
+
+    Marks a function as a route-specific hook.
+
+    :param type_: The type of hook to add.
+
+.. py:decorator:: func.before_request
+
+    Marks a function as a before-request hook.
+
+.. py:decorator:: func.after_request
+
+    Marks a function as an after-request hook.
+
 
 Registering the Group
 ---------------------

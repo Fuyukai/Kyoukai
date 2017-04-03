@@ -2,13 +2,12 @@
 Asphalt wrappers for Kyoukai.
 """
 import abc
-import asyncio
 import importlib
 import socket
 import ssl as py_ssl
 from functools import partial
-
 import logging
+
 from asphalt.core import resolve_reference, Context
 from asphalt.core.event import Signal, Event
 from asphalt.core.component import Component

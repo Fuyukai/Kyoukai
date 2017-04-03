@@ -39,6 +39,8 @@ handler. However, it is possible to create them manually:
 Response Helpers
 ----------------
 
+.. versionadded:: 2.1.3
+
 There are some built-in helper functions to encode data in a certain form:
 
 .. autofunction:: kyoukai.util.as_html
