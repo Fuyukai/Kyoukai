@@ -95,9 +95,9 @@ Customizing the Blueprint
 -------------------------
 
 Route groups work by using an underlying Blueprint that is populated with all the routes from the
- class body during instantiation. The Blueprint can be customized by passing arguments in the
- class definition to the metaclass, which are stored and later used to create the new Blueprint
- object.
+class body during instantiation. The Blueprint can be customized by passing arguments in the
+class definition to the metaclass, which are stored and later used to create the new Blueprint
+object.
 
 .. code-block:: python
 
