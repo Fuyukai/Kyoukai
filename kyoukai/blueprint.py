@@ -144,8 +144,8 @@ class Blueprint(object):
     def add_child(self, blueprint: 'Blueprint') -> 'Blueprint':
         """
         Adds a Blueprint as a child of this one.
-
         This is automatically called when using another Blueprint as a parent.
+        
         :param blueprint: The blueprint to add as a child.
         """
         self._children.append(blueprint)
