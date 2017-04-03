@@ -60,7 +60,7 @@ class RouteGroupType(type):
                     rtt = bp.wrap_route(value, **func.route_kwargs)
 
                     # copy hooks
-                    for type_, hooks in func.hooks.items():
+                    for type_, hooks in func.route_hooks.items():
                         for hook in hooks:
                             rtt.add_hook(type_, hook)
 
