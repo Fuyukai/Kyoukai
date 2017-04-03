@@ -11,6 +11,8 @@ Version 2.1.3
 
   - Add :meth:`~.util.as_html`, :meth:`~.util.as_plaintext`, :meth:`~.util.as_json` helper methods.
 
+  - Add **Host Matching** support. See :ref:`hostmatching`.
+
 Version 2.1.2
 -------------
 

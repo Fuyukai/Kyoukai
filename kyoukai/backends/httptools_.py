@@ -67,8 +67,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         self.transport = None  # type: asyncio.WriteTransport
 
         # Request lock.
-        # This ensures that requests are processed serially, and responded to in the correct order, as the lock is
-        # released after processing a request completely.
+        # This ensures that requests are processed serially, and responded to in the correct order,
+        # as the lock is released after processing a request completely.
         self.lock = asyncio.Lock()
 
         # The parser itself.
@@ -203,18 +203,20 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             self.parser.feed_data(data)
         except httptools.HttpParserInvalidMethodError as e:
             # Exceptions here are a bit tricky.
-            # We can't simply call into the app to have it handle a 405/400 - there's no Request, or environment.
-            # Instead, what we do is call a wrapper function (handle_parser_exception) which will generate a fake
-            # WSGI environment, and then automatically return a werkzeug httpexception that corresponds.
+            # We can't simply call into the app to have it handle a 405/400 - there's no Request,
+            # or environment.Instead, what we do is call a wrapper function
+            # (handle_parser_exception) which will generate a fake WSGI environment, and then
+            # automatically return a werkzeug httpexception that corresponds.
             self.handle_parser_exception(e)
         except httptools.HttpParserError as e:
             traceback.print_exc()
             self.handle_parser_exception(e)
         except httptools.HttpParserUpgrade as e:
             # It's a HTTP upgrade!
-            # The only valid values of these that we wish to support (currently) are `h2c` and `Websocket`.
-            # Currently, Kyoukai does not support websocket upgrade (soon™).
-            # However, we cannot silently ignore websocket upgrades - we discard those for now and disconnect.
+            # The only valid values of these that we wish to support (currently) are `h2c` and
+            # `Websocket`. Currently, Kyoukai does not support websocket upgrade (soon™).
+            # However, we cannot silently ignore websocket upgrades - we discard those for now and
+            # disconnect.
             # Anything else, we also discard and disconnect.
 
             # httptools sucks, and only provides us an offset.
@@ -229,8 +231,9 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
                 return
             # If it's h2c, replace ourselves with the HTTP/2 client.
             if upgrade.lower() == "h2c":
-                # Copy the transport into our local scope, as it becomes None after we've switched type.
-                # Once we've replaced ourselves, call `connection_made` on the new type to initialize.
+                # Copy the transport into our local scope, as it becomes None after we've switched
+                # type. Once we've replaced ourselves, call `connection_made` on the new type to
+                # initialize.
                 for name, header in self.headers:
                     if name.lower() == "http2-settings":
                         http2_settings = header

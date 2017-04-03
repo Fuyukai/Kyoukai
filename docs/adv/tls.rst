@@ -1,12 +1,12 @@
 .. _tls:
 
-.. versionadded:: 2.1
-
 HTTPS Support
 =============
 
-Kyoukai's built in web server comes with native TLS support with secure defaults. Enabling it is as simple as
-creating a new block in the config file:
+.. versionadded:: 2.1
+
+Kyoukai's built in web server comes with native TLS support with secure defaults. Enabling it is as
+simple as creating a new block in the config file:
 
 .. code-block:: yaml
 

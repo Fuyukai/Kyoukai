@@ -20,17 +20,25 @@ class Blueprint(object):
     """
 
     def __init__(self, name: str, parent: 'Blueprint' = None,
-                 prefix: str = ""):
+                 prefix: str = "", *,
+                 host_matching: bool = False, host: str = None):
         """
         :param name: The name of this Blueprint.
             This is used when generating endpoints in the finalize stage.
 
         :param parent: The parent of this Blueprint.
-            Parent blueprints will gather the routes of their children, and return a giant :class:`werkzeug.routing.Map`
-            object that contains all of the route maps in the children
+            Parent blueprints will gather the routes of their children, and return a giant 
+            :class:`werkzeug.routing.Map` object that contains all of the route maps in the children
 
         :param prefix: The prefix to be added to the start of every route name.
-            This is inherited from parents - the parent prefix will also be added to the start of every route.
+            This is inherited from parents - the parent prefix will also be added to the start of 
+            every route.
+            
+        :param host_matching: Should host matching be enabled?
+            This is implicitly True if ``host`` is non-None.
+            
+        :param host: The host of the Blueprint. Used for custom subdomain routing.
+            If this is None, then this Blueprint will be used for all hosts.
         """
         #: The name of this Blueprint.
         self.name = name
@@ -41,7 +49,7 @@ class Blueprint(object):
         #: Any children :class:`~.Blueprint` objects.
         self._children = []
 
-        # The current prefix.
+        #: The current URL prefix.
         self._prefix = prefix
 
         #: If this Blueprint is finalized or not.
@@ -61,6 +69,10 @@ class Blueprint(object):
 
         #: The request hooks for this Blueprint.
         self._request_hooks = {}
+
+        #: The host for this Blueprint.
+        self._host = host
+        self._host_matching = host_matching or self._host is not None
 
     @property
     def parent(self) -> "Blueprint":
@@ -90,21 +102,44 @@ class Blueprint(object):
         for child in self._children:
             yield from child.tree_routes
 
-    def finalize(self):
+    @property
+    def host(self) -> str:
         """
-        Called on the root Blueprint when all Blueprints have been registered and the app is starting.
+        :return: The host for this Blueprint, or the host of any parent Blueprint. 
+        """
+        if self._parent:
+            return self._host or self.parent.host
 
-        This will automatically build a Map of Rule objects for each Blueprint.
+        return self._host
+
+    def finalize(self, **map_options) -> Map:
+        """
+        Called on the root Blueprint when all Blueprints have been registered and the app is 
+        starting.
+        
+        This will automatically build a :class:`werkzeug.routing.Map` of 
+        :class:`werkzeug.routing.Rule` objects for each Blueprint.
+        
+        .. note::
+        
+            Calling this on sub-blueprints will have no effect, apart from generating a Map.  
+            It is recommended to only call this on the root Blueprint.
+        
+        :param map_options: The options to pass to the created Map.
+        :return: The :class:`werkzeug.routing.Map` created from the routing tree.
         """
         routes = self.routes.copy()
         for child in self._children:
             routes.extend(list(child.tree_routes))
 
         # Make a new Map() out of all of the routes.
-        rule_map = Map([route.create_rule() for route in routes])
+        rule_map = Map([route.create_rule() for route in routes],
+                       host_matching=self._host_matching)
         self._route_map = rule_map
 
         self.finalized = True
+
+        return rule_map
 
     def add_child(self, blueprint: 'Blueprint') -> 'Blueprint':
         """
@@ -124,8 +159,11 @@ class Blueprint(object):
 
         This is equivalent to:
 
-            route = bp.wrap_route(func)
+        .. code-block:: python
+        
+            route = bp.wrap_route(func, **kwargs)
             bp.add_route(route, routing_url, methods)
+            
         """
 
         def _inner(func):
@@ -140,6 +178,8 @@ class Blueprint(object):
         Helper decorator for adding an error handler.
 
         This is equivalent to:
+
+        .. code-block:: python
 
             route = bp.add_errorhandler(cbl, code)
 
@@ -248,7 +288,7 @@ class Blueprint(object):
 
         :param route: The route object to add.
         
-            This can be gotten from :class:`kyoukai.blueprints.Blueprints.wrap_route`, or by 
+            This can be gotten from :class:`.Blueprint.wrap_route`, or by 
             directly creating a Route object.
 
         :param routing_url: The Werkzeug-compatible routing URL to add this route under.
@@ -269,7 +309,7 @@ class Blueprint(object):
 
         return route
 
-    def get_route(self, endpoint: str):
+    def get_route(self, endpoint: str) -> 'typing.Union[Route, None]':
         """
         Gets the route associated with an endpoint.
         """
@@ -279,7 +319,7 @@ class Blueprint(object):
 
         return None
 
-    def add_route_group(self, group: 'RouteGroup', *args, **kwargs):
+    def add_route_group(self, group: 'RouteGroup'):
         """
         Adds a route group to the current Blueprint.
         
@@ -290,22 +330,22 @@ class Blueprint(object):
 
         return self
 
-    def url_for(self, environment: dict, endpoint: str,
-                *,
-                method: str = None,
-                **kwargs) -> str:
+    def url_for(self, environment: dict, endpoint: str, *,
+                method: str = None, **kwargs) -> str:
         """
         Gets the URL for a specified endpoint using the arguments of the route.
 
         This works very similarly to Flask's ``url_for``.
 
-        It is not recommended to invoke this method directly - instead, ``url_for`` is set on the context object that
-        is provided to your user function. This will allow you to invoke it with the correct environment already set.
+        It is not recommended to invoke this method directly - instead, ``url_for`` is set on the 
+        context object that is provided to your user function. This will allow you to invoke it 
+        with the correct environment already set.
 
         :param environment: The WSGI environment to use to bind to the adapter.
         :param endpoint: The endpoint to try and retrieve.
 
-        :param method: If set, the method to explicitly provide (for similar endpoints with different allowed routes).
+        :param method: If set, the method to explicitly provide (for similar endpoints with \ 
+            different allowed routes).
 
         :param kwargs: Keyword arguments to provide to the route.
         :return: The built URL for this endpoint.
@@ -317,7 +357,7 @@ class Blueprint(object):
 
         return built_url
 
-    def match(self, environment: dict) -> typing.Tuple[Route, typing.Container]:
+    def match(self, environment: dict) -> typing.Tuple[Route, typing.Container[typing.Any]]:
         """
         Matches with the WSGI environment.
 
@@ -325,8 +365,8 @@ class Blueprint(object):
         
             You can use the ``environ`` argument of a Request to get the environment back.
             
-        :return: A Route object, which can be invoked to return the right response, and the parameters to invoke it \
-            with.
+        :return: A Route object, which can be invoked to return the right response, and the \
+            parameters to invoke it with.
         """
         # Get the MapAdapter used for matching.
         adapter = self._route_map.bind_to_environ(environment)

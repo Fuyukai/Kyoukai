@@ -12,6 +12,7 @@ import logging
 from asphalt.core import resolve_reference, Context
 from asphalt.core.event import Signal, Event
 from asphalt.core.component import Component
+from werkzeug.routing import Rule
 from werkzeug.wrappers import Request, Response
 
 from kyoukai.blueprint import Blueprint
@@ -81,7 +82,8 @@ class KyoukaiBaseComponent(Component, metaclass=abc.ABCMeta):  # pragma: no cove
     """
     The base class for any component used by Kyoukai.
 
-    This one does not create a Server instance; it should be used when you are using a different HTTP server backend.
+    This one does not create a Server instance; it should be used when you are using a different 
+    HTTP server backend.
     """
     connection_made = Signal(ConnectionMadeEvent)
     connection_lost = Signal(ConnectionLostEvent)
@@ -157,8 +159,8 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
         Creates a new component.
 
         :param app: The application object to use.
-            This can either be the real application object, or a string that resolves to a reference for the real \
-            application object.
+            This can either be the real application object, or a string that resolves to a \
+            reference for the real application object.
 
         :param ip: If using the built-in HTTP server, the IP to bind to.
         :param port: If using the built-in HTTP server, the port to bind to.
@@ -192,9 +194,14 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
             if ssl.get("enabled") is True:
                 ssl_context = py_ssl.create_default_context(py_ssl.Purpose.CLIENT_AUTH)
                 # override the ciphers
-                ssl_context.set_ciphers("EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+AES128:RSA+AES128:"
-                                        "EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!aNULL:!eNULL:!MD5:!DSS:!RC4")
-                ssl_context.load_cert_chain(certfile=ssl["ssl_certfile"], keyfile=ssl["ssl_keyfile"])
+                ssl_context.set_ciphers(
+                    "EECDH+CHACHA20:EECDH+CHACHA20-draft:"  # CHACHA20 for newer openssl
+                    "EECDH+AES128:RSA+AES128:"              # Standard AES
+                    "EECDH+AES256:RSA+AES256:"              # Slower AES
+                    "EECDH+3DES:RSA+3DES:"                  # 3DES for older systems
+                    "!aNULL:!eNULL:!MD5:!DSS:!RC4")         # Disable insecure ciphers
+                ssl_context.load_cert_chain(certfile=ssl["ssl_certfile"],
+                                            keyfile=ssl["ssl_keyfile"])
 
                 if self.cfg.get("http2", False) is True:
                     ssl_context.set_alpn_protocols(["h2"])
@@ -209,7 +216,8 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
         self.app.finalize()
-        self.server = await self.app.loop.create_server(protocol, self.ip, self.port, ssl=ssl_context)
+        self.server = await self.app.loop.create_server(protocol, self.ip, self.port,
+                                                        ssl=ssl_context)
         self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
 
 
@@ -235,6 +243,9 @@ class HTTPRequestContext(Context):
 
         #: The :class:`~.Blueprint` object this request is for.
         self.bp = None  # type: Blueprint
+
+        #: The :class:`werkzeug.routing.Rule` object associated with this request.
+        self.rule = None  # type: Rule
 
         #: The WSGI environment for this request.
         self.environ = self.request.environ  # type: dict

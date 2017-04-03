@@ -191,8 +191,8 @@ class H2State:
 
         return d
 
-    def start_response(self, status: str, headers: typing.List[typing.Tuple[str, str]], exc_info=None) -> \
-            typing.Callable:
+    def start_response(self, status: str, headers: typing.List[typing.Tuple[str, str]],
+                       exc_info=None):
         """
         The ``start_response`` callable that is plugged into a Werkzeug response.
         """

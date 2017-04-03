@@ -1,11 +1,13 @@
 """
 A gunicorn (green unicorn) based WSGI wrapper for Kyoukai.
 
-This is similar to the uWSGI wrapper in that it implements a WSGI application for gunicorn to attach to. This only
-works with the gaiohttp worker, as otherwise the worker will have to block whilst the event loop runs.
+This is similar to the uWSGI wrapper in that it implements a WSGI application for gunicorn to attach 
+to. This only works with the gaiohttp worker, as otherwise the worker will have to block whilst 
+the event loop  runs.
 
-The gaiohttp worker allows asyncio execution of a coroutine (in our case, Kyoukai.process_request), so the asyncio
-event loop should work like normal whilst allowing gunicorn to take the brunt of the application work.
+The gaiohttp worker allows asyncio execution of a coroutine (in our case, Kyoukai.process_request), 
+so the asyncio event loop should work like normal whilst allowing gunicorn to take the brunt of 
+the application work.
 """
 import asyncio
 import typing
@@ -30,9 +32,11 @@ class GunicornAdapter(object):
     """
     This class should be instantiated to create a gunicorn-compatible WSGI class.
 
-    The instance method ``run_application`` should be set as the WSGI application, which calls your app.
+    The instance method ``run_application`` should be set as the WSGI application, which calls your 
+    app.
     For example:
-    .. code:: python
+    
+    .. code-block:: python
 
         kyk = Kyoukai("my_app")
         runner = GunicornAdapter(kyk)
@@ -56,7 +60,8 @@ class GunicornAdapter(object):
         except KeyError:
             raise LookupError('missing configuration key: component') from None
         else:
-            component = component_types.create_object(**component_config)  # type: ContainerComponent
+            component = component_types.create_object(
+                **component_config)  # type: ContainerComponent
 
         # Create a new Context.
         context = Context()
@@ -82,7 +87,8 @@ class GunicornAdapter(object):
     def __init__(self, app: Kyoukai, base_context: Context = None):
         """
         :param app: The current application to run.
-        :param base_context: The base context which is used as the parent to the HTTPRequestContext created.
+        :param base_context: The base context which is used as the parent to the \ 
+            HTTPRequestContext created.
         """
         self.app = app
 
@@ -95,7 +101,8 @@ class GunicornAdapter(object):
         """
         Main entry point of the application.
 
-        This is wrapped into a :class:`asyncio.Task` by ``run_application`` which is awaited on to run the app itself.
+        This is wrapped into a :class:`asyncio.Task` by ``run_application`` which is awaited on to 
+        run the app itself.
         """
         if not self.app.root.finalized:
             self.app.finalize()
@@ -111,7 +118,8 @@ class GunicornAdapter(object):
         """
         Runs Kyoukai for the current request.
 
-        This is **not** a coroutine - it returns a single item (a Task), which is awaited on to get the response.
+        This is **not** a coroutine - it returns a single item (a Task), which is awaited on to get 
+        the response.
 
         :param environment: The WSGI environment to run this request with.
         :param start_response: A callable that can be used to start the response.
@@ -121,7 +129,8 @@ class GunicornAdapter(object):
         is_async = environment.get("wsgi.async", False)
         if not is_async:
             # Damnit. Return a WSGI response that ells the user they're stupid.
-            r = Response("<h1>Error</h1><br/>You did not use the <code>gaiohttp</code> gunicorn worker. This is an "
+            r = Response("<h1>Error</h1><br/>You did not use the <code>gaiohttp</code> "
+                         "gunicorn worker. This is an "
                          "error! Please switch to the gaiohttp worker instead.")
             r.headers["Content-Type"] = "text/html; charset=utf-8"
             r.status_code = 500

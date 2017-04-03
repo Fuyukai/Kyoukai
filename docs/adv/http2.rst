@@ -3,6 +3,8 @@
 HTTP/2 Support
 ==============
 
+.. versionadded:: 2.1.0
+
 Kyoukai comes with built in support for HTTP/2, thanks to to the H2 library.
 
 Enabling HTTP2 requires:
@@ -16,10 +18,11 @@ Enabling HTTP2 requires:
 Automatic switching
 -------------------
 
-Kyoukai supports automatically upgrading to HTTP/2 via ALPN/NPN protocols (the default for making new connections
-over TLS) or with plain old h2c.
+Kyoukai supports automatically upgrading to HTTP/2 via ALPN/NPN protocols (the default for making
+new connections over TLS) or with plain old h2c.
 
-To enable **automatic upgrade**, add the ``http2`` key to your config file, under the ``kyoukai`` component, like so:
+To enable **automatic upgrade**, add the ``http2`` key to your config file, under the ``kyoukai``
+component, like so:
 
 .. code-block:: yaml
 
@@ -27,15 +30,17 @@ To enable **automatic upgrade**, add the ``http2`` key to your config file, unde
     # This will switch to the HTTP/2 protocol parser when a connection is created.
     http2: true
 
-Now, when connecting over TLS (or HTTP/1.1 with h2c) the connection will be automatically upgraded to a HTTP/2
-connection.
+Now, when connecting over TLS (or HTTP/1.1 with h2c) the connection will be automatically
+upgraded to a HTTP/2 connection.
 
 Manual switching
 ----------------
 
-It is possible to enforce HTTP/2 only, or otherwise manual switching, with the usage of :class:`~.H2KyoukaiProtocol`.
+It is possible to enforce HTTP/2 only, or otherwise manual switching, with the usage of
+:class:`~.H2KyoukaiProtocol`.
 
-To switch to this component, change ``KyoukaiComponent`` to ``H2KyoukaiComponent`` in your application component
+To switch to this component, change ``KyoukaiComponent`` to ``H2KyoukaiComponent`` in your
+application component
 container like so:
 
 .. code-block:: python

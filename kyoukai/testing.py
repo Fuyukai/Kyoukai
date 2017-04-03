@@ -74,14 +74,16 @@ class TestKyoukai(Kyoukai):
             # use testing as you would normally
 
         :param other_app: The application object to wrap.
-            Internally, this creates a new instance of ourselves, then sets the ``process_request`` of the subclass
-            to the copied object.
+            Internally, this creates a new instance of ourselves, then sets the ``process_request`` 
+            of the subclass to the copied object.
 
-            This means whenever ``inject_request`` is called, it will use the old app's process_request to run with,
+            This means whenever ``inject_request`` is called, it will use the old app's 
+            process_request to run with,
             which will use the environment of the previous instance.
 
-            Of course, if the old app has any side effects upon process_request, these side effects will happen when
-            the testing application runs as well, as the old app is completely copied over.
+            Of course, if the old app has any side effects upon process_request, these side effects 
+            will happen when the testing application runs as well, as the old app is completely 
+            copied over.
 
         :param base_context: The base context to use for this.
         """

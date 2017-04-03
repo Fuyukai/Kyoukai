@@ -3,6 +3,8 @@
 Route Groups
 ============
 
+.. versionadded:: 2.1.2
+
 **Route Groups** are a way of grouping routes together into a single class, where they can all
 access the members of the class. This is easier than having global shared state, and easily
 allows having "route" templates.
@@ -36,7 +38,7 @@ Adding Routes
 
 To make your route group useful, you need to add some **routes** to it. The RouteGroup module
 includes a special decorator that marks a route function as a new :class:`.Route` during instance
- creation, :meth:`~.routegroup.route`.
+creation, :meth:`~.routegroup.route`.
 
 This method takes the same arguments as the regular ``route`` decorator; the only difference is
 that it returns the original function in the class body rather than returning a new Route object.
@@ -59,6 +61,8 @@ This will register ``heck_em_up`` as a route on the new route group.
 
 Error Handlers
 --------------
+
+.. versionadded:: 2.1.3
 
 Route groups can also have group-specific error handlers, using :meth:`~.routegroup.errorhandler`.
 
@@ -84,7 +88,7 @@ Adding the group to your app is as simple as instantiating the group and calling
 
 Of course, an alias for this exists on :class:`~.app.Kyoukai` which redirects to the root blueprint.
 
-.. autofunction:: kyoukai.blueprint.Blueprint.add_route_group
+.. automethod:: kyoukai.blueprint.Blueprint.add_route_group
     :noindex:
 
 Customizing the Blueprint

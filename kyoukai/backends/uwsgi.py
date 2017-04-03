@@ -1,14 +1,16 @@
 """
 A uWSGI adapter for Kyoukai.
 
-This allows you to run Kyoukai with uWSGI as the web server. It translates the WSGI protocol into Kyoukai itself.
+This allows you to run Kyoukai with uWSGI as the web server. It translates the WSGI protocol into 
+Kyoukai itself.
 """
 
 import asyncio
 try:
     import greenlet
 except ImportError:
-    raise RuntimeError("uwsgi must be configured with the greenlet and asyncio workers enabled for the uwsgi backend")
+    raise RuntimeError("uwsgi must be configured with the greenlet and asyncio workers enabled "
+                       "for the uwsgi backend")
 
 import functools
 
@@ -53,8 +55,8 @@ class uWSGIAdapter(object):
     """
     The main adapter.
 
-    To use uWSGI with Kyoukai, you must create an instance of this class with your app object, and point uWSGI to the
-    ``wsgi_application`` method.
+    To use uWSGI with Kyoukai, you must create an instance of this class with your app object, and 
+    point uWSGI to the ``wsgi_application`` method.
 
     .. code:: python
 
@@ -84,8 +86,8 @@ class uWSGIAdapter(object):
         self.base_context = base_context or Context()
 
         # The event loop.
-        # This is set in run_application if it is None, otherwise it is set in `from_component`, to get the right
-        # event loop.
+        # This is set in run_application if it is None, otherwise it is set in `from_component`,
+        # to get the right event loop.
         # This is used on the futures.
         self.loop = None
 
@@ -174,8 +176,8 @@ class uWSGIAdapter(object):
         # we're back!
 
         # Get the result/exception from the future.
-        # This will automatically re-raise. Kyoukai handles exceptions from user code, so this *shouldn't* kill
-        # anything, only cause uWSGI to emit a 500.
+        # This will automatically re-raise. Kyoukai handles exceptions from user code, so this
+        # *shouldn't* kill anything, only cause uWSGI to emit a 500.
         result = fut.result()  # type: Response
 
         # Write the response to the WSGI stream.

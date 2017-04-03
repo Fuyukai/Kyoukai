@@ -46,10 +46,11 @@ class Route(object):
         #: The :class:`~.Blueprint` this route is associated with.
         self.bp = None  # type: Blueprint
 
-        # The :class:`Rule` associated with this route.
+        #: The :class:`Rule` associated with this route.
         self.rule = None  # type: Rule
         self.routing_url = None
 
+        #: A list of methods associated with this rule.
         self.methods = []
 
         self.reverse_hooks = reverse_hooks
@@ -65,8 +66,10 @@ class Route(object):
 
         :return: A new :class:`werkzeug.routing.Rule` that is to be used for this route.
         """
-        return Rule(self.bp.prefix + self.routing_url, methods=self.methods,
-                    endpoint=self.get_endpoint_name(self.bp))
+        return Rule(self.bp.prefix + self.routing_url,
+                    methods=self.methods,
+                    endpoint=self.get_endpoint_name(self.bp),
+                    host=self.bp.host)
 
     def get_endpoint_name(self, bp=None):
         """

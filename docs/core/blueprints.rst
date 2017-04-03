@@ -1,9 +1,13 @@
 .. _blueprints:
 
-.. versionadded:: 1.5
-
 Blueprints
 ==========
+
+.. versionadded:: 1.5
+
+.. versionchanged:: 2.1.2
+
+    Host Matching is now supported. See :ref:`hostmatching`.
 
 In Kyoukai, routes are stored inside a tree structure consisting of multiple Blueprint objects with a parent and
 children. Each Blueprint contains a group of routes stored on it, which inherit the request hooks and the API prefix

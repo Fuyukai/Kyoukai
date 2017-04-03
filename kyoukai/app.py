@@ -45,22 +45,6 @@ class Kyoukai(object):
                                    app="app:app")
 
     Of course, you can also embed Kyoukai inside another app, by awaiting :meth:`Kyoukai.start`.
-
-    :param application_name: The name of the application that is being created. This is currently \ 
-        unused.
-
-    :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment \
-        created for ``url_for``, if applicable.
-        
-    :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI \ 
-        environment created for ``url_for``, if applicable.
-        
-    :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is \ 
-        specified it, will be automatically fetched using :meth:`asyncio.get_event_loop`.
-        
-    :param request_class: Keyword-only. The custom request class to instantiate requests with.
-    
-    :param response_class: Keyword-only. The custom response class to instantiate responses with.
     """
 
     #: The class of request to spawn every request.
@@ -78,6 +62,29 @@ class Kyoukai(object):
                  *,
                  server_name: str = None,
                  **kwargs):
+        """
+        :param application_name: The name of the application that is being created. This is \ 
+            passed to the :class:`.Blueprint` being created as the root blueprint.
+            
+        :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment \
+            created for ``url_for``, if applicable.
+            
+        :param host_matching: Should host matching be enabled? This will be implicitly True if \
+            ``host`` is not None.
+            
+        :param host: The host used for host matching, to be passed to the root Blueprint.
+            By default, no host is used, so all hosts are matched on the root Blueprint.
+            
+        :param application_root: Keyword-only. The APPLICATION_ROOT to use inside the fake WSGI \ 
+            environment created for ``url_for``, if applicable.
+        
+        :param loop: Keyword-only. The asyncio event loop to use for this app. If no loop is \ 
+            specified it, will be automatically fetched using :meth:`asyncio.get_event_loop`.
+        
+        :param request_class: Keyword-only. The custom request class to instantiate requests with.
+        :param response_class: Keyword-only. The custom response class to instantiate responses \ 
+            with.
+        """
         self.name = application_name
         self.server_name = server_name
 
@@ -90,7 +97,8 @@ class Kyoukai(object):
         self.logger = logging.getLogger("Kyoukai")  # type: logging.Logger
 
         # Create the root blueprint.
-        self._root_bp = Blueprint(application_name)
+        self._root_bp = Blueprint(application_name, host=kwargs.get("host"),
+                                  host_matching=kwargs.get("host_matching", False))
 
         # The current Component that is running this app.
         self.component = None
@@ -232,6 +240,7 @@ class Kyoukai(object):
             # Call match on our Blueprint to find the request.
             try:
                 matched, params = self.root.match(request.environ)
+                ctx.rule = matched
             except NotFound as e:
                 # No route matched.
                 self.log_route(ctx.request, 404)

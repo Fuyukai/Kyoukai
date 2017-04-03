@@ -74,7 +74,9 @@ def to_wsgi_environment(headers: list, method: str, path: str,
         This should NOT be urldecoded, as the path is manually decoded.
 
     :param http_version: The HTTP version to use.
-    :param body: A :class:`BytesIO` representing the body wrapper for this dict, or None if there is no request body.
+    :param body: A :class:`BytesIO` representing the body wrapper for this dict, or None if there \ 
+        is no request body.
+
     :return: A new dict containing the fake WSGI environment.
     """
     if isinstance(headers, dict):
