@@ -4,17 +4,19 @@ The core application.
 
 import asyncio
 import logging
-import traceback
 
 from asphalt.core import Context, run_application
 from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError
-from werkzeug.routing import RequestRedirect
+from werkzeug.routing import RequestRedirect, Map
 from werkzeug.wrappers import Request, Response
 
 from kyoukai.asphalt import HTTPRequestContext
 from kyoukai.blueprint import Blueprint
 
 __version__ = "2.1.4"
+
+
+logger = logging.getLogger("Kyoukai")
 
 
 class Kyoukai(object):
@@ -94,8 +96,6 @@ class Kyoukai(object):
         if not self.loop:
             self.loop = asyncio.get_event_loop()
 
-        self.logger = logging.getLogger("Kyoukai")  # type: logging.Logger
-
         # Create the root blueprint.
         self._root_bp = Blueprint(application_name, host=kwargs.get("host"),
                                   host_matching=kwargs.get("host_matching", False))
@@ -130,16 +130,18 @@ class Kyoukai(object):
         """
         return self.root.add_child(child)
 
-    def finalize(self):
+    def finalize(self, **map_options) -> Map:
         """
         Finalizes the app and blueprints.
 
         This will calculate the current :class:`werkzeug.routing.Map` which is required for 
         routing to work.
+        
+        :param map_options: The options to pass to the Map for routing.
         """
         self.debug = self.config.get("debug", False)
 
-        self.root.finalize()
+        return self.root.finalize(**map_options)
 
     # Magic methods
     def __getattr__(self, item: str) -> object:
@@ -151,6 +153,7 @@ class Kyoukai(object):
         if item in ("route", "errorhandler", "add_errorhandler", "add_route", "wrap_route",
                     "url_for", "before_request", "add_hook", "after_request",
                     "add_route_group"):
+
             return getattr(self.root, item)
 
         raise AttributeError("'{.__class__.__name__}' object has no attribute {}"
@@ -164,7 +167,7 @@ class Kyoukai(object):
         :param code: The response code of the route.
         """
         fmtted = "{} {} - {}".format(request.method, request.path, code)
-        self.logger.info(fmtted)
+        logger.info(fmtted)
 
     async def handle_httpexception(self, ctx: HTTPRequestContext, exception: HTTPException,
                                    environ: dict = None) -> Response:
@@ -199,11 +202,11 @@ class Kyoukai(object):
                 result = await error_handler.invoke(ctx, {"exc": exception})
             except HTTPException as e:
                 # why tho?
-                self.logger.warning("Error handler function raised another error, using the "
+                logger.warning("Error handler function raised another error, using the "
                                     "response from that...")
                 result = e.get_response(environ)
             except Exception as e:
-                self.logger.exception("Error in error handler!")
+                logger.exception("Error in error handler!")
                 result = InternalServerError(e).get_response(environ)
             # else:
                 # result = wrap_response(result, self.response_class)
@@ -244,13 +247,13 @@ class Kyoukai(object):
             except NotFound as e:
                 # No route matched.
                 self.log_route(ctx.request, 404)
-                self.logger.debug("Could not resolve route for {request.path}."
+                logger.debug("Could not resolve route for {request.path}."
                                   .format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except MethodNotAllowed as e:
                 # 405 method not allowed
                 self.log_route(ctx.request, 405)
-                self.logger.debug("Could not resolve valid method for "
+                logger.debug("Could not resolve valid method for "
                                   "{request.path} ({request.method})".format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except RequestRedirect as e:
@@ -272,12 +275,12 @@ class Kyoukai(object):
                 ctx.route_invoked.dispatch(ctx=ctx)
                 result = await matched.invoke(ctx, params)
             except HTTPException as e:
-                self.logger.info(
+                logger.info(
                     "Hit HTTPException ({}) inside function, delegating.".format(str(e))
                 )
                 result = await self.handle_httpexception(ctx, e, request.environ)
             except Exception as e:
-                self.logger.exception("Unhandled exception in route function")
+                logger.exception("Unhandled exception in route function")
                 new_e = InternalServerError()
                 new_e.__cause__ = e
                 result = await self.handle_httpexception(ctx, new_e, request.environ)
