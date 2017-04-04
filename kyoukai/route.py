@@ -27,7 +27,8 @@ class Route(object):
         :param function: The underlying callable.
             This can be a function, or any other callable.
 
-        :param reverse_hooks: If the request hooks should be reversed for this request (i.e child to parent.)
+        :param reverse_hooks: If the request hooks should be reversed for this request (i.e child \
+         to parent.)
         
         :param should_invoke_hooks: If request hooks should be invoked.
             This is automatically False for error handlers.
@@ -156,8 +157,8 @@ class Route(object):
 
             assert isinstance(arg, inspect.Parameter)
             if arg.name not in params:
-                raise ValueError("Argument {} not found in args for callable {}".format(arg.name,
-                                                                                        self._callable.__name__))
+                raise ValueError("Argument {} not found in args for callable {}"
+                                 .format(arg.name, self._callable.__name__))
 
             # Also, check that the type of the arg and the annotation matches.
             value = params[arg.name]

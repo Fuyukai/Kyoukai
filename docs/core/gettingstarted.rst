@@ -81,7 +81,7 @@ Routes are made up of three parts:
       the a new :class:`~.HTTPRequestContext`, containing the request data
       and other context specific data.
 
-   .. code:: python
+   .. code-block:: python
 
        async def some_route(ctx: HTTPRequestContext): ...
 
@@ -94,13 +94,14 @@ Creating the route
 Routes in Kyoukai are created very similarly to Flask routes: with a
 decorator.
 
-.. code:: python
+.. code-block:: python
 
     @app.route("/path", methods=["GET", "POST"])
 
-| As explained above, the route decorator takes a path and a method.
-| This route decorator returns a Route class, but this isn't important
-  right now.
+.. note::
+
+    As explained above, the route decorator takes a path and a method.
+    This route decorator returns a Route class, but this isn't important right now.
 
 The Route Coroutine
 ~~~~~~~~~~~~~~~~~~~
@@ -108,7 +109,7 @@ The Route Coroutine
 Your route function **must** be a coroutine. As Kyoukai is async,
 your code must also be async.
 
-.. code:: python
+.. code-block:: python
 
     @app.route("/")
     async def index(ctx): ...
@@ -128,7 +129,7 @@ For now, we will put normal HTML in our file.
 
 Open up ``templates/index.html`` and add the following code to it:
 
-.. code:: html
+.. code-block:: html
 
     It's current year, and you're still using blocking code? Not <em>me!</em>
 
@@ -139,18 +140,16 @@ Save and close the template.
 Rendering the template
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Rendering the template requires an Asphalt extension - `Asphalt Rendering <https://asphalt-templating.readthedocs
-.io/en/latest/>`__. Once configured and installed, it can be used to render your template easily.
+Since the template is a very simple HTML document, no additional rendering is needed; you can
+simply use :func:`.as_html` to render the document.
 
-You can add it to your brand new route like so:
-
-.. code:: python
+.. code-block:: python
 
     @app.route("/")
     async def index(ctx):
-        return ctx.jinja2.render("index.html")
+        with open("templates/index.html") as f:
+            return as_html(f.read())
 
-Replace ``jinja2`` with the appropriate rendering engine you selected.
 
 Responses
 ---------
@@ -190,14 +189,12 @@ blocking code.
 
     app.run(ip="127.0.0.1", port=4444)
 
-.. warning::
+.. note::
 
-   Whilst using ``app.run``, you will not have Asphalt Rendering enabled in your configuration.
+    The args passed in here are just the default values; they are optional.
 
-| The args passed in here are just the default values; they are
-  optional.
-| Open up your web browser and point it to http://localhost:4444/. If
-  you have done this correctly, you should see something like this:
+Open up your web browser and point it to http://localhost:4444/. If you have done this correctly,
+ you should see something like this:
 
 .. figure:: /img/ex1.png
    :alt: example 1
@@ -207,8 +204,9 @@ blocking code.
 Deploying
 ---------
 
-There's no special procedure for deploying your app. The inbuilt webserver is production ready, and you can run your
-application in a production environment in the same way as you would develop it.
+There's no special procedure for deploying your app. The inbuilt webserver is production ready,
+and you can run your application in a production environment in the same way as you would develop
+it.
 
 
 Finishing your project

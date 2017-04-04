@@ -19,12 +19,12 @@ __version__ = "2.1.4"
 
 class Kyoukai(object):
     """
-    The Kyoukai type is the core of the Kyoukai framework, and the core of your web application based upon the
-    Kyoukai framework. It acts as a central router and request processor that takes in requests from the protocols
-    and returns responses.
+    The Kyoukai type is the core of the Kyoukai framework, and the core of your web application 
+    based upon the Kyoukai framework. It acts as a central router and request processor that 
+    takes in requests from the protocols and returns responses.
 
-    The application name is currently unused, but it is good practice to set it correctly anyway in case it is used
-    in future editions of Kyoukai.
+    The application name is currently unused, but it is good practice to set it correctly anyway in 
+    case it is used in future editions of Kyoukai.
 
     You normally create an application instance inside your component file, like so:
 
@@ -153,8 +153,8 @@ class Kyoukai(object):
                     "add_route_group"):
             return getattr(self.root, item)
 
-        raise AttributeError("'{.__class__.__name__}' object has no attribute {}".format(self,
-                                                                                         item))
+        raise AttributeError("'{.__class__.__name__}' object has no attribute {}"
+                             .format(self, item))
 
     def log_route(self, request: Request, code: int):
         """

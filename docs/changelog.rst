@@ -77,35 +77,44 @@ Version 2.0.1
 Version 2.0
 -----------
 
-Version 2.0 is a major overhaul of the library, simplifying it massively and removing a lot of redundant or otherwise overly complex code.
+Version 2.0 is a major overhaul of the library, simplifying it massively and removing a lot of
+redundant or otherwise overly complex code.
 
   - Requests and responses are now based on Werkzeug data structures.
-    Werkzeug is a much more battle tested library than Kyoukai; it ensures that there are less edge cases during HTTP parsing.
+    Werkzeug is a much more battle tested library than Kyoukai; it ensures that there are less
+    edge cases during HTTP parsing.
 
-  - Routing is now handled by Werkzeug and the Rule/Map based router rather than overly complex regex routes.
+  - Routing is now handled by Werkzeug and the Rule/Map based router rather than overly complex
+    regex routes.
 
-  - The application object is now I/O blind - it will take in a Request object and produce a Response object, instead of writing to the stream directly.
+  - The application object is now I/O blind - it will take in a Request object and produce a
+    Response object, instead of writing to the stream directly.
 
-  - A new ``gunicorn`` HTTP backend has been added - using the ``gaiohttp`` worker, gunicorn can now be connected to Kyoukai.
+  - A new ``gunicorn`` HTTP backend has been added - using the ``gaiohttp`` worker, gunicorn can
+    now be connected to Kyoukai.
 
-  - A new ``uwsgi`` HTTP backend has been added - uWSGI running in asyncio mode can now be connected to Kyoukai.
+  - A new ``uwsgi`` HTTP backend has been added - uWSGI running in asyncio mode can now be
+    connected to Kyoukai.
 
-  - A new HTTP/2 backend has been added which uses the pure Python ``h2`` library as a state machine for parsing HTTP frames.
+  - A new HTTP/2 backend has been added which uses the pure Python ``h2`` library as a state
+    machine for parsing HTTP frames.
 
-  - The ``httptools`` backend has been rewritten - it is now more reliable and supports chunked data streams.
+  - The ``httptools`` backend has been rewritten - it is now more reliable and supports
+    chunked data streams.
 
 Version 1.9.2
 -------------
 
  - Add ``depth`` property which signifies how deep in the tree the Blueprint is.
 
- - The routing tree no longer considers matching routes that don't start with the prefix of the blueprint.
+ - The routing tree no longer considers matching routes that don't start with the prefix of the
+   blueprint.
 
  - Add ``tree_path`` property which shows the full tree path to a Blueprint.
 
  - Add the ability to set 405 error handlers on Blueprints.
-   The routing engine will automatically try and match the 405 on the lowest common ancestor of all routes that
-   failed to match in the blueprint tree.
+   The routing engine will automatically try and match the 405 on the lowest common ancestor of all
+   routes that failed to match in the blueprint tree.
 
  - Add ``blueprint`` and ``route`` attributes to :class:`~.HTTPRequestContext`.
 
@@ -115,8 +124,8 @@ Version 1.9.2
 
  - Converters will now handle ``*args`` and ``**kwargs`` in functions properly.
 
- - HTTPExceptions have been overhauled to allow early exiting with a custom response. Do not abuse as a replacement
-   for the return statement.
+ - HTTPExceptions have been overhauled to allow early exiting with a custom response. Do not abuse
+   as a replacement for the return statement.
 
 Version 1.9.1
 -------------
@@ -132,15 +141,16 @@ Version 1.8.6
 Version 1.8.5
 -------------
 
- - Routing tree has been improved by allowing two routes with the same path but different methods to reside in two
-   different blueprints.
+ - Routing tree has been improved by allowing two routes with the same path but different methods
+   to reside in two different blueprints.
 
 Version 1.8.4
 -------------
 
  - Error handlers can now error themselves, and this is handled gracefully.
 
- - If a match is invalid, it will raise a 500 error at compile time, which is usually when routes are first matched.
+ - If a match is invalid, it will raise a 500 error at compile time, which is usually when routes
+   are first matched.
 
 Version 1.8.3
 -------------
@@ -164,8 +174,8 @@ Version 1.8.1
 Version 1.8.0
 -------------
 
- - Add the ability to override the Request and Response classes used in views with ``app.request_cls`` and
-   ``app.response_cls`` respectively.
+ - Add the ability to override the Request and Response classes used in views with
+   ``app.request_cls`` and ``app.response_cls`` respectively.
 
  - Views now have the ability to change which Route class they use in the decorator.
 
@@ -182,28 +192,29 @@ Version 1.7.2
 
  - Form handling is now handled by Werkzeug.
 
- - Add a new attribute, :attr:`kyoukai.request.Request.files` which stores uploaded files from the form passed in.
+ - Add a new attribute, :attr:`kyoukai.request.Request.files` which stores uploaded files from the
+   form passed in.
 
  - Requests are no longer parsed multiple times.
 
 Version 1.7.0
 -------------
 
- - Overhaul template renderers. This allows easier creation of a template renderer with a specific engine without
-   having to use engine-specific code in views.
+ - Overhaul template renderers. This allows easier creation of a template renderer with a specific
+   engine without having to use engine-specific code in views.
 
- - Add a Jinja2 based renderer. This can be enabled by passing ``template_renderer="jinja2"`` in your application
-   constructor.
+ - Add a Jinja2 based renderer. This can be enabled by passing ``template_renderer="jinja2"`` in
+   your application constructor.
 
 Version 1.6.0
 -------------
 
  - Add converters.
-   Converters allow annotations to be added to parameters which will automatically convert the argument passed in to
-   that type, if possible.
+   Converters allow annotations to be added to parameters which will automatically convert the
+   argument passed in to that type, if possible.
 
- - Exception handlers now take an ``exception`` param as the second arg, whcih is the HTTPException that caused this
-   error handler to happen.
+ - Exception handlers now take an ``exception`` param as the second arg, which is the HTTPException
+   that caused this error handler to happen.
 
 Version 1.5.0
 -------------

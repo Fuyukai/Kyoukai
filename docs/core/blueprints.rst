@@ -9,9 +9,9 @@ Blueprints
 
     Host Matching is now supported. See :ref:`hostmatching`.
 
-In Kyoukai, routes are stored inside a tree structure consisting of multiple Blueprint objects with a parent and
-children. Each Blueprint contains a group of routes stored on it, which inherit the request hooks and the API prefix
-of all of its parents.
+In Kyoukai, routes are stored inside a tree structure consisting of multiple Blueprint objects with
+a parent and children. Each Blueprint contains a group of routes stored on it, which inherit the
+request hooks and the API prefix of all of its parents.
 
 Blueprints are instantiated similar to app objects, with a name.
 
@@ -20,26 +20,28 @@ Blueprints are instantiated similar to app objects, with a name.
     my_blueprint = Blueprint("my_blueprint")
 
 
-Additionally, blueprints take an additional set of parameters which can be used to more finely control the behaviour.
+Additionally, blueprints take an additional set of parameters which can be used to more finely
+control the behaviour.
 
    - ``url_prefix``: The URL prefix to add to every request.
-        For example, if this is set to ``/api/v1`, every request attached to this blueprint will only be accessible
+        For example, if this is set to ``/api/v1`, every request attached to this blueprint will
+        only be accessible
         via ``/api/v1/<route>``.
 
 A note on the tree
 ------------------
 
-Blueprints are stored inside a tree structure - that means that all Blueprints have a parent blueprint and 0 to N
-children blueprints.
+Blueprints are stored inside a tree structure - that means that all Blueprints have a parent
+blueprint and 0 to N children blueprints.
 
-When registering an error handler, or a request hook, children blueprints automatically inherit these unless they are
- overriden on the child level.
+When registering an error handler, or a request hook, children blueprints automatically inherit
+these unless they are overridden on the child level.
 
 Routing
 -------
 
-Routing with Blueprints is incredibly similar to routing with a bare app object. Internally, an ``@app.route`` maps
-to routing on an underlying Blueprint object used as the "root" blueprint.
+Routing with Blueprints is incredibly similar to routing with a bare app object. Internally, an
+``@app.route`` maps to routing on an underlying Blueprint object used as the "root" blueprint.
 
 .. code-block:: python
 
@@ -53,8 +55,9 @@ to routing on an underlying Blueprint object used as the "root" blueprint.
 Error handlers
 --------------
 
-Error handlers with Blueprints are handled exactly the same as error handlers on bare app objects. The difference
-between these however is that error handlers are local to the Blueprint and its children.
+Error handlers with Blueprints are handled exactly the same as error handlers on bare app objects.
+The difference between these however is that error handlers are local to the Blueprint and its
+children.
 
 .. code-block:: python
 
@@ -69,15 +72,18 @@ between these however is that error handlers are local to the Blueprint and its 
 Registering blueprints
 ----------------------
 
-If, after creating your blueprint, you attempt to navigate to ``/some/route`` you will find a 404 error living there
-instead. This is because you did not register the Blueprint to your application.
+If, after creating your blueprint, you attempt to navigate to ``/some/route`` you will find a
+404 error living there instead. This is because you did not register the Blueprint to your
+application.
 
 .. code:: python
 
     app.register_blueprint(my_blueprint)
 
-Internally, this adds a child to the root blueprint, and sets the parent of the child to the root blueprint.
-If you have a blueprint that you wish to inherit from, you must register your Blueprint as a child of the Blueprint
+Internally, this adds a child to the root blueprint, and sets the parent of the child to the root
+blueprint.
+If you have a blueprint that you wish to inherit from, you must register your Blueprint as a child
+of the Blueprint
 you wish to inherit from.
 
 .. code-block:: python

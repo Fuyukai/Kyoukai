@@ -149,7 +149,8 @@ class Blueprint(object):
 
         # Make a new Map() out of all of the routes.
         rule_map = Map([route.create_rule() for route in routes],
-                       host_matching=self._host_matching)
+                       host_matching=self._host_matching,
+                       **map_options)
 
         logger.info("Built route mapping with {} rules.".format(len(rule_map._rules)))
 
