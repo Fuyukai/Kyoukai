@@ -52,6 +52,7 @@ Contents:
    :caption: Advanced usage
    :maxdepth: 2
 
+   adv/routing
    adv/hooks
    adv/routegroups
    adv/hostmatching

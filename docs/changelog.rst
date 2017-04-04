@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.2.0
+-------------
+
+  - Add the ability to override endpoint generation for Route objects.
+
 Version 2.1.3
 -------------
 

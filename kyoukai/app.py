@@ -66,7 +66,10 @@ class Kyoukai(object):
                  **kwargs):
         """
         :param application_name: The name of the application that is being created. This is \ 
-            passed to the :class:`.Blueprint` being created as the root blueprint.
+            passed to the :class:`.Blueprint` being created as the root blueprint.  
+            
+            This is used in ``url_for``, for example, to get the endpoint of routes registered to \
+            the root Blueprint.
             
         :param server_name: Keyword-only. The SERVER_NAME to use inside the fake WSGI environment \
             created for ``url_for``, if applicable.

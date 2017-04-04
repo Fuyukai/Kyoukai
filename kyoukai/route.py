@@ -22,7 +22,8 @@ class Route(object):
     """
 
     def __init__(self, function, reverse_hooks: bool = False,
-                 should_invoke_hooks: bool = True, do_argument_checking: bool = True):
+                 should_invoke_hooks: bool = True, do_argument_checking: bool = True,
+                 endpoint: str = None):
         """        
         :param function: The underlying callable.
             This can be a function, or any other callable.
@@ -34,6 +35,8 @@ class Route(object):
             This is automatically False for error handlers.
         
         :param do_argument_checking: If argument type and name checking is enabled for this route.
+        
+        :param endpoint: The custom endpoint for this route.
         """
         if not callable(function):
             raise TypeError("Route arg must be callable")
@@ -53,6 +56,9 @@ class Route(object):
 
         #: A list of methods associated with this rule.
         self.methods = []
+
+        #: The custom endpoint for this route. Could be None.
+        self.endpoint = endpoint
 
         self.reverse_hooks = reverse_hooks
 
@@ -76,18 +82,21 @@ class Route(object):
         """
         Gets the endpoint name for this route.
         """
+        if self.endpoint is not None:
+            return self.endpoint
+
         if bp is not None:
             prefix = bp.name
         else:
             prefix = self.bp.name if self.bp else ""
 
-        return prefix + ".{}".format(self._callable.__name__)
+        return "{}.{}".format(prefix, self._callable.__name__)
 
     async def invoke_function(self, ctx, pre_hooks: list, post_hooks: list, params):
         """
         Invokes the underlying callable.
-
         This is for use in chaining routes.
+
         :param ctx: The :class:`~.HTTPRequestContext` to use for this route.
         :param pre_hooks: A list of hooks to call before the route is invoked.
         :param post_hooks: A list of hooks to call after the route is invoked.
