@@ -10,6 +10,7 @@ import warnings
 from io import BytesIO
 
 import httptools
+import sys
 from asphalt.core import Context
 from werkzeug.exceptions import MethodNotAllowed, BadRequest, InternalServerError
 from werkzeug.wrappers import Request, Response

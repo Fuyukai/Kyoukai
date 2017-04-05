@@ -123,7 +123,7 @@ class GunicornAdapter(object):
 
         :param environment: The WSGI environment to run this request with.
         :param start_response: A callable that can be used to start the response.
-        :return: A new :class:`asyncio.Task` that can be awaited on to get a response from the
+        :return: A new :class:`asyncio.Task` that can be awaited on to get a response from the \
         application.
         """
         is_async = environment.get("wsgi.async", False)

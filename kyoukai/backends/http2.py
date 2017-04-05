@@ -24,6 +24,7 @@ from functools import partial
 from urllib.parse import urlsplit
 
 from asphalt.core import Context
+from h2.config import H2Configuration
 from h2.exceptions import ProtocolError
 from werkzeug.wrappers import Request, Response
 from werkzeug.datastructures import MultiDict
@@ -273,8 +274,11 @@ class H2KyoukaiProtocol(asyncio.Protocol):
 
         self.parent_context = parent_context
 
+        config = H2Configuration(client_side=False,
+                                 header_encoding="utf-8")
+
         # The HTTP/2 state machine.
-        self.conn = H2Connection(client_side=False)
+        self.conn = H2Connection(config=config)
 
         # The current transport for this connection.
         self.transport = None  # type: asyncio.WriteTransport
