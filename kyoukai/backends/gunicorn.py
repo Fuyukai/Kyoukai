@@ -127,6 +127,7 @@ class GunicornAdapter(object):
         application.
         """
         is_async = environment.get("wsgi.async", False)
+
         if not is_async:
             # Damnit. Return a WSGI response that ells the user they're stupid.
             r = Response("<h1>Error</h1><br/>You did not use the <code>gaiohttp</code> "

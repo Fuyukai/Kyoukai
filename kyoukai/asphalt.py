@@ -146,8 +146,11 @@ class KyoukaiBaseComponent(Component, metaclass=abc.ABCMeta):  # pragma: no cove
 class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
     """
     A component for Kyoukai.
-
-    This includes the built-in HTTP server.
+    This includes the built-in HTTP server.  
+    
+    .. versionchanged:: 2.2
+    
+        Passing ``run_server`` as False will not run the inbuilt web server.
     """
     connection_made = Signal(ConnectionMadeEvent)
     connection_lost = Signal(ConnectionLostEvent)
@@ -213,11 +216,12 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
 
                 self.logger.info("Using HTTP over TLS.")
 
-        protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
-        self.app.finalize()
-        self.server = await self.app.loop.create_server(protocol, self.ip, self.port,
-                                                        ssl=ssl_context)
-        self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
+        if self.cfg.get("run_server", True) is True:
+            protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
+            self.app.finalize()
+            self.server = await self.app.loop.create_server(protocol, self.ip, self.port,
+                                                            ssl=ssl_context)
+            self.logger.info("Kyoukai serving on {}:{}.".format(self.ip, self.port))
 
 
 class HTTPRequestContext(Context):
