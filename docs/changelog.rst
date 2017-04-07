@@ -8,6 +8,17 @@ Version 2.2.0
 
   - Add the ability to override endpoint generation for Route objects.
 
+  - Change the routing tree to use :class:`werkzeug.routing.Submount` objects instead of prefix
+    combination.
+
+  - Allow a Route to have multiple :class:`werkzeug.routing.Rule` objects created from it.
+
+  - Remove :meth:`.Route.create_rule` - replaced by :meth:`.Route.get_rules`.
+
+  - :meth:`.Blueprint.route` and :meth:`.routegroup.route` will now append new routes to the
+    Route object.
+
+
 Version 2.1.3
 -------------
 

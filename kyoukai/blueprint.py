@@ -5,11 +5,13 @@ Kyoukai uses Blueprints to create a routing tree - a tree of blueprints that are
 match routes easily.
 """
 import logging
+import pprint
+
 import typing
 from kyoukai.routegroup import RouteGroup, get_rg_bp
 
 from werkzeug.exceptions import HTTPException
-from werkzeug.routing import Map, Rule
+from werkzeug.routing import Map, Rule, Submount
 from werkzeug.wrappers import Response
 
 from kyoukai.route import Route
@@ -88,10 +90,27 @@ class Blueprint(object):
     @property
     def prefix(self) -> str:
         """
-        :return: The combined prefix of this Blueprint.
+        :return: The prefix of this Blueprint.
+        
+        .. versionchanged:: 2.2.0
+        
+            Moved prefix combination to :attr:`.computed_prefix`.
+        """
+        return self._prefix
+
+    @prefix.setter
+    def prefix(self, value):
+        self._prefix = value
+
+    @property
+    def computed_prefix(self) -> str:
+        """
+        :return: The combined prefix (parent + ours) of this Blueprint.
+        
+        .. versionadded:: 2.2.0
         """
         if self._parent:
-            return self._parent.prefix + self._prefix
+            return self._parent.computed_prefix + self._prefix
 
         return self._prefix
 
@@ -116,6 +135,26 @@ class Blueprint(object):
 
         return self._host
 
+    def get_submount(self) -> Submount:
+        """
+        Gets the :class:`werkzeug.routing.Submount` for this Blueprint.
+        
+        .. versionadded:: 2.2.0
+        """
+        inner = []
+        # get child submounts
+        for bp in self._children:
+            inner.append(bp.get_submount())
+
+        for route in self.routes:
+            inner.extend(route.get_rules())
+
+        # create the submount
+        sm = Submount(self._prefix,
+                      rules=inner)
+
+        return sm
+
     def traverse_tree(self) -> 'typing.Generator[Blueprint, None, None]':
         """
         Traverses the tree for children Blueprints.
@@ -136,19 +175,25 @@ class Blueprint(object):
         
             Calling this on sub-blueprints will have no effect, apart from generating a Map.  
             It is recommended to only call this on the root Blueprint.
+            
+        .. versionchanged:: 2.2.0
+        
+            This now uses submounts instead of a giant rule amalgamation.
         
         :param map_options: The options to pass to the created Map.
         :return: The :class:`werkzeug.routing.Map` created from the routing tree.
         """
         routes = self.routes.copy()
         for child in self._children:
-            routes.extend(list(child.tree_routes))
+            routes.append(child.get_submount())
+
+        routes.append(self.get_submount())
 
         logger.info("Scanned {} routes over {} child blueprint(s), building URL mapping now."
                     .format(len(routes), sum(1 for x in self.traverse_tree())))
 
         # Make a new Map() out of all of the routes.
-        rule_map = Map([route.create_rule() for route in routes],
+        rule_map = Map([route for route in routes],
                        host_matching=self._host_matching,
                        **map_options)
 
@@ -182,10 +227,19 @@ class Blueprint(object):
         
             route = bp.wrap_route(func, **kwargs)
             bp.add_route(route, routing_url, methods)
-            
+           
+        .. versionchanged:: 2.2.0
+        
+            Now accepts a Route as the function to decorate - this will add a new routing url and \ 
+            method pair to the :attr:`.Route.routes`.
         """
 
         def _inner(func):
+            if isinstance(func, Route):
+                # don't re-wrap, only add the routing URL and methods
+                func.routes.append((routing_url, methods))
+                return func
+
             route = self.wrap_route(func, **kwargs)
             self.add_route(route, routing_url, methods)
             return route
@@ -319,8 +373,7 @@ class Blueprint(object):
         :return: The unmodified :class:`~.Route` object.
         """
         # Create an endpoint name for the route.
-        route.routing_url = routing_url
-        route.methods = methods
+        route.routes.append((routing_url, methods))
         # Add it to the list of routes to add later.
         self.routes.append(route)
         # Add the self to the route.

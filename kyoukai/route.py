@@ -21,7 +21,8 @@ class Route(object):
     They invoke this function when invoked on routing and calling.
     """
 
-    def __init__(self, function, reverse_hooks: bool = False,
+    def __init__(self, function, *,
+                 reverse_hooks: bool = False,
                  should_invoke_hooks: bool = True, do_argument_checking: bool = True,
                  endpoint: str = None):
         """        
@@ -50,12 +51,8 @@ class Route(object):
         #: The :class:`~.Blueprint` this route is associated with.
         self.bp = None  # type: Blueprint
 
-        #: The :class:`Rule` associated with this route.
-        self.rule = None  # type: Rule
-        self.routing_url = None
-
-        #: A list of methods associated with this rule.
-        self.methods = []
+        #: A list of tuples (url, methods) for this Route.
+        self.routes = []
 
         #: The custom endpoint for this route. Could be None.
         self.endpoint = endpoint
@@ -67,16 +64,22 @@ class Route(object):
         #: Our own specific hooks.
         self.hooks = {}
 
-    def create_rule(self) -> Rule:
+    def get_rules(self) -> typing.List[Rule]:
         """
-        Creates the rule object used by this route.
+        :return: A list of :class:`werkzeug.routing.Rule` objects for this route.
+        
+        .. versionadded:: 2.2.0
+        """
+        rules = []
 
-        :return: A new :class:`werkzeug.routing.Rule` that is to be used for this route.
-        """
-        return Rule(self.bp.prefix + self.routing_url,
-                    methods=self.methods,
-                    endpoint=self.get_endpoint_name(self.bp),
-                    host=self.bp.host)
+        for url, methods in self.routes:
+            rule = Rule(url, methods=methods,
+                        host=self.bp.host if self.bp is not None else None,
+                        endpoint=self.get_endpoint_name())
+
+            rules.append(rule)
+
+        return rules
 
     def get_endpoint_name(self, bp=None):
         """

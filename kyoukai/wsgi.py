@@ -1,6 +1,7 @@
 """
-This file name is misleading. Kyoukai does NOT implement WSGI at all, except in the uWSGI wrapper. Instead, this file
-adds some utilities which convert from Werkzeug's WSGI magic to our normalized area.
+This file name is misleading. Kyoukai does NOT implement WSGI at all, except in the uWSGI wrapper. 
+Instead, this file adds some utilities which convert from Werkzeug's WSGI magic to our normalized 
+area.
 """
 import typing
 from io import BytesIO

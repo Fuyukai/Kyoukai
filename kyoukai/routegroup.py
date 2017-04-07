@@ -58,13 +58,15 @@ class RouteGroupType(type):
                     # wrap value, but use func attrs
                     # this preserves the method and `self`
                     rtt = bp.wrap_route(value, **func.route_kwargs)
+                    rtt.routes = func.routes
+                    rtt.bp = bp
 
                     # copy hooks
                     for type_, hooks in func.route_hooks.items():
                         for hook in hooks:
                             rtt.add_hook(type_, hook)
 
-                    bp.add_route(rtt, value.route_url, func.route_methods)
+                    bp.routes.append(rtt)
                 elif func.rg_delegate == "errorhandler":
                     # add the error handler using `errorhandler_code`
                     bp.add_errorhandler(value, func.errorhandler_code)
@@ -106,6 +108,11 @@ def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
     .. versionchanged:: 2.1.3
     
         Added the ability to add route-specific hooks.
+        
+    .. versionchanged:: 2.2.0
+        
+        Now accepts an already edited function as the function to decorate - this will add a new \
+        routing url and method pair to the :attr:`.Route.routes`.
     
     :param url: The routing URL of the route.
     :param methods: An iterable of methods for the route.
@@ -116,22 +123,28 @@ def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
         func.in_group = True
         func.rg_delegate = "route"
         func.route_kwargs = kwargs
-        func.route_url = url
-        func.route_methods = methods
 
-        func.route_hooks = collections.defaultdict(lambda: [])
+        # try and append to the routes
+        # failing that, create a new list
+        try:
+            func.routes.append((url, methods))
+        except AttributeError:
+            func.routes = [(url, methods)]
 
-        # helper for route-specific hooks.
-        def hook(type_: str):
-            def _inner2(hookfunc):
-                func.route_hooks[type_].append(hookfunc)
-                return hookfunc
+        if not hasattr(func, "route_hooks"):
+            func.route_hooks = collections.defaultdict(lambda: [])
 
-            return _inner2
+            # helper for route-specific hooks.
+            def hook(type_: str):
+                def _inner2(hookfunc):
+                    func.route_hooks[type_].append(hookfunc)
+                    return hookfunc
 
-        func.hook = hook
-        func.before_request = hook("pre")
-        func.after_request = hook("post")
+                return _inner2
+
+            func.hook = hook
+            func.before_request = hook("pre")
+            func.after_request = hook("post")
 
         return func
 

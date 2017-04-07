@@ -15,7 +15,6 @@ from kyoukai.blueprint import Blueprint
 
 __version__ = "2.1.4"
 
-
 logger = logging.getLogger("Kyoukai")
 
 
@@ -156,7 +155,6 @@ class Kyoukai(object):
         if item in ("route", "errorhandler", "add_errorhandler", "add_route", "wrap_route",
                     "url_for", "before_request", "add_hook", "after_request",
                     "add_route_group"):
-
             return getattr(self.root, item)
 
         raise AttributeError("'{.__class__.__name__}' object has no attribute {}"
@@ -206,12 +204,12 @@ class Kyoukai(object):
             except HTTPException as e:
                 # why tho?
                 logger.warning("Error handler function raised another error, using the "
-                                    "response from that...")
+                               "response from that...")
                 result = e.get_response(environ)
             except Exception as e:
                 logger.exception("Error in error handler!")
                 result = InternalServerError(e).get_response(environ)
-            # else:
+                # else:
                 # result = wrap_response(result, self.response_class)
 
             return result
@@ -251,13 +249,13 @@ class Kyoukai(object):
                 # No route matched.
                 self.log_route(ctx.request, 404)
                 logger.debug("Could not resolve route for {request.path}."
-                                  .format(request=request))
+                             .format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except MethodNotAllowed as e:
                 # 405 method not allowed
                 self.log_route(ctx.request, 405)
                 logger.debug("Could not resolve valid method for "
-                                  "{request.path} ({request.method})".format(request=request))
+                             "{request.path} ({request.method})".format(request=request))
                 return await self.handle_httpexception(ctx, e, request.environ)
             except RequestRedirect as e:
                 # slashes etc

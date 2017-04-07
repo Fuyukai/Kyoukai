@@ -197,11 +197,11 @@ class KyoukaiComponent(KyoukaiBaseComponent):  # pragma: no cover
                 ssl_context = py_ssl.create_default_context(py_ssl.Purpose.CLIENT_AUTH)
                 # override the ciphers
                 ssl_context.set_ciphers(
-                    "EECDH+CHACHA20:EECDH+CHACHA20-draft:"  # CHACHA20 for newer openssl
-                    "EECDH+AES128:RSA+AES128:"              # Standard AES
-                    "EECDH+AES256:RSA+AES256:"              # Slower AES
-                    "EECDH+3DES:RSA+3DES:"                  # 3DES for older systems
-                    "!aNULL:!eNULL:!MD5:!DSS:!RC4")         # Disable insecure ciphers
+                    "ECDH+CHACHA20:ECDH+CHACHA20:"         # CHACHA20 for newer openssl
+                    "ECDH+AES128:RSA+AES128:"              # Standard AES
+                    "ECDH+AES256:RSA+AES256:"              # Slower AES
+                    "ECDH+3DES:RSA+3DES:"                  # 3DES for older systems
+                    "!aNULL:!eNULL:!MD5:!DSS:!RC4")        # Disable insecure ciphers
                 ssl_context.load_cert_chain(certfile=ssl["ssl_certfile"],
                                             keyfile=ssl["ssl_keyfile"])
 
