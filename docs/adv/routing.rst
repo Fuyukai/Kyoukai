@@ -34,7 +34,7 @@ For example, a Blueprint defined as ``Blueprint("api")`` and a route defined as
 override the endpoint by passing ``endpoint=`` to either :func:`.Blueprint.wrap_route` or
 :func:`.Blueprint.route` (and the route group equivalent).
 
-.. versionchanged:: 2.2
+.. versionchanged:: 2.2.0
 
     Added the ability to override the endpoint for a route.
 

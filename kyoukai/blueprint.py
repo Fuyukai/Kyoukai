@@ -230,7 +230,7 @@ class Blueprint(object):
            
         .. versionchanged:: 2.2.0
         
-            Now accepts a Route as the function to decorate - this will add a new routing url and \ 
+            Now accepts a Route as the function to decorate - this will add a new routing url and 
             method pair to the :attr:`.Route.routes`.
         """
 
@@ -429,12 +429,17 @@ class Blueprint(object):
 
         return built_url
 
-    def match(self, environment: dict) -> typing.Tuple[Route, typing.Container[typing.Any]]:
+    def match(self, environment: dict) -> typing.Tuple[Route, typing.Container[typing.Any], Rule]:
         """
         Matches with the WSGI environment.
+        
+        .. warning::
+            You should **not** be using this method yourself.
+            
+        .. versionchanged:: 2.2.0
+            This will now return the :class:`werkeug.routing.Rule` as well.
 
         :param environment: The environment dict to perform matching with.
-        
             You can use the ``environ`` argument of a Request to get the environment back.
             
         :return: A Route object, which can be invoked to return the right response, and the \
@@ -444,8 +449,8 @@ class Blueprint(object):
         adapter = self._route_map.bind_to_environ(environment)
         # Match the route, without catching any exceptions.
         # These exceptions are propagated into the app and handled there instead.
-        endpoint, params = adapter.match()
+        rule, params = adapter.match(return_rule=True)
 
-        route = self.get_route(endpoint)
+        route = self.get_route(rule.endpoint)
 
-        return route, params
+        return route, params, rule

@@ -18,6 +18,9 @@ Version 2.2.0
   - :meth:`.Blueprint.route` and :meth:`.routegroup.route` will now append new routes to the
     Route object.
 
+  - Add HTTP OPTIONS support.
+    Kyoukai will automatically intercept any OPTIONS requests, and return the right response
+    without user code needing to handle it.
 
 Version 2.1.3
 -------------

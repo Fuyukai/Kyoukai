@@ -243,8 +243,8 @@ class Kyoukai(object):
         async with ctx:
             # Call match on our Blueprint to find the request.
             try:
-                matched, params = self.root.match(request.environ)
-                ctx.rule = matched
+                matched, params, rule = self.root.match(request.environ)
+                ctx.rule = rule
             except NotFound as e:
                 # No route matched.
                 self.log_route(ctx.request, 404)
@@ -274,7 +274,16 @@ class Kyoukai(object):
             # Invoke the route.
             try:
                 ctx.route_invoked.dispatch(ctx=ctx)
-                result = await matched.invoke(ctx, params)
+                # INTERCEPT
+                if ctx.request.method.upper() == "OPTIONS":
+                    # NO USER CODE HERE HEHEHEHEHE
+                    # instead, we need to return an Allow: header
+                    # kyoukai autocalcs this
+                    result = Response(status=200)
+                    result.headers["Allow"] = ",".join(x for x in ctx.rule.methods if x !=
+                                                       "OPTIONS")
+                else:
+                    result = await matched.invoke(ctx, params)
             except HTTPException as e:
                 logger.info(
                     "Hit HTTPException ({}) inside function, delegating.".format(str(e))

@@ -73,6 +73,11 @@ class Route(object):
         rules = []
 
         for url, methods in self.routes:
+            # mutable list thx
+            methods = list(methods)
+            if "OPTIONS" not in methods:
+                methods.append("OPTIONS")
+
             rule = Rule(url, methods=methods,
                         host=self.bp.host if self.bp is not None else None,
                         endpoint=self.get_endpoint_name())
