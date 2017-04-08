@@ -86,9 +86,12 @@ class Route(object):
 
         return rules
 
-    def get_endpoint_name(self, bp=None):
+    def get_endpoint_name(self, bp=None) -> str:
         """
         Gets the endpoint name for this route.
+        
+        :param bp: The :class:`.Blueprint` to use for name calculation.
+        :return: The endpoint that can be used.
         """
         if self.endpoint is not None:
             return self.endpoint

@@ -183,7 +183,7 @@ class Blueprint(object):
         :param map_options: The options to pass to the created Map.
         :return: The :class:`werkzeug.routing.Map` created from the routing tree.
         """
-        routes = self.routes.copy()
+        routes = []
         for child in self._children:
             routes.append(child.get_submount())
 
