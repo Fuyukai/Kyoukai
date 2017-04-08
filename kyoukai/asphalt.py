@@ -256,7 +256,7 @@ class HTTPRequestContext(Context):
         #: The :class:`asyncio.Protocol` protocol handling this connection.
         self.proto = None
 
-    def url_for(self, endpoint: str, *, method: str, **kwargs):
+    def url_for(self, endpoint: str, *, method: str = None, **kwargs):
         """
         A context-local version of ``url_for``.
 
