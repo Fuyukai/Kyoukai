@@ -226,13 +226,16 @@ class Route(object):
         """
         return self.add_hook(type_="post", hook=func)
 
-    async def invoke(self, ctx, params: typing.Container = None) -> Response:
+    async def invoke(self, ctx, args: typing.Iterable[typing.Any] = (),
+                     params: typing.Container = None) -> Response:
         """
         Invokes a route.
         This will run the underlying function.
         
         :param ctx: The :class:`~.HTTPRequestContext` which is used in this request.
-        :param params: Any params that are used in this request.
+        :param args: Any args to expand into the function.
+        :param params: Any keyword params that are used in this request.
+
         :return: The result of the route's function.
         """
         if params is None:
@@ -244,10 +247,10 @@ class Route(object):
         if not params:
             params = {}
 
-        if self.do_argument_checking:
+        if self.do_argument_checking and not args:
             self.check_route_args(params)
         else:
-            params = list(params.values())
+            params = list(args) + list(params.values())
 
         # Try and get the hooks.
         pre_hooks = self.bp.get_hooks("pre").copy()
