@@ -68,7 +68,7 @@ class Blueprint(object):
         self.routes = []
 
         #: The :class:`~werkzeug.routing.Map` used for this blueprint.
-        self._route_map = None  # type: Map
+        self.map = None  # type: Map
 
         #: The error handler dictionary.
         self.errorhandlers = {}
@@ -199,8 +199,8 @@ class Blueprint(object):
 
         logger.info("Built route mapping with {} rules.".format(len(rule_map._rules)))
 
-        self._route_map = rule_map
-
+        # update self.map
+        self.map = rule_map
         self.finalized = True
 
         return rule_map

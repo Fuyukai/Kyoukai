@@ -22,6 +22,8 @@ Version 2.2.0
     Kyoukai will automatically intercept any OPTIONS requests, and return the right response
     without user code needing to handle it.
 
+  - Expose the :class:`werkzeug.routing.Map` on :attr:`.Blueprint.map`.
+
 Version 2.1.3
 -------------
 
