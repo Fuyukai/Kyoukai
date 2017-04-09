@@ -200,7 +200,7 @@ class Kyoukai(object):
             # Try and invoke the error handler to get the Response.
             # Wrap it in the try/except, so we can handle a default one.
             try:
-                result = await error_handler.invoke(ctx, {"exc": exception})
+                result = await error_handler.invoke(ctx, args=(exception,))
             except HTTPException as e:
                 # why tho?
                 logger.warning("Error handler function raised another error, using the "
@@ -283,7 +283,7 @@ class Kyoukai(object):
                     result.headers["Allow"] = ",".join(x for x in ctx.rule.methods if x !=
                                                        "OPTIONS")
                 else:
-                    result = await matched.invoke(ctx, params)
+                    result = await matched.invoke(ctx, params=params)
             except HTTPException as e:
                 logger.info(
                     "Hit HTTPException ({}) inside function, delegating.".format(str(e))
