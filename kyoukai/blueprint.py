@@ -422,7 +422,7 @@ class Blueprint(object):
         :param kwargs: Keyword arguments to provide to the route.
         :return: The built URL for this endpoint.
         """
-        bound = self._route_map.bind_to_environ(environment)
+        bound = self.map.bind_to_environ(environment)
 
         # Build the URL from the endpoint.
         built_url = bound.build(endpoint, values=kwargs, method=method)
@@ -446,7 +446,7 @@ class Blueprint(object):
             parameters to invoke it with.
         """
         # Get the MapAdapter used for matching.
-        adapter = self._route_map.bind_to_environ(environment)
+        adapter = self.map.bind_to_environ(environment)
         # Match the route, without catching any exceptions.
         # These exceptions are propagated into the app and handled there instead.
         rule, params = adapter.match(return_rule=True)
