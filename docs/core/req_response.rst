@@ -1,4 +1,4 @@
-.. _Requests and Responses:
+.. _req_response:
 
 Requests and Responses
 ======================

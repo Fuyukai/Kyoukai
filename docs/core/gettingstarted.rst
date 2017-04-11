@@ -48,12 +48,25 @@ Writing the App
 
 Open up ``app.py`` and add your starting line.
 
-.. code:: python
+.. code-block:: python
 
     from kyoukai import Kyoukai
 
 This imports the Kyoukai application class from the library, allowing you
 to create a new object inside your code.
+
+Creating the App Object
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The central object in your file is the :class:`.Kyoukai` object. This object is core for handling
+requests from clients, including routing and handling errors.
+
+.. code-block:: python
+
+    app = Kyoukai("my_app")
+
+The name passed into the constructor is the **application name** - right now, this is irrelevant.
+However, it is a required param, so you should pass something like your application's name.
 
 Routes
 ~~~~~~
@@ -103,6 +116,13 @@ decorator.
     As explained above, the route decorator takes a path and a method.
     This route decorator returns a Route class, but this isn't important right now.
 
+The router decorator can be found on one of two objects:
+
+    - Your :class:`.Kyoukai` application object (which internally reroutes it to
+        :attr:`.Kyoukai.root`)
+
+    - A :class:`.Blueprint` application object.
+
 The Route Coroutine
 ~~~~~~~~~~~~~~~~~~~
 
@@ -133,7 +153,8 @@ Open up ``templates/index.html`` and add the following code to it:
 
     It's current year, and you're still using blocking code? Not <em>me!</em>
 
-(note: do not replace current year with the actual current year.)
+.. warning::
+    Do not replace current year with the actual current year.
 
 Save and close the template.
 
@@ -150,6 +171,9 @@ simply use :func:`.as_html` to render the document.
         with open("templates/index.html") as f:
             return as_html(f.read())
 
+
+:func:`.as_html` requires an extra import, ``from kyoukai.util import as_html`` to use. For more
+information about these helper functions, see :ref:`req_response`.
 
 Responses
 ---------
