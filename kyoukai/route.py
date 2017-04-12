@@ -216,13 +216,13 @@ class Route(object):
 
     def before_request(self, func):
         """
-        Convenience decorator to add a post-request hook.
+        Convenience decorator to add a pre-request hook.
         """
         return self.add_hook(type_="pre", hook=func)
 
     def after_request(self, func):
         """
-        Convenience decorator to add a pre-request hook.
+        Convenience decorator to add a post-request hook.
         """
         return self.add_hook(type_="post", hook=func)
 
