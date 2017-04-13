@@ -20,10 +20,10 @@ def extract_version(module = 'kyoukai'):
 
 
 deps = [
-    "httptools>=0.0.9",
-    "asphalt>=2.1.0",
-    "werkzeug>=0.11.10",
-    "h2>=3.0.0",
+    "httptools>=0.0.9,<=0.1.0",
+    "asphalt>=2.1.1,<=3.1.0",
+    "werkzeug>=0.12.0,<=0.13.0",
+    "h2>=3.0.0,<=3.1.0",
 ]
 
 setup(
@@ -50,7 +50,7 @@ setup(
         "pytest-asyncio"
     ],
     extras_require={
-        "gunicorn": ["aiohttp>=1.1.0", "gunicorn>=19.6.0"],
+        "gunicorn": ["aiohttp>=2.2.0,<=2.3.0", "gunicorn>=19.6.0"],
         "uwsgi": ["greenlet>=0.4.0"]
     }
 )
