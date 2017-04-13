@@ -1,14 +1,12 @@
 """
 Routes are wrapped function objects that are called upon a HTTP request.
 """
-import inspect
-
 import collections
+import inspect
 import types
-
 import typing
 
-from werkzeug.exceptions import HTTPException, InternalServerError
+from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
 

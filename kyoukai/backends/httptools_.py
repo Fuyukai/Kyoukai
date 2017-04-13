@@ -10,10 +10,9 @@ import warnings
 from io import BytesIO
 
 import httptools
-import sys
 from asphalt.core import Context
 from werkzeug.exceptions import MethodNotAllowed, BadRequest, InternalServerError
-from werkzeug.wrappers import Request, Response
+from werkzeug.wrappers import Response
 
 from kyoukai.backends.http2 import H2KyoukaiProtocol
 from kyoukai.wsgi import to_wsgi_environment, get_formatted_response

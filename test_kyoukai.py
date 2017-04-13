@@ -6,7 +6,6 @@ from werkzeug.wrappers import Response
 
 from kyoukai import __version__
 from kyoukai.asphalt import HTTPRequestContext
-from kyoukai.blueprint import Blueprint
 from kyoukai.testing import TestKyoukai
 from kyoukai.util import wrap_response
 from kyoukai.wsgi import to_wsgi_environment, get_formatted_response

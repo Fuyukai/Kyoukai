@@ -15,27 +15,25 @@ Additionally, this server is **untested** - it can and probably will fail horrib
 import asyncio
 import collections
 import logging
-import typing
 import ssl
 import sys
 import warnings
-
 from functools import partial
 from urllib.parse import urlsplit
 
+import typing
 from asphalt.core import Context
 from h2.config import H2Configuration
+from h2.connection import H2Connection
+from h2.errors import ErrorCodes
+from h2.events import (
+    DataReceived, RequestReceived, WindowUpdated, StreamEnded
+)
 from h2.exceptions import ProtocolError
-from werkzeug.wrappers import Request, Response
 from werkzeug.datastructures import MultiDict
+from werkzeug.wrappers import Request, Response
 
 from kyoukai.asphalt import KyoukaiBaseComponent
-
-from h2.connection import H2Connection
-from h2.events import (
-    DataReceived, RequestReceived, WindowUpdated, StreamEnded, StreamReset
-)
-from h2.errors import ErrorCodes
 
 # Sentinel value for the request being complete.
 REQUEST_FINISHED = object()

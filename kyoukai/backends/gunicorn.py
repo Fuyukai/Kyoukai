@@ -10,11 +10,12 @@ so the asyncio event loop should work like normal whilst allowing gunicorn to ta
 the application work.
 """
 import asyncio
-import typing
 
+import typing
 from asphalt.core import Context
 from werkzeug.wrappers import Request, Response
 from werkzeug.wsgi import ClosingIterator
+
 try:
     import gunicorn
     import aiohttp
@@ -25,7 +26,7 @@ from asphalt.core import ContainerComponent
 from asphalt.core.component import component_types
 
 from kyoukai.app import Kyoukai
-from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
+from kyoukai.asphalt import KyoukaiBaseComponent
 
 
 class GunicornAdapter(object):

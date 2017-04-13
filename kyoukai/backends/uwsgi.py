@@ -17,7 +17,7 @@ import functools
 from asphalt.core import Context, ContainerComponent
 from asphalt.core.component import component_types
 from kyoukai.app import Kyoukai
-from kyoukai.asphalt import KyoukaiBaseComponent, KyoukaiComponent
+from kyoukai.asphalt import KyoukaiBaseComponent
 from werkzeug.wrappers import Request, Response
 
 

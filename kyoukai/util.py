@@ -2,8 +2,8 @@
 Misc utilities for usage inside the framework.
 """
 import json
-
 import typing
+
 from werkzeug.wrappers import Response
 
 

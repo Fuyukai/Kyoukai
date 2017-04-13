@@ -3,9 +3,8 @@ Route groups are classes that allow you to group a set of routes together.
 
 .. currentmodule:: kyoukai.routegroup
 """
-import inspect
-
 import collections
+import inspect
 import typing
 
 

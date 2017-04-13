@@ -1,20 +1,17 @@
 """
 A blueprint is a container - a collection of routes.
 
-Kyoukai uses Blueprints to create a routing tree - a tree of blueprints that are used to collect routes together and
-match routes easily.
+Kyoukai uses Blueprints to create a routing tree - a tree of blueprints that are used to collect 
+routes together and match routes easily.
 """
 import logging
-import pprint
 
 import typing
-from kyoukai.routegroup import RouteGroup, get_rg_bp
-
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Map, Rule, Submount
-from werkzeug.wrappers import Response
 
 from kyoukai.route import Route
+from kyoukai.routegroup import RouteGroup, get_rg_bp
 
 
 logger = logging.getLogger("Kyoukai")
@@ -22,7 +19,8 @@ logger = logging.getLogger("Kyoukai")
 
 class Blueprint(object):
     """
-    A Blueprint class contains a Map of URL rules, which is checked and ran for every
+    A Blueprint is a "route container" - it contains 0 to N routes, and 0 to N child Blueprints 
+    that inherit from the parent.
     """
 
     def __init__(self, name: str, parent: 'Blueprint' = None,
@@ -196,8 +194,7 @@ class Blueprint(object):
                     .format(len(routes), sum(1 for x in self.traverse_tree())))
 
         # Make a new Map() out of all of the routes.
-        rule_map = Map([route for route in routes],
-                       host_matching=self._host_matching,
+        rule_map = Map(routes,                       host_matching=self._host_matching,
                        **map_options)
 
         logger.info("Built route mapping with {} rules.".format(len(rule_map._rules)))

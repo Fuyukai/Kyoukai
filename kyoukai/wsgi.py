@@ -3,12 +3,11 @@ This file name is misleading. Kyoukai does NOT implement WSGI at all, except in 
 Instead, this file adds some utilities which convert from Werkzeug's WSGI magic to our normalized 
 area.
 """
-import typing
+import sys
 from io import BytesIO
 from urllib.parse import urlsplit
 
-import sys
-
+import typing
 from werkzeug.datastructures import MultiDict
 from werkzeug.wrappers import Response
 

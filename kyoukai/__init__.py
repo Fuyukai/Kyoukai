@@ -15,9 +15,10 @@ Kyoukai is an async web framework for Python 3.5 and above.
     testing
     util
 """
+import json
+
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.formparser import FormDataParser
-import json
 
 
 def _parse_json(parser: FormDataParser, stream, mimetype, content_length, options):
