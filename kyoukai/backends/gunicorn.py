@@ -106,8 +106,8 @@ class GunicornAdapter(object):
         run the app itself.
         """
         if not self.app.root.finalized:
-            self.app.finalize()
-        request = Request(environ=environ)
+            self.app.root.finalize()
+        request = self.app.request_class(environ=environ)
 
         response = await self.app.process_request(request, self._base_context)
         # Return the Response object which will be iterated over by Gunicorn.
