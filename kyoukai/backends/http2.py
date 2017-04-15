@@ -477,7 +477,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         app = self.component.app  # type: Kyoukai
         # Create the fake WSGI environment.
         env = create_wsgi_environment(r)
-        request = Request(environ=env)
+        request = app.request_class(environ=env)
 
         loop = app.loop
         t = loop.create_task(app.process_request(request, self.parent_context))  # type: asyncio.Task

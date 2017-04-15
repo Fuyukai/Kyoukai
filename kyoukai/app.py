@@ -176,7 +176,7 @@ class Kyoukai(object):
         Handle a HTTP Exception.
 
         :param ctx: The context of the request.
-        :param exception: The HTTPException
+        :param exception: The HTTPException to handle.
         :param environ: The fake WSGI environment.
         
         :return: A :class:`werkzeug.wrappers.Response` that handles this response.
@@ -325,7 +325,7 @@ class Kyoukai(object):
         :param ip: The IP of the built-in server.
         :param port: The port of the built-in server.
         :param component: The component to start the app with. This should be an instance of \
-            :class:`kyoukai.asphalt.KyoukaiComponent`.
+            :class:`~.KyoukaiComponent`.
                     
         :param base_context: The base context that the HTTPRequestContext should be started with.
         """
