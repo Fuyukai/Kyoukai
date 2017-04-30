@@ -21,7 +21,7 @@ def extract_version(module = 'kyoukai'):
 
 deps = [
     "httptools>=0.0.9,<=0.1.0",
-    "asphalt>=2.1.1,<=3.1.0",
+    "asphalt>=2.1.1,<=3.1.0,!=3.0.0",
     "werkzeug>=0.12.0,<=0.13.0",
     "h2>=3.0.0,<=3.1.0",
 ]
