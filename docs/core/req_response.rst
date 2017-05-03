@@ -21,7 +21,7 @@ For example, returning a JSON blob of the headers:
 .. code-block:: python
 
     async def my_route(ctx: HTTPRequestContext):
-        headers = json.dumps(ctx.headers)
+        headers = json.dumps(dict(ctx.request.headers))
         return headers
 
 Creating a Response
