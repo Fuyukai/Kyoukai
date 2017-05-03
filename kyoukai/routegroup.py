@@ -209,7 +209,7 @@ class RouteGroup(object, metaclass=RouteGroupType):
      
     .. code-block:: python
     
-        class MyGroup(RouteGroup, url_prefix="/api/v1"):
+        class MyGroup(RouteGroup, prefix="/api/v1"):
             def __init__(self, something: str):
                 self.something = something
                 

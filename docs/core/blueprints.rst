@@ -23,7 +23,7 @@ Blueprints are instantiated similar to app objects, with a name.
 Additionally, blueprints take an additional set of parameters which can be used to more finely
 control the behaviour.
 
-   - ``url_prefix``: The URL prefix to add to every request.
+   - ``prefix``: The URL prefix to add to every request.
         For example, if this is set to ``/api/v1`, every request attached to this blueprint will
         only be accessible
         via ``/api/v1/<route>``.
