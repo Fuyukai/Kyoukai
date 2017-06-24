@@ -155,6 +155,8 @@ class Route(object):
         # signature ignores the `self` param on methods, for some reason
         # not that i'm complaining
         f_nargs = len(sig.parameters) - 1
+        if f_nargs < 0:
+            raise TypeError("Route functions must take ctx argument")
 
         # If the lengths of the signature and the params are different, it's obviously wrong.
         if f_nargs != len(params):
