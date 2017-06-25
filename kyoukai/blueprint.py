@@ -190,12 +190,12 @@ class Blueprint(object):
 
         routes.append(self.get_submount())
 
-        logger.info("Scanned {} routes over {} child blueprint(s), building URL mapping now."
-                    .format(len(routes), sum(1 for x in self.traverse_tree())))
+        logger.info("Scanned {} route(s) over {} child blueprint(s) + {} route(s) in our "
+                    "blueprint, building URL mapping now."
+                    .format(len(routes), sum(1 for x in self.traverse_tree()), len(self.routes)))
 
         # Make a new Map() out of all of the routes.
-        rule_map = Map(routes,                       host_matching=self._host_matching,
-                       **map_options)
+        rule_map = Map(routes, host_matching=self._host_matching, **map_options)
 
         logger.info("Built route mapping with {} rules.".format(len(rule_map._rules)))
 
