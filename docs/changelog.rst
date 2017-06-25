@@ -8,6 +8,10 @@ Version 2.x.x
 
   - Add the ability to override the context class created.
 
+  - Debug log full tracebacks on HTTPExceptions inside routes.
+
+  - Change log message when building route mapping.
+
 Version 2.2.0
 -------------
 

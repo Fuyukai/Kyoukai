@@ -204,7 +204,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         except httptools.HttpParserInvalidMethodError as e:
             # Exceptions here are a bit tricky.
             # We can't simply call into the app to have it handle a 405/400 - there's no Request,
-            # or environment.Instead, what we do is call a wrapper function
+            # or environment. Instead, what we do is call a wrapper function
             # (handle_parser_exception) which will generate a fake WSGI environment, and then
             # automatically return a werkzeug httpexception that corresponds.
             self.handle_parser_exception(e)
@@ -281,9 +281,11 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         if isinstance(exc, httptools.HttpParserInvalidMethodError):
             # 405 method not allowed
             r = MethodNotAllowed()
-        elif isinstance(exc, (httptools.HttpParserError, httptools.HttpParserUpgrade)):
+        elif isinstance(exc, httptools.HttpParserError):
             # 400 bad request
             r = BadRequest()
+        elif isinstance(exc, httptools.HttpParserUpgrade):
+            r = BadRequest(description="Invalid upgrade header.")
         else:
             # internal server error
             r = InternalServerError()
@@ -306,8 +308,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
             else:
                 return
         except:
-            self.logger.critical("Error in Kyoukai's HTTP handling!")
-            traceback.print_exc()
+            self.logger.critical("Error in Kyoukai's HTTP handling!", exc_info=True)
             self._raw_write(CRITICAL_ERROR_TEXT.encode())
             self.close()
         finally:
@@ -324,13 +325,11 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
         This constructs a new Werkzeug request from the headers.
         """
-        # Event is set, construct the new fake WSGI environment
-
         # Check if the body has data in it by asking it to tell us what position it's seeked to.
         # If it's > 0, it has data, so we can use it. Otherwise, it doesn't, so it's useless.
         told = self.body.tell()
         if told:
-            self.logger.debug("Read {} bytes of data from the connection".format(told))
+            self.logger.debug("Read {} bytes of body data from the connection".format(told))
             self.body.seek(0)
             body = self.body
         else:
