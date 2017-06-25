@@ -7,7 +7,8 @@ import logging
 import traceback
 
 from asphalt.core import Context, run_application
-from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError
+from werkzeug.exceptions import NotFound, MethodNotAllowed, HTTPException, InternalServerError, \
+    BadRequestKeyError
 from werkzeug.routing import RequestRedirect, Map
 from werkzeug.wrappers import Request, Response
 
@@ -290,6 +291,9 @@ class Kyoukai(object):
                                                        "OPTIONS")
                 else:
                     result = await matched.invoke(ctx, params=params)
+            except BadRequestKeyError as e:
+                logger.info("BadRequestKeyError: {}".format(' '.join(e.args)), exc_info=True)
+                result = await self.handle_httpexception(ctx, e, request.environ)
             except HTTPException as e:
                 fmtted = traceback.format_exception(type(e), e, e.__traceback__)
                 logger.debug(''.join(fmtted))

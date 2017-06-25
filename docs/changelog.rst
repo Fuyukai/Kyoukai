@@ -12,6 +12,8 @@ Version 2.x.x
 
   - Change log message when building route mapping.
 
+  - Explicitly handle :class:`werkzeug.exceptions.BadRequestKeyError` in app processing.
+
 Version 2.2.0
 -------------
 
