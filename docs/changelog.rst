@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.x.x
+-------------
+
+  - Add the ability to override the context class created.
+
 Version 2.2.0
 -------------
 

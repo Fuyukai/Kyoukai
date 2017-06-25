@@ -88,6 +88,9 @@ class Kyoukai(object):
         :param request_class: Keyword-only. The custom request class to instantiate requests with.
         :param response_class: Keyword-only. The custom response class to instantiate responses \ 
             with.
+
+        :param context_class: Keyword-only. The :class:`.Context` subclass to use when creating a \
+            context. Defaults to :class:`.HTTPRequestContext`.
         """
         self.name = application_name
         self.server_name = server_name
@@ -108,6 +111,9 @@ class Kyoukai(object):
         # The Request/Response classes.
         self.request_class = kwargs.pop("request_class", self.request_class)
         self.response_class = kwargs.pop("response_class", self.response_class)
+
+        #: The context class.
+        self.context_class = kwargs.pop("context_class", HTTPRequestContext)
 
         # Is this app set to debug mode?
         self.debug = False
@@ -237,7 +243,7 @@ class Kyoukai(object):
             raise RuntimeError("App was not finalized")
 
         # Create a new HTTPRequestContext.
-        ctx = HTTPRequestContext(parent_context, request)
+        ctx = self.context_class(parent_context, request)
         ctx.app = self
 
         async with ctx:
@@ -270,7 +276,6 @@ class Kyoukai(object):
             ctx.route_args = params
 
             result = None
-
             # Invoke the route.
             try:
                 ctx.route_invoked.dispatch(ctx=ctx)
