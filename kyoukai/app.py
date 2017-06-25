@@ -291,13 +291,8 @@ class Kyoukai(object):
                 else:
                     result = await matched.invoke(ctx, params=params)
             except HTTPException as e:
-                if e.code == 400:
-                    # this is the worst fix
-                    frame = e.__traceback__.tb_frame
-                    if 'werkzeug' in frame.f_code.co_filename:
-                        logger.info("Presumably hit a werkzeug frame, printing Bad Request")
-                        fmtted = ''.join(traceback.format_exc())
-                        logger.info(fmtted)
+                fmtted = traceback.format_exception(type(e), e, e.__traceback__)
+                logger.debug(''.join(fmtted))
                 logger.info(
                     "Hit HTTPException ({}) inside function, delegating.".format(str(e))
                 )
