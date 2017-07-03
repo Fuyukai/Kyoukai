@@ -4,9 +4,11 @@ A high-performance HTTP/1.1 backend for the Kyoukai webserver using `httptools
 """
 import asyncio
 import base64
+import gzip
 import logging
 import traceback
 import warnings
+import zlib
 from io import BytesIO
 
 import httptools
@@ -20,6 +22,7 @@ from kyoukai.wsgi import to_wsgi_environment, get_formatted_response
 CRITICAL_ERROR_TEXT = """HTTP/1.0 500 INTERNAL SERVER ERROR
 Server: Kyoukai
 X-Powered-By: Kyoukai
+X-HTTP-Backend: httptools
 Content-Type: text/html; charset=utf-8
 Content-Length: 310
 
@@ -27,16 +30,35 @@ Content-Length: 310
 <title>Critical Server Error</title>
 <h1>Critical Server Error</h1>
 <p>An unrecoverable error has occurred within Kyoukai.
-If you are the developer, please report this at <a href="https://github.com/SunDwarf/Kyoukai">the Kyoukai issue
-tracker.</a>
+If you are the developer, please report this at <a href="https://github.com/SunDwarf/Kyoukai">the 
+Kyoukai issue tracker.</a>
 """.replace("\n", "\r\n")
 
 HTTP_SWITCHING_PROTOCOLS = """HTTP/1.1 101 SWITCHING PROTOCOLS
 Connection: Upgrade
 Upgrade: h2c
 Server: Kyoukai
+X-Powered-By: Kyoukai
+X-HTTP-Backend: httptools
 Content-Length: 0
 
+""".replace("\n", "\r\n")
+
+HTTP_TOO_BIG = """HTTP/1.1 413 PAYLOAD TOO LARGE
+Server: Kyoukai
+X-Powered-By: Kyoukai
+X-HTTP-Backend: httptools
+Content-Length: 0
+
+""".replace("\n", "\r\n")
+
+HTTP_INVALID_COMPRESSION = """HTTP/1.1 400 BAD REQUEST
+Server: Kyoukai
+X-Powered-By: Kyoukai
+X-HTTP-Backend: httptools
+Content-Length: 25
+
+Invalid compressed data
 """.replace("\n", "\r\n")
 
 PROTOCOL_CLASS = "KyoukaiProtocol"
@@ -46,6 +68,7 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
     """
     The base protocol for Kyoukai using httptools for a HTTP/1.0 or HTTP/1.1 interface.
     """
+    MAX_BODY_SIZE = 12 * 1024 * 1024
 
     def __init__(self, component, parent_context: Context,
                  server_ip: str, server_port: int):
@@ -138,6 +161,10 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
         :param body: The body text.
         """
         self.body.write(body)
+        if self.body.tell() >= self.MAX_BODY_SIZE:
+            # write a "too big" message
+            self.write(HTTP_TOO_BIG)
+            self.close()
 
     def on_url(self, url: bytes):
         """
@@ -337,6 +364,37 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
 
         version = self.parser.get_http_version()
         method = self.parser.get_method().decode()
+
+        for header, value in self.headers:
+            # check if a content-encoding has been passed
+            if header == "Content-Encoding" and body is not None:
+                # no special encoding
+                if value == "identity":
+                    pass
+
+                # gzip, decompress as such
+                elif value == "gzip":
+                    self.logger.debug("Decoding body data as gzip.")
+                    try:
+                        decompressed_data = gzip.decompress(body.read())
+                    except zlib.error:
+                        self.write(HTTP_INVALID_COMPRESSION)
+                        self.close()
+                        return
+
+                    body = BytesIO(decompressed_data)
+
+                # deflate, decompress as such
+                elif value == "deflate":
+                    z = zlib.decompressobj(6, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0)
+                    try:
+                        decompressed_data = z.decompress(body.read())
+                    except zlib.error:
+                        self.write(HTTP_INVALID_COMPRESSION)
+                        self.close()
+                        return
+                else:
+                    self.logger.error("Unknown Content-Encoding sent by client: {}".format(value))
 
         new_environ = to_wsgi_environment(headers=self.headers, method=method, path=self.full_url,
                                           http_version=version, body=body)

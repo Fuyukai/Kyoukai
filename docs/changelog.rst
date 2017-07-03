@@ -3,7 +3,7 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
-Version 2.x.x
+Version 2.2.1
 -------------
 
   - Add the ability to override the context class created.
@@ -13,6 +13,8 @@ Version 2.x.x
   - Change log message when building route mapping.
 
   - Explicitly handle :class:`werkzeug.exceptions.BadRequestKeyError` in app processing.
+
+  - Decompress client body data when a Content-Encoding is detected in the httptools backend.
 
 Version 2.2.0
 -------------
