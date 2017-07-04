@@ -3,6 +3,11 @@ Kyoukai Changelog
 
 Here you can see the list of changes between each Kyoukai release.
 
+Version 2.x.x
+-------------
+
+  - Add the ability to have multiple error handlers per function.
+
 Version 2.2.1
 -------------
 
