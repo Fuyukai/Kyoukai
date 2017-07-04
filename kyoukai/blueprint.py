@@ -246,7 +246,7 @@ class Blueprint(object):
 
         return _inner
 
-    def errorhandler(self, code: int):
+    def errorhandler(self, code: int, endcode: int = None, step: int = None):
         """
         Helper decorator for adding an error handler.
 
@@ -257,10 +257,15 @@ class Blueprint(object):
             route = bp.add_errorhandler(cbl, code)
 
         :param code: The error handler code to use.
+        :param endcode: The end of the error code range to handle. Error handlers will be added \
+            for all requests between code and endcode. If this is not provided, only one code \
+            will be handled.
+
+        :param step: The step for the error handler range.
         """
 
         def _inner(cbl):
-            self.add_errorhandler(cbl, code)
+            self.add_errorhandler(cbl, code, endcode, step)
             return cbl
 
         return _inner
@@ -286,7 +291,7 @@ class Blueprint(object):
         :param cbl: The callable error handler.
         :param startcode: The error code to handle, for example 404.
             This also represents the start of an error range, if endcode is not None.
-        :param endcode: The end of the error code range to handle. Error handlers will be added
+        :param endcode: The end of the error code range to handle. Error handlers will be added \
             for all requests between startcode and endcode.
         :param step: The step for the error handler range.
         """
@@ -300,7 +305,7 @@ class Blueprint(object):
             self.errorhandlers[startcode] = rtt
         else:
             # add a range of routes instead
-            for i in range(startcode, endcode, step=step or 1):
+            for i in range(startcode, endcode, step or 1):
                 self.errorhandlers[i] = rtt
 
         rtt.bp = self

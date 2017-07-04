@@ -171,7 +171,7 @@ def errorhandler(startcode: int, endcode: int = None, step: int = None):
         if endcode is None:
             codes = [startcode]
         else:
-            codes = range(startcode, endcode, step=step or 1)
+            codes = range(startcode, endcode, step or 1)
 
         for code in codes:
             try:
