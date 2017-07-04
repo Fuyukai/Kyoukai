@@ -37,6 +37,19 @@ decorator, providing the integer error code that you wish to handle. So for exam
 Of course, you can have anything in the body of the error handler. Whatever is returned from
 this error handler is sent back to the client.
 
+.. versionadded:: 2.2.1
+
+You can also have an error handler handle multiple codes in the same function by decorating it
+multiple times, or passing a range of errors to handle.
+
+.. code-block:: python
+
+    # handle error 502 and errors 400 (inclusive) to 414 (exclusive)
+    @app.root.errorhandler(500)
+    @app.root.errorhandler(400, 414)
+    async def handle_many(ctx: HTTPRequestContext, exc: HTTPException):
+        ...
+
 HTTP Exceptions
 ---------------
 
