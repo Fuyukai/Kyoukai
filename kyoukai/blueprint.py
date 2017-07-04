@@ -276,7 +276,7 @@ class Blueprint(object):
         rtt = Route(cbl, *args, **kwargs)
         return rtt
 
-    def add_errorhandler(self, cbl, errorcode: int):
+    def add_errorhandler(self, cbl, startcode: int, endcode: int = None, step: int = None):
         """
         Adds an error handler to the table of error handlers.
 
@@ -284,11 +284,25 @@ class Blueprint(object):
         for that code, it will try to fetch recursively the parent's error handler.
 
         :param cbl: The callable error handler.
-        :param errorcode: The error code to handle, for example 404.
+        :param startcode: The error code to handle, for example 404.
+            This also represents the start of an error range, if endcode is not None.
+        :param endcode: The end of the error code range to handle. Error handlers will be added
+            for all requests between startcode and endcode.
+        :param step: The step for the error handler range.
         """
-        # for simplicity sake, wrap it in a route.
-        rtt = self.wrap_route(cbl, should_invoke_hooks=False)
-        self.errorhandlers[errorcode] = rtt
+        # don't re-wrap it in a route if it's already a route
+        rtt = cbl
+        if not isinstance(rtt, Route):
+            rtt = self.wrap_route(rtt, should_invoke_hooks=False)
+
+        # if it's a single code, just use the one error handler
+        if endcode is None:
+            self.errorhandlers[startcode] = rtt
+        else:
+            # add a range of routes instead
+            for i in range(startcode, endcode, step=step or 1):
+                self.errorhandlers[i] = rtt
+
         rtt.bp = self
         return rtt
 

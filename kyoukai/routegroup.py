@@ -68,7 +68,8 @@ class RouteGroupType(type):
                     bp.routes.append(rtt)
                 elif func.rg_delegate == "errorhandler":
                     # add the error handler using `errorhandler_code`
-                    bp.add_errorhandler(value, func.errorhandler_code)
+                    for code in func.errorhandler_codes:
+                        bp.add_errorhandler(value, code)
                 elif func.rg_delegate == "hook":
                     # add the hook
                     bp.add_hook(func.hook_type, value)
@@ -150,18 +151,33 @@ def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
     return inner
 
 
-def errorhandler(code: int):
+def errorhandler(startcode: int, endcode: int = None, step: int = None):
     """
     A companion function to the RouteGroup class. This follows :meth:`.Blueprint.errorhandler` in 
     terms of arguments. 
     
-    :param code: The code for the error handler.
+    :param startcode: The error code to handle, for example 404.
+        This also represents the start of an error range, if endcode is not None.
+    :param endcode: The end of the error code range to handle. Error handlers will be added
+        for all requests between startcode and endcode.
+    :param step: The step for the error handler range.
     """
 
     def inner(func):
         func.in_group = True
         func.rg_delegate = "errorhandler"
-        func.errorhandler_code = code
+
+        # less code here
+        if endcode is None:
+            codes = [startcode]
+        else:
+            codes = range(startcode, endcode, step=step or 1)
+
+        for code in codes:
+            try:
+                func.errorhandler_codes.append(code)
+            except AttributeError:
+                func.errorhandler_codes = [code]
 
         return func
 
