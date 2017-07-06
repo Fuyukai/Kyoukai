@@ -7,7 +7,7 @@ rootpath = os.path.abspath(os.path.dirname(__file__))
 
 
 # Extract version
-def extract_version(module = 'kyoukai'):
+def extract_version(module='kyoukai'):
     version = None
     fname = os.path.join(rootpath, module, 'app.py')
     with open(fname) as f:
@@ -29,17 +29,25 @@ deps = [
 setup(
     name='Kyoukai',
     version=extract_version(),
-    packages=find_packages(),
+    packages=[
+        'kyoukai',
+        'kyoukai.backends',
+
+        # ext packages
+        'kyoukai.ext',
+        'kyoukai.ext.rest',
+    ],
     url='https://mirai.veriny.tf',
     license='MIT',
-    author='Isaac Dickinson',
-    author_email='sun@veriny.tf',
+    author='Laura Dickinson',
+    author_email='l@veriny.tf',
     description='A fast, asynchronous web framework for Python 3.5+',
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.5"
+        "Programming Language :: Python :: 3.6",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Application Frameworks"
