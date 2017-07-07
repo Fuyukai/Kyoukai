@@ -49,7 +49,7 @@ def as_plaintext(text: str, code: int = 200, headers: dict = None) -> Response:
 
 
 def as_json(data: typing.Union[dict, list], code: int = 200, headers: dict = None,
-            *, json_encoder: json.JSONEncoder = None) -> Response:
+            *, json_encoder: json.JSONEncoder = None, **kwargs) -> Response:
     """
     Returns a JSON response.
     
@@ -66,7 +66,7 @@ def as_json(data: typing.Union[dict, list], code: int = 200, headers: dict = Non
     if headers is None:
         headers = {}
 
-    dumped = json.dumps(data, cls=json_encoder)
+    dumped = json.dumps(data, cls=json_encoder, **kwargs)
     r = Response(dumped, status=code, headers=headers)
     return r
 
