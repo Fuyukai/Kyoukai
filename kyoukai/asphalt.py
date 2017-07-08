@@ -236,10 +236,13 @@ class HTTPRequestContext(Context):
         super().__init__(parent)
 
         #: The :class:`~.Kyoukai` object this request is handling.
-        self.app = None  # type: Kyoukai
+        self.app = None
 
         #: The :class:`werkzeug.wrappers.Request` object this request is handling.
         self.request = request
+
+        #: The route parameters for this request. Usually contained by the routing URL.
+        self.params = None  # type: dict
 
         #: The :class:`~.Route` object this request is for.
         self.route = None  # type: Route

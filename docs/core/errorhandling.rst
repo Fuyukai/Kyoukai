@@ -50,6 +50,12 @@ multiple times, or passing a range of errors to handle.
     async def handle_many(ctx: HTTPRequestContext, exc: HTTPException):
         ...
 
+.. versionchanged:: 2.2.1
+
+If you need to access the arguments provided in the route when handling an error, you can use
+:attr:`.HTTPRequestContext.params`, which will be a dict of the parameters passed to the function
+based on the routing URL.
+
 HTTP Exceptions
 ---------------
 

@@ -252,6 +252,7 @@ class Kyoukai(object):
             # Call match on our Blueprint to find the request.
             try:
                 matched, params, rule = self.root.match(request.environ)
+                ctx.params = params
                 ctx.rule = rule
             except NotFound as e:
                 # No route matched.
@@ -275,7 +276,6 @@ class Kyoukai(object):
 
             ctx.route = matched
             ctx.bp = ctx.route.bp
-            ctx.route_args = params
 
             result = None
             # Invoke the route.
@@ -286,7 +286,7 @@ class Kyoukai(object):
                     # NO USER CODE HERE HEHEHEHEHE
                     # instead, we need to return an Allow: header
                     # kyoukai autocalcs this
-                    result = Response(status=200)
+                    result = Response(status=204)
                     result.headers["Allow"] = ",".join(x for x in ctx.rule.methods if x !=
                                                        "OPTIONS")
                 else:
