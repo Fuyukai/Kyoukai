@@ -16,6 +16,7 @@ from kyoukai.asphalt import HTTPRequestContext
 from kyoukai.blueprint import Blueprint
 
 __version__ = "2.2.1"
+version_format = "Kyoukai/{}".format(__version__)
 
 logger = logging.getLogger("Kyoukai")
 
@@ -315,13 +316,13 @@ class Kyoukai(object):
                     self.log_route(ctx.request, result.status_code)
 
             # Update the Server header.
-            result.headers["Server"] = "Kyoukai/{}".format(__version__)
+            result.headers["Server"] = version_format
 
             # list means wsgi response probably
             if not isinstance(result.response, (bytes, str, list)):
                 result.set_data(str(result.response))
 
-            result.headers["X-Powered-By"] = "Kyoukai/{}".format(__version__)
+            result.headers["X-Powered-By"] = version_format
 
             # Return the new Response.
             return result
