@@ -114,7 +114,7 @@ def route(url: str, methods: typing.Iterable[str] = ("GET", "HEAD"), **kwargs):
         Now accepts an already edited function as the function to decorate - this will add a new \
         routing url and method pair to the :attr:`.Route.routes`.
 
-    .. versionchanged:: 2.2.1
+    .. versionchanged:: 2.2.2
 
         Default methods changed to GET and HEAD.
     

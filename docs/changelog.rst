@@ -8,6 +8,8 @@ Version 2.x.x
 
   - Add the ability to have multiple error handlers per function.
 
+  - Add :meth:`.Route.add_path`.
+
 Version 2.2.1
 -------------
 
