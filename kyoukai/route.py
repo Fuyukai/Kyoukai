@@ -62,6 +62,10 @@ class Route(object):
         #: Our own specific hooks.
         self.hooks = {}
 
+    @property
+    def callable_repr(self):
+        return repr(self._callable)
+
     def add_path(self, url: str, methods: typing.Sequence[str] = ("GET", "HEAD")):
         """
         Adds a path to the current set of paths for this route.

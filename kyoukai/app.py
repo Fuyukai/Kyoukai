@@ -221,6 +221,11 @@ class Kyoukai(object):
                 # else:
                 # result = wrap_response(result, self.response_class)
 
+            if result.status_code != exception.code:
+                logger.warning("Error handler {} returned code {} when exception was code {}..."
+                               .format(error_handler.callable_repr, result.status_code,
+                                       exception.code))
+
             return result
 
     async def process_request(self, request: Request, parent_context: Context) -> Response:
