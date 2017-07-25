@@ -41,30 +41,67 @@ override the endpoint by passing ``endpoint=`` to either :func:`.Blueprint.wrap_
 
 Building the URL is simple:
 
-.. code-block:: python
+.. code-block:: python3
 
     url = ctx.url_for("api.get_all_users")
 
 If the same endpoint has multiple methods, pass ``methods`` to the function:
 
-.. code-block:: python
+.. code-block:: python3
 
     url = ctx.url_for("api.something_with_users", methods=["POST"])
 
 To enforce *external URLs only* (i.e not relative), pass ``force_external = True``:
 
-.. code-block:: python
+.. code-block:: python3
 
     url = ctx.url_for("api.get_all_users", force_external=True)
 
 Finally, if your route is defined with parameters (e.g ``def get_user(ctx, user_id: int)``):
 
-.. code-block:: python
+.. code-block:: python3
 
     url = ctx.url_for("api.get_all_users", user_id=1)
 
 Multiple Paths For One Route
 ----------------------------
 
-This is a TODO, and will be implemented in a later version.
+It is possible to have multiple paths for a single route by stacking the :meth:`.Blueprint.route`
+decorator repeatedly.
+
+.. code-block:: python3
+
+    bp = Blueprint("something")
+
+    @bp.route("/users/<id:int>")
+    @bp.route("/users/<id:int>/profile")
+    async def handler(ctx, id):
+        ...
+
+Custom methods can be defined for each path, too. The methods are associated with one path, and
+will not affect the methods of the other paths.
+
+    @bp.route("/users/<id:int>", methods=["POST"])
+    @bp.route("/users/<id:int>/profile")  # uses "GET", "HEAD" by default
+    async def handler(ctx, id):
+        ...
+
+This can be done with route group decorators too, by stacking the route decorator on top of
+eachother.
+
+Manual Mode
+~~~~~~~~~~~
+
+To manually add a new routing path to a route, you can use :meth:`.Route.add_path`.
+
+.. code-block:: python3
+
+    bp = Blueprint("something")
+
+    @bp.route("/users/<id:int>")
+    async def handler(ctx, id):
+        ...
+
+    handler.add_path("/users/<id:int>/profile")
+
 
