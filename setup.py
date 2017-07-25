@@ -34,8 +34,8 @@ setup(
         'kyoukai.backends',
 
         # ext packages
-        'kyoukai.ext',
-        'kyoukai.ext.rest',
+        #'kyoukai.ext',
+        #'kyoukai.ext.rest',
     ],
     url='https://mirai.veriny.tf',
     license='MIT',
