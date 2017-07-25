@@ -83,7 +83,7 @@ class RouteGroupType(type):
         return obb
 
 
-def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
+def route(url: str, methods: typing.Iterable[str] = ("GET", "HEAD"), **kwargs):
     """
     A companion function to the RouteGroup class. This follows :meth:`.Blueprint.route` in 
     terms of arguments, and marks a function as a route inside the class.
@@ -113,6 +113,10 @@ def route(url: str, methods: typing.Iterable[str] = ("GET",), **kwargs):
         
         Now accepts an already edited function as the function to decorate - this will add a new \
         routing url and method pair to the :attr:`.Route.routes`.
+
+    .. versionchanged:: 2.2.1
+
+        Default methods changed to GET and HEAD.
     
     :param url: The routing URL of the route.
     :param methods: An iterable of methods for the route.

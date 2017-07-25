@@ -7,7 +7,7 @@ import types
 import typing
 
 from werkzeug.exceptions import HTTPException
-from werkzeug.routing import Rule
+from werkzeug.routing import Rule, Submount
 from werkzeug.wrappers import Response
 
 from kyoukai.util import wrap_response
@@ -62,11 +62,27 @@ class Route(object):
         #: Our own specific hooks.
         self.hooks = {}
 
-    def get_rules(self) -> typing.List[Rule]:
+    def add_path(self, url: str, methods: typing.Sequence[str] = ("GET", "HEAD")):
         """
-        :return: A list of :class:`werkzeug.routing.Rule` objects for this route.
+        Adds a path to the current set of paths for this route.
+
+        :param url: The routing URL to add.
+        :param methods: An iterable of methods to use for this path.
+
+        The URL and methods will be added as a pair.
+        """
+        self.routes.append((url, methods))
+        return self
+
+    def get_submount(self) -> Submount:
+        """
+        :return: A submount that represents this route.
         
         .. versionadded:: 2.2.0
+
+        .. versionchanged:: 2.2.1
+
+            Changed from getting a list of rules to a single submount object.
         """
         rules = []
 
@@ -82,7 +98,9 @@ class Route(object):
 
             rules.append(rule)
 
-        return rules
+        # pass an empty prefix since we don't care about adding that
+        submount = Submount("", rules)
+        return submount
 
     def get_endpoint_name(self, bp=None) -> str:
         """

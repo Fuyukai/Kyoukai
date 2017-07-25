@@ -144,8 +144,9 @@ class Blueprint(object):
         for bp in self._children:
             inner.append(bp.get_submount())
 
+        # get route submounts
         for route in self.routes:
-            inner.extend(route.get_rules())
+            inner.append(route.get_submount())
 
         # create the submount
         sm = Submount(self._prefix,
@@ -216,7 +217,7 @@ class Blueprint(object):
         blueprint._parent = self
         return blueprint
 
-    def route(self, routing_url: str, methods: typing.Iterable[str] = ("GET",),
+    def route(self, routing_url: str, methods: typing.Sequence[str] = ("GET", "HEAD"),
               **kwargs):
         """
         Convenience decorator for adding a route.
@@ -231,13 +232,13 @@ class Blueprint(object):
         .. versionchanged:: 2.2.0
         
             Now accepts a Route as the function to decorate - this will add a new routing url and 
-            method pair to the :attr:`.Route.routes`.
+            method pair to :meth:`.Route.add_route`.
         """
 
         def _inner(func):
             if isinstance(func, Route):
                 # don't re-wrap, only add the routing URL and methods
-                func.routes.append((routing_url, methods))
+                func.add_path(routing_url, methods)
                 return func
 
             route = self.wrap_route(func, **kwargs)
@@ -273,8 +274,8 @@ class Blueprint(object):
     def wrap_route(self, cbl, *args, **kwargs) -> Route:
         """
         Wraps a callable in a Route.
-
         This is required for routes to be added.
+
         :param cbl: The callable to wrap.
         :return: A new :class:`~.Route` object.
         """
@@ -374,7 +375,8 @@ class Blueprint(object):
         """
         return self.add_hook(type_="pre", hook=func)
 
-    def add_route(self, route: Route, routing_url: str, methods: typing.Iterable[str] = ("GET",)):
+    def add_route(self, route: Route, routing_url: str,
+                  methods: typing.Sequence[str] = ("GET", "HEAD")):
         """
         Adds a route to the routing table and map.
 
@@ -391,8 +393,8 @@ class Blueprint(object):
 
         :return: The unmodified :class:`~.Route` object.
         """
-        # Create an endpoint name for the route.
-        route.routes.append((routing_url, methods))
+        # Add the routing path to the route
+        route.add_path(routing_url, methods)
         # Add it to the list of routes to add later.
         self.routes.append(route)
         # Add the self to the route.
