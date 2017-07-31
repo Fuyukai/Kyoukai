@@ -185,18 +185,12 @@ class Blueprint(object):
         if self.finalized is True:
             return self.map
 
-        routes = []
-        for child in self._children:
-            routes.append(child.get_submount())
-
-        routes.append(self.get_submount())
-
-        logger.info("Scanned {} route(s) over {} child blueprint(s) + {} route(s) in our "
-                    "blueprint, building URL mapping now."
-                    .format(len(routes), sum(1 for x in self.traverse_tree()), len(self.routes)))
+        submount = self.get_submount()
+        logger.info("Scanned {} route(s) in the routing tree, building routing mapping."
+                    .format(sum(1 for x in submount.get_rules(submount))))
 
         # Make a new Map() out of all of the routes.
-        rule_map = Map(routes, host_matching=self._host_matching, **map_options)
+        rule_map = Map([submount], host_matching=self._host_matching, **map_options)
 
         logger.info("Built route mapping with {} rules.".format(len(rule_map._rules)))
 

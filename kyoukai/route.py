@@ -84,7 +84,7 @@ class Route(object):
         
         .. versionadded:: 2.2.0
 
-        .. versionchanged:: 2.2.2
+        .. versionchanged:: 2.x.x
 
             Changed from getting a list of rules to a single submount object.
         """

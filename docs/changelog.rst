@@ -10,6 +10,8 @@ Version 2.x.x
 
   - Add :meth:`.Route.add_path`.
 
+  - Fix rules being duplicated in the root mapping.
+
 Version 2.2.1
 -------------
 
