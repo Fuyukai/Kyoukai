@@ -43,7 +43,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinxcontrib.asyncio',
-#    'sphinx_autodoc_typehints',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.autosummary',
 ]
 
