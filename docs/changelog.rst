@@ -14,6 +14,8 @@ Version 2.x.x
 
   - Redirect using a 307 when RequestRedirect is raised from :meth:`.Blueprint.match`.
 
+  - Fix when ``get_response`` would error.
+
 Version 2.2.1
 -------------
 

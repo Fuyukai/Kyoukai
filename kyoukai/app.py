@@ -196,6 +196,9 @@ class Kyoukai(object):
         if environ is None:
             environ = ctx.environ
 
+        cbl = lambda environ: Response("Internal server error during processing. Report this.",
+                                       status=500)
+
         error_handler = bp.get_errorhandler(exception)
         if not error_handler:
             # Try the root Blueprint. This may happen if the blueprint requested isn't registered
@@ -203,28 +206,39 @@ class Kyoukai(object):
             error_handler = self.root.get_errorhandler(exception)
             if not error_handler:
                 # Just return the Exception's get_response.
-                return exception.get_response(environ=environ)
+                cbl = exception.get_response
 
         else:
             # Try and invoke the error handler to get the Response.
             # Wrap it in the try/except, so we can handle a default one.
             try:
-                result = await error_handler.invoke(ctx, args=(exception,))
+                res = await error_handler.invoke(ctx, args=(exception,))
+                # hacky way of unifying everything
+                cbl = lambda environ: res
             except HTTPException as e:
                 # why tho?
                 logger.warning("Error handler function raised another error, using the "
                                "response from that...")
-                result = e.get_response(environ)
+                cbl = e.get_response
             except Exception as e:
                 logger.exception("Error in error handler!")
-                result = InternalServerError(e).get_response(environ)
+                cbl = InternalServerError(e).get_response
                 # else:
                 # result = wrap_response(result, self.response_class)
 
-            if result.status_code != exception.code:
-                logger.warning("Error handler {} returned code {} when exception was code {}..."
-                               .format(error_handler.callable_repr, result.status_code,
-                                       exception.code))
+        try:
+            result = cbl(environ=environ)
+        except Exception:
+            # ok
+            logger.critical("Whilst handling a {}, response.get_response ({}) raised exception"
+                            .format(exception.code, cbl), exc_info=True)
+            result = Response("Critical server error. Your application is broken.",
+                              status=500)
+
+        if result.status_code != exception.code:
+            logger.warning("Error handler {} returned code {} when exception was code {}..."
+                           .format(error_handler.callable_repr, result.status_code,
+                                   exception.code))
 
             return result
 

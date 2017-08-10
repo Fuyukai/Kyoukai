@@ -229,8 +229,9 @@ class H2KyoukaiComponent(KyoukaiBaseComponent):
         """
         Creates a new HTTP/2 SSL-based context.
 
-        This will use the HTTP/2 protocol, disabling HTTP/1.1 support for this port. It is possible to run two
-        servers side-by-side, one HTTP/2 and one HTTP/1.1, if you run them on different ports.
+        This will use the HTTP/2 protocol, disabling HTTP/1.1 support for this port. It is possible
+        to run two ervers side-by-side, one HTTP/2 and one HTTP/1.1, if you run them on
+        different ports.
         """
         super().__init__(app, ip, port)
 
@@ -257,7 +258,8 @@ class H2KyoukaiComponent(KyoukaiBaseComponent):
 
         protocol = partial(self.get_protocol, ctx, (self._server_name, self.port))
         self.app.finalize()
-        self.server = await self.app.loop.create_server(protocol, self.ip, self.port, ssl=ssl_context)
+        self.server = await self.app.loop.create_server(protocol, self.ip, self.port,
+                                                        ssl=ssl_context)
         self.logger.info("Kyoukai H2 serving on {}:{}".format(self.ip, self.port))
 
 
@@ -341,7 +343,8 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         ssl_sock = self.transport.get_extra_info("ssl_object")
         if ssl_sock is None:
             # We're not connecting over TLS.
-            # For the sake of it, we're gonna assume that the client talks HTTP/2 instead of HTTP/1.1,
+            # For the sake of it, we're gonna assume that the client talks HTTP/2 instead of
+            # HTTP/1.1,
             # or some other protocol.
             warnings.warn("HTTP/2 connection established over a non-TLS stream!")
         else:
@@ -354,7 +357,8 @@ class H2KyoukaiProtocol(asyncio.Protocol):
             if negotiated_protocol != "h2":
                 # Close the connection - this isn't a HTTP/2 connection.
                 # All we're gonna receive is junk data.
-                # This uses error code 0x1 (PROTOCOL_ERROR) because it's technically a protocol error.
+                # This uses error code 0x1 (PROTOCOL_ERROR) because it's technically a protocol
+                # error.
                 self.close(0x1)
                 return
 
@@ -480,7 +484,7 @@ class H2KyoukaiProtocol(asyncio.Protocol):
         request = app.request_class(environ=env)
 
         loop = app.loop
-        t = loop.create_task(app.process_request(request, self.parent_context))  # type: asyncio.Task
+        t = loop.create_task(app.process_request(request, self.parent_context))
         self.stream_tasks[event.stream_id] = loop.create_task(self.sending_loop(event.stream_id))
 
         t.add_done_callback(self._processing_done(env, event.stream_id))
