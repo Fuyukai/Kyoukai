@@ -275,7 +275,8 @@ class Kyoukai(object):
             except RequestRedirect as e:
                 # slashes etc
                 # user code is not allowed to handle this
-                self.log_route(ctx.request, 301)
+                self.log_route(ctx.request, 307)
+                e.code = 307
                 return e.get_response(request.environ)
             else:
                 ctx.route_matched.dispatch(ctx=ctx)

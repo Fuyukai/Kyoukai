@@ -12,6 +12,8 @@ Version 2.x.x
 
   - Fix rules being duplicated in the root mapping.
 
+  - Redirect using a 307 when RequestRedirect is raised from :meth:`.Blueprint.match`.
+
 Version 2.2.1
 -------------
 
