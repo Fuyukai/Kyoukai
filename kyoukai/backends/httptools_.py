@@ -393,6 +393,8 @@ class KyoukaiProtocol(asyncio.Protocol):  # pragma: no cover
                         self.write(HTTP_INVALID_COMPRESSION)
                         self.close()
                         return
+
+                    body = BytesIO(decompressed_data)
                 else:
                     self.logger.error("Unknown Content-Encoding sent by client: {}".format(value))
 
