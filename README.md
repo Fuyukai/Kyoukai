@@ -1,5 +1,7 @@
 ## Kyōkai (境界)
 
+**This project will not be getting any more updates.**
+
 [![Coverage](https://codecov.io/github/SunDwarf/Kyoukai/coverage.svg)](https://codecov.io/gh/SunDwarf/Kyoukai)
 [![CircleCI](https://img.shields.io/circleci/project/SunDwarf/Kyoukai.svg?maxAge=2592000)](https://circleci.com/gh/SunDwarf/Kyoukai/)
 
