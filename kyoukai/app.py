@@ -15,7 +15,7 @@ from werkzeug.wrappers import Request, Response
 from kyoukai.asphalt import HTTPRequestContext
 from kyoukai.blueprint import Blueprint
 
-__version__ = "2.2.1"
+__version__ = "2.2.1.post1"
 version_format = "Kyoukai/{}".format(__version__)
 
 logger = logging.getLogger("Kyoukai")
